@@ -1,5 +1,6 @@
 # Awesome WotLK
 ## World of Warcraft 3.3.5a 12340 improvements library
+### Fork of https://github.com/FrostAtom/awesome_wotlk/
 
 ## <b> [Details](#details) - [Installation](#installation) - [Docs](https://github.com/FrostAtom/awesome_wotlk/blob/main/docs/api_reference.md) - [For suggestions](#for-suggestions) - [3rd party libraries](#3rd-party-libraries)
 
@@ -27,6 +28,10 @@ ___
 > - New CVars:<br>
     - nameplateDistance<br>
     - cameraFov<br>
+> - New Interaction Keybind:<br>
+    - loots mob, skins mob, interacts with closest objects to mine, sit, loot, open, etc.
+    - u can create macro /script QueueInteract()
+    - or u can use [Addon](https://github.com/someweirdhuman/awesome_wotlk/tree/main/Interaction) and go to keybinds and keybind the feature
 See [Docs](https://github.com/FrostAtom/awesome_wotlk/blob/main/docs/api_reference.md) for details
 
 ## Installation
