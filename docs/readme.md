@@ -29,9 +29,9 @@ ___
     - nameplateDistance<br>
     - cameraFov<br>
 > - New Interaction Keybind:<br>
-    - loots mob, skins mob, interacts with closest objects to mine, sit, loot, open, etc.
-    - u can create macro /script QueueInteract()
-    - or u can use [Addon](https://github.com/someweirdhuman/awesome_wotlk/tree/main/Interaction) and go to keybinds and keybind the feature
+    - loots mob, skins mob, interacts with closest objects to mine, sit, loot, open, etc.<br>
+    - u can create macro /script QueueInteract()<br>
+    - or u can use [Addon](https://github.com/someweirdhuman/awesome_wotlk/tree/main/Interaction) and go to keybinds and keybind the feature<br>
 See [Docs](https://github.com/FrostAtom/awesome_wotlk/blob/main/docs/api_reference.md) for details
 
 ## Installation
