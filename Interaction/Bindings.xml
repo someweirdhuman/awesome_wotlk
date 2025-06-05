@@ -1,0 +1,5 @@
+<Bindings>
+  <Binding name="INTERACTIONKEYBIND" header="INTERACTION" Category="ADDONS">
+    QueueInteract()
+  </Binding>
+</Bindings>
