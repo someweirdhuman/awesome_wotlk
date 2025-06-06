@@ -55,7 +55,35 @@ void ProcessQueuedInteraction()
     s_requestedInteraction = 0;
 }
 
-int lua_QueueInteract(lua_State* L)
+bool IsGoodObject(uint8_t gameObjectType)
+{
+    switch (gameObjectType)
+    {
+        case GAMEOBJECT_TYPE_DOOR:
+        case GAMEOBJECT_TYPE_BUTTON:
+        case GAMEOBJECT_TYPE_QUESTGIVER:
+        case GAMEOBJECT_TYPE_CHEST:
+        case GAMEOBJECT_TYPE_BINDER:
+        case GAMEOBJECT_TYPE_TRAP:
+        case GAMEOBJECT_TYPE_CHAIR:
+        case GAMEOBJECT_TYPE_SPELL_FOCUS:
+        case GAMEOBJECT_TYPE_GOOBER:
+        case GAMEOBJECT_TYPE_FISHINGNODE:
+        case GAMEOBJECT_TYPE_SUMMONING_RITUAL:
+        case GAMEOBJECT_TYPE_MAILBOX:
+        case GAMEOBJECT_TYPE_MEETINGSTONE:
+        case GAMEOBJECT_TYPE_FLAGSTAND:
+        case GAMEOBJECT_TYPE_FLAGDROP:
+        case GAMEOBJECT_TYPE_BARBER_CHAIR:
+        case GAMEOBJECT_TYPE_GUILD_BANK:
+        case GAMEOBJECT_TYPE_TRAPDOOR:
+            return true;  
+        default:
+            return false; 
+    }
+}
+
+static int lua_QueueInteract(lua_State* L)
 {
     if (!IsInWorld())
         return 0;
@@ -89,19 +117,21 @@ int lua_QueueInteract(lua_State* L)
         if (object->GetTypeID() == TYPEID_UNIT) {
             uint32_t dynFlags = object->GetValue<uint32_t>(UNIT_DYNAMIC_FLAGS);
             uint32_t unitFlags = object->GetValue<uint32_t>(UNIT_FIELD_FLAGS);
+            uint32_t npcFlags = object->GetValue<uint32_t>(UNIT_NPC_FLAGS);
 
             bool isLootable = (dynFlags & UNIT_DYNFLAG_LOOTABLE) != 0;
             bool isSkinnable = (unitFlags & UNIT_FLAG_SKINNABLE) != 0;
 
-            if (!isLootable && !isSkinnable) {
+            if ((!isLootable && !isSkinnable) && npcFlags == 0) {
                 return true;
             }
         }
         else if (object->GetTypeID() == TYPEID_GAMEOBJECT) {
-            uint32_t goFlags = object->GetValue<uint32_t>(GAMEOBJECT_FLAGS);
-
-            if (goFlags & (GO_FLAG_IN_USE | GO_FLAG_DESTROYED | GO_FLAG_LOCKED | GO_FLAG_INTERACT_COND))
-                return true; // Skip non-usable GOs
+            uint32_t bytes = object->GetValue<uint32_t>(GAMEOBJECT_BYTES_1);
+            uint8_t gameObjectType = (bytes >> 8) & 0xFF;
+            if (!IsGoodObject(gameObjectType)) {
+                return true;
+            }
         }
 
         candidate = guid;
