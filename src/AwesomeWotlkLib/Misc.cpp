@@ -88,27 +88,21 @@ static int lua_QueueInteract(lua_State* L)
     if (!IsInWorld())
         return 0;
 
-    Player* player = ObjectMgr::GetPlayer();
-    VecXYZ posPlayer;
-    if (!player) return 0;
-
-    player->ToUnit()->vmt->GetPosition(player->ToUnit(), &posPlayer);
-    guid_t player_guid = player->entry->guid;
-
     guid_t candidate = 0;
     float bestDistance = 3000.0f;
 
+    CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
+    if (!player) {
+        return 0;
+    }
+
     ObjectMgr::EnumObjects([&](guid_t guid) {
-        if (guid == player_guid) return true;
+        if (guid == player->GetGUID()) return true;
 
         CGObject_C* object = ObjectMgr::GetObjectPtr(guid, TYPEMASK_GAMEOBJECT | TYPEMASK_UNIT);
         if (!object) return true;
 
-        C3Vector objPos;
-        object->GetPosition(objPos);
-
-        VecXYZ testVec{ objPos.X, objPos.Y, objPos.Z };
-        float distance = posPlayer.distance(testVec);
+        float distance = player->distance(object);
 
         if (distance > 20.0f || distance == 0.f || distance > bestDistance) {
             return true;
@@ -121,8 +115,9 @@ static int lua_QueueInteract(lua_State* L)
 
             bool isLootable = (dynFlags & UNIT_DYNFLAG_LOOTABLE) != 0;
             bool isSkinnable = (unitFlags & UNIT_FLAG_SKINNABLE) != 0;
+            bool canAssist = player->CanAssist((CGUnit_C*)object, true);
 
-            if ((!isLootable && !isSkinnable) && npcFlags == 0) {
+            if (!isLootable && !isSkinnable && (!canAssist || npcFlags == 0)) {
                 return true;
             }
         }
@@ -138,7 +133,7 @@ static int lua_QueueInteract(lua_State* L)
         bestDistance = distance;
 
         return true;
-        });
+    });
 
     if (candidate != 0)
         s_requestedInteraction = candidate;

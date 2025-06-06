@@ -689,6 +689,21 @@ public:
 
     TypeID GetTypeID() const { return m_typeID; }
 
+    float distance(CGObject_C* secObj)
+    {
+        if (!secObj)
+            return 0.0f;
+
+        C3Vector a, b;
+        secObj->GetPosition(a);
+        this->GetPosition(b);
+
+        float dx = b.X - a.X;
+        float dy = b.Y - a.Y;
+        float dz = b.Z - a.Z;
+        return std::sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
 private:
     uint32_t m_field4;        // 0x4
     uint32_t* m_data;         // 0x8
@@ -698,6 +713,23 @@ private:
     uint32_t m_field18[46];   // 0x18
 };
 
+class CGUnit_C : public CGObject_C
+{
+public:
+    bool CanAssist(const CGUnit_C* unit, bool ignoreFlags) const
+    {
+        using CanAssist_t = bool(__thiscall*)(const CGUnit_C* thisPtr, const CGUnit_C* unit, bool ignoreFlags);
+        static const CanAssist_t CanAssistFn = reinterpret_cast<CanAssist_t>(0x007293D0);
+
+        return CanAssistFn(this, unit, ignoreFlags);
+    }
+
+    uint64_t GetGUID() const
+    {
+        return GetValue<uint64_t>(OBJECT_FIELD_GUID);
+    }
+
+};
 
 inline HWND GetGameWindow() { return *(HWND*)0x00D41620; }
 
@@ -767,6 +799,17 @@ inline guid_t GetGuidByUnitID(const char* unitId) { return ((decltype(&GetGuidBy
 inline CGObject_C* GetObjectPtr(uint64_t objectGuid, uint32_t objectTypeMask) {
     typedef CGObject_C* (__cdecl* FuncPtr)(uint64_t, uint32_t, const char*, int);
     return ((FuncPtr)0x004D4DB0)(objectGuid, objectTypeMask, "", 0);
+}
+inline CGUnit_C* GetCGUnitPlayer() {
+    long long lpguid = ((long long(__cdecl*)())(0x004D3790))();
+    if (!(lpguid && ((int(__cdecl*)(long long, int))0x004D4DB0)(lpguid, 0x0010)))
+        return nullptr;
+
+    CGUnit_C* player = (CGUnit_C*)(ObjectMgr::GetObjectPtr(lpguid, TYPEMASK_UNIT));
+    if (!player) {
+        return nullptr;
+    }
+    return player;
 }
 inline guid_t String2Guid(const char* str)
 {
