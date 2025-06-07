@@ -1,0 +1,6 @@
+## Interface: 30300
+## Title: Flash
+## Version: 1.0
+## Notes: Flash
+## Author: Widget
+core.lua
