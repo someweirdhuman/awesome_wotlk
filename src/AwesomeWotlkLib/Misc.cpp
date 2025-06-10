@@ -124,7 +124,8 @@ static int lua_QueueInteract(lua_State* L)
         else if (object->GetTypeID() == TYPEID_GAMEOBJECT) {
             uint32_t bytes = object->GetValue<uint32_t>(GAMEOBJECT_BYTES_1);
             uint8_t gameObjectType = (bytes >> 8) & 0xFF;
-            if (!IsGoodObject(gameObjectType)) {
+
+            if (!((CGGameObject_C*)object)->CanUseNow() || !IsGoodObject(gameObjectType)) {
                 return true;
             }
         }

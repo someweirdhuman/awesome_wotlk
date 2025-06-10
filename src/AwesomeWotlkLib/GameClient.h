@@ -731,6 +731,20 @@ public:
 
 };
 
+class CGGameObject_C;
+
+class CGGameObject_C : public CGObject_C
+{
+public:
+    int CanUseNow() const
+    {
+        typedef bool(__thiscall* CanUseNow_t)(const CGGameObject_C* thisPtr);
+        static const CanUseNow_t CanUseNowFn = reinterpret_cast<CanUseNow_t>(0x0070BA10); //set_name(0x0070BA10, "CGGameObject_C__CanUseNow");
+
+        return CanUseNowFn(this);
+    }
+};
+
 inline HWND GetGameWindow() { return *(HWND*)0x00D41620; }
 
 namespace CGame {
