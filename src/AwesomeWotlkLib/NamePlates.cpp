@@ -9,58 +9,11 @@
 #define NAME_PLATE_CREATED "NAME_PLATE_CREATED"
 #define NAME_PLATE_UNIT_ADDED "NAME_PLATE_UNIT_ADDED"
 #define NAME_PLATE_UNIT_REMOVED "NAME_PLATE_UNIT_REMOVED"
+#define NAME_PLATE_OWNER_CHANGED "NAME_PLATE_OWNER_CHANGED"
 
-using NamePlateFlags = uint32_t;
-enum NamePlateFlag_ {
-    NamePlateFlag_Null = 0,
-    NamePlateFlag_Created = (1 << 0),
-    NamePlateFlag_Visible = (1 << 1),
-    NamePlateFlag_CreatedAndVisible = NamePlateFlag_Created | NamePlateFlag_Visible,
-};
-
-struct NamePlateEntry {
-    NamePlateEntry() : nameplate(NULL), guid(0), flags(NamePlateFlag_Null), updateId(0) {}
-    Frame* nameplate;
-    guid_t guid;
-    NamePlateFlags flags;
-    uint32_t updateId;
-};
-
-struct NamePlateVars {
-    NamePlateVars() : updateId(1) {}
-    std::vector<NamePlateEntry> nameplates;
-    uint32_t updateId;
-};
 
 static Console::CVar* s_cvar_nameplateDistance;
 
-static NamePlateVars& lua_findorcreatevars(lua_State* L)
-{
-    struct Dummy {
-        static int lua_gc(lua_State* L)
-        {
-            ((NamePlateVars*)lua_touserdata(L, -1))->~NamePlateVars();
-            return 0;
-        }
-    };
-    NamePlateVars* result = NULL;
-    lua_getfield(L, LUA_REGISTRYINDEX, "nameplatevars"); // vars
-    if (lua_isuserdata(L, -1))
-        result = (NamePlateVars*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
-
-    if (!result) {
-        result = (NamePlateVars*)lua_newuserdata(L, sizeof(NamePlateVars)); // vars
-        new (result) NamePlateVars();
-        
-        lua_createtable(L, 0, 1); // vars, mt
-        lua_pushcfunction(L, Dummy::lua_gc); // vars, mt, gc
-        lua_setfield(L, -2, "__gc"); // vars, mt
-        lua_setmetatable(L, -2); // vars
-        lua_setfield(L, LUA_REGISTRYINDEX, "nameplatevars");
-    }
-    return *result;
-}
 
 static guid_t getTokenGuid(int id)
 {
@@ -68,16 +21,6 @@ static guid_t getTokenGuid(int id)
     if (id >= vars.nameplates.size())
         return 0;
     return vars.nameplates[id].guid;
-}
-
-static NamePlateEntry* getEntryByGuid(guid_t guid)
-{
-    if (!guid) return NULL;
-    NamePlateVars& vars = lua_findorcreatevars(GetLuaState());
-    auto it = std::find_if(vars.nameplates.begin(), vars.nameplates.end(), [guid](const NamePlateEntry& entry) {
-        return (entry.flags & NamePlateFlag_Visible) && entry.guid == guid;
-    });
-    return it != vars.nameplates.end() ? &(*it) : NULL;
 }
 
 static int getTokenId(guid_t guid)
@@ -167,8 +110,12 @@ static void onUpdateCallback()
             entry.updateId = vars.updateId;
         } else {
             if (it->guid != guid) {
-                // FIXME: potential problem with silent changing real unit
                 it->guid = guid;
+                if (it->flags & NamePlateFlag_Visible) {
+                    char token[16];
+                    snprintf(token, std::size(token), "nameplate%lu", std::distance(vars.nameplates.begin(), it) + 1);
+                    FrameScript::FireEvent(NAME_PLATE_OWNER_CHANGED, "%s", token);
+                }
             }
             it->updateId = vars.updateId;
         }
@@ -245,6 +192,7 @@ void NamePlates::initialize()
     Hooks::FrameXML::registerEvent(NAME_PLATE_CREATED);
     Hooks::FrameXML::registerEvent(NAME_PLATE_UNIT_ADDED);
     Hooks::FrameXML::registerEvent(NAME_PLATE_UNIT_REMOVED);
+    Hooks::FrameXML::registerEvent(NAME_PLATE_OWNER_CHANGED);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateDistance, "nameplateDistance", NULL, (Console::CVarFlags)1, "43", CVarHandler_NameplateDistance);
     Hooks::FrameScript::registerToken("nameplate", getTokenGuid, getTokenId);
     Hooks::FrameScript::registerOnUpdate(onUpdateCallback);

@@ -547,8 +547,28 @@ struct UnitEntry : ObjectEntry {
     uint32_t virtualItemSlotId[3];
     uint32_t flags;
     uint32_t flags2;
-
-    char gap[0x15C];
+    float auraState;
+    uint32_t baseAttackTime[2];
+    uint32_t rangedAttackTime;
+    float boundingRadius;
+    float combatReach;
+    uint32_t displayId;
+    uint32_t nativeDisplayId;
+    uint32_t mountDisplayId;
+    float minDamage;
+    float maxDamage;
+    float minOffhandDamage;
+    float maxOffhandDamage;
+    uint32_t bytes1;
+    uint32_t petNumber;
+    uint32_t petNameTimestamp;
+    uint32_t petExperience;
+    uint32_t petNextLevelExp;
+    uint32_t dynamicFlags;
+    float modCastSpeed;
+    uint32_t createdBySpell;
+    uint32_t npc_flags;
+    char gap1[0xFE];
 };
 static_assert(sizeof(UnitEntry) == 0x250);
 
