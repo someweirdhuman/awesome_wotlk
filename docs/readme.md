@@ -20,11 +20,15 @@ ___
     - FlashWindow<br>
     - IsWindowFocused<br>
     - FocusWindow<br>
-    - CopyToClipboard
+    - CopyToClipboard<br>
+    - UnitOccupations<br>
+    - UnitOwner<br>
+    - UnitTokenFromGUID
 > - New events:<br>
     - NAME_PLATE_CREATED<br>
     - NAME_PLATE_UNIT_ADDED<br>
-    - NAME_PLATE_UNIT_REMOVED
+    - NAME_PLATE_UNIT_REMOVED<br>
+    - NAME_PLATE_OWNER_CHANGED
 > - New CVars:<br>
     - nameplateDistance<br>
     - cameraFov<br>
