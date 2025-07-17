@@ -40,6 +40,11 @@ Parameters: **unitId**`string`
 
 Notifies that a nameplate will be hidden
 
+## NAME_PLATE_UNIT_CHANGED`Event`
+Parameters: **unitId**`string`
+
+Fires when nameplate owner changed(?)
+
 ## nameplateDistance`CVar`
 Arguments: **distance**`number`
 
@@ -109,6 +114,27 @@ Arguments: **text**`string`
 Returns: `none`
 
 Copies text to clipboard
+
+## UnitOccupations`API`
+Arguments: **unitID**`string`
+
+Returns: **npcFlags**`number`
+
+Returns npcFlags if passed valid unitID else returns nothing
+
+## UnitOwner`API`
+Arguments: **unitID**`string`
+
+Returns: **ownerName**`string`, **ownerGuid**`string`, 
+
+Returns ownerName and ownerGuid if passed valid unitID else returns nothing
+
+## UnitTokenFromGUID`API`
+Arguments: **GUID**`string`
+
+Returns: **UnitToken**`string`
+
+Returns UnitToken if passed valid GUID else returns nothing
 
 ## cameraFov`CVar`
 Parameters: **value**`number`
