@@ -25,6 +25,27 @@ for _, nameplate in pairs(C_NamePlate.GetNamePlates()) do
 end
 ```
 
+## C_NamePlate.GetNamePlateByGUID`API`
+Arguments: `none`
+
+Returns: **namePlateList**`table`
+
+Get nameplate from UnitGUID for example from combat log
+```lua
+local nameplate = C_NamePlate.GetNamePlateByGUID(destGUID)
+```
+
+## C_NamePlate.GetNamePlateTokenByGUID`API`
+Arguments: `none`
+
+Returns: **namePlateList**`table`
+
+Get nameplate token from UnitGUID for example from combat log
+```lua
+local token = C_NamePlate.GetNamePlateTokenByGUID(destGUID)
+local frame = C_NamePlate.GetNamePlateForUnit(token)
+```
+
 ## NAME_PLATE_CREATED`Event`
 Parameters: **namePlateBase**`frame`
 
