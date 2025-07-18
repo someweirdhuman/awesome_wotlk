@@ -13,6 +13,8 @@ ___
 > - New API:<br>
     - C_NamePlate.GetNamePlates<br>
     - C_NamePlate.GetNamePlateForUnit<br>
+    - C_NamePlate.GetNamePlateByGUID<br>
+    - C_NamePlate.GetNamePlateTokenByGUID<br>
     - UnitIsControlled<br>
     - UnitIsDisarmed<br>
     - UnitIsSilenced<br>
@@ -41,12 +43,8 @@ See [Docs](https://github.com/someweirdhuman/awesome_wotlk/blob/main/docs/api_re
 ## Installation
 1) Download latest [release](https://github.com/someweirdhuman/awesome_wotlk/releases)
 2) Unpack files to root game folder
-3) Launch `AwesomeWotlkPatch.exe`, you should get a message
+3) Launch `AwesomeWotlkPatch.exe`, you should get a message (or drag wow.exe on top of AwesomeWotlkPatch.exe)
 4) To update just download and replace dll
-
-## For suggestions
-Join us at [Discord](https://discord.gg/NNnBTK5c8e) - [Telegram](https://t.me/wow_soft)
-<br><img src="https://raw.githubusercontent.com/someweirdhuman/awesome_wotlk/main/docs/assets/wow_soft.jpg" width="148" height="148">
 
 ## 3rd party libraries
 - [microsoft-Detours](https://github.com/microsoft/Detours) - [license](https://github.com/microsoft/Detours/blob/6782fe6e6ab11ae34ae66182aa5a73b5fdbcd839/LICENSE.md)
