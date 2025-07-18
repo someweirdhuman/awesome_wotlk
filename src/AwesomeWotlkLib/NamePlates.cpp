@@ -14,6 +14,62 @@
 
 static Console::CVar* s_cvar_nameplateDistance;
 
+guid_t parseGuidFromString(const char* str)
+{
+    if (!str)
+        return 0;
+
+    return static_cast<guid_t>(strtoull(str, nullptr, 0));
+}
+
+static int C_NamePlate_GetNamePlateByGUID(lua_State* L)
+{
+    const char* guidStr = luaL_checkstring(L, 1);
+    if (!guidStr) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    guid_t guid = parseGuidFromString(guidStr);
+    if (!guid) return 0;
+
+    NamePlateEntry* entry = getEntryByGuid(guid);
+    if (!entry || !entry->nameplate)
+        return 0;
+
+    lua_pushframe(L, entry->nameplate);
+    return 1;
+}
+
+static int C_NamePlate_GetNamePlateTokenByGUID(lua_State* L)
+{
+    const char* guidStr = luaL_checkstring(L, 1);
+    if (!guidStr) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    guid_t guid = parseGuidFromString(guidStr); 
+    if (!guid) return 0;
+
+    NamePlateVars& vars = lua_findorcreatevars(GetLuaState());
+
+    for (size_t i = 0; i < vars.nameplates.size(); ++i)
+    {
+        const NamePlateEntry& entry = vars.nameplates[i];
+        if ((entry.flags & NamePlateFlag_CreatedAndVisible) == NamePlateFlag_CreatedAndVisible &&
+            entry.guid == guid)
+        {
+            static char token[32];
+            snprintf(token, sizeof(token), "nameplate%zu", i);
+            lua_pushstring(L, token);
+            return 1;
+        }
+    }
+
+    lua_pushnil(L);
+    return 1;
+}
 
 static guid_t getTokenGuid(int id)
 {
@@ -73,6 +129,8 @@ static int lua_openlibnameplates(lua_State* L)
     luaL_Reg methods[] = {
         {"GetNamePlates", C_NamePlate_GetNamePlates},
         {"GetNamePlateForUnit", C_NamePlate_GetNamePlateForUnit},
+        {"GetNamePlateByGUID", C_NamePlate_GetNamePlateByGUID},
+        {"GetNamePlateTokenByGUID", C_NamePlate_GetNamePlateTokenByGUID},
     };
     
     lua_createtable(L, 0, std::size(methods));
