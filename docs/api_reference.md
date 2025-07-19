@@ -94,7 +94,7 @@ Default: **20**
 
 Sets the effective height of a nameplate used in the stacking collision calculation. 
 
-### nameplateUpperBorder`CVar`  
+## nameplateUpperBorder`CVar`  
 Arguments: **offset**`number`
 
 Default: **30**
@@ -115,7 +115,7 @@ Default: **1**
 
 Speed at which nameplates move **upward** during stacking resolution. 
 
-### nameplateSpeedReset`CVar` 
+## nameplateSpeedReset`CVar` 
 Arguments: **speed**`number`
 
 Default: **1**
