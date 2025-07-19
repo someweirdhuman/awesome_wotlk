@@ -64,7 +64,6 @@ bool IsGoodObject(uint8_t gameObjectType)
         case GAMEOBJECT_TYPE_QUESTGIVER:
         case GAMEOBJECT_TYPE_CHEST:
         case GAMEOBJECT_TYPE_BINDER:
-        case GAMEOBJECT_TYPE_TRAP:
         case GAMEOBJECT_TYPE_CHAIR:
         case GAMEOBJECT_TYPE_SPELL_FOCUS:
         case GAMEOBJECT_TYPE_GOOBER:
@@ -125,7 +124,9 @@ static int lua_QueueInteract(lua_State* L)
             uint32_t bytes = object->GetValue<uint32_t>(GAMEOBJECT_BYTES_1);
             uint8_t gameObjectType = (bytes >> 8) & 0xFF;
 
-            if (!((CGGameObject_C*)object)->CanUseNow() || !IsGoodObject(gameObjectType)) {
+            if (!IsGoodObject(gameObjectType)) return true;
+
+            if (!static_cast<CGGameObject_C*>(object)->CanUseNow()) {
                 return true;
             }
         }
