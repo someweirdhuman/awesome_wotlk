@@ -141,6 +141,48 @@ inline bool GetPoint(lua_State* L, int frame_idx, int point_index,
     return true;
 }
 
+inline bool SetHeight(lua_State* L, int frame_idx, double height)
+{
+    lua_getfield(L, frame_idx, "SetHeight");  // push frame.SetHeight function
+    if (lua_type(L, -1) != LUA_TFUNCTION) {
+        lua_pop(L, 1);
+        return false;  // function not found
+    }
+
+    lua_pushvalue(L, frame_idx);     // push frame as self
+    lua_pushnumber(L, height);       // push height
+
+    if (lua_pcall(L, 2, 0, 0) != 0) {  // pcall with 2 arguments: self, height
+        const char* err = lua_tostringnew(L, -1);
+        // handle error, e.g. print or log
+        lua_pop(L, 1);
+        return false;
+    }
+
+    return true;
+}
+
+inline bool SetWidth(lua_State* L, int frame_idx, double height)
+{
+    lua_getfield(L, frame_idx, "SetWidth");  // push frame.SetHeight function
+    if (lua_type(L, -1) != LUA_TFUNCTION) {
+        lua_pop(L, 1);
+        return false;  // function not found
+    }
+
+    lua_pushvalue(L, frame_idx);     // push frame as self
+    lua_pushnumber(L, height);       // push height
+
+    if (lua_pcall(L, 2, 0, 0) != 0) {  // pcall with 2 arguments: self, height
+        const char* err = lua_tostringnew(L, -1);
+        // handle error, e.g. print or log
+        lua_pop(L, 1);
+        return false;
+    }
+
+    return true;
+}
+
 inline bool SetPoint(
     lua_State* L,
     int frame_idx,

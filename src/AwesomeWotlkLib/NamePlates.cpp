@@ -22,6 +22,8 @@ static Console::CVar* s_cvar_nameplateOriginPos;
 static Console::CVar* s_cvar_nameplateSpeedRaise;
 static Console::CVar* s_cvar_nameplateSpeedReset;
 static Console::CVar* s_cvar_nameplateSpeedLower;
+static Console::CVar* s_cvar_nameplateHitboxHeight;
+static Console::CVar* s_cvar_nameplateHitboxWidth;
 
 guid_t parseGuidFromString(const char* str)
 {
@@ -115,6 +117,8 @@ static int CVarHandler_NameplateOriginPos(Console::CVar*, const char*, const cha
 static int CVarHandler_NameplateSpeedRaise(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateSpeedLower(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateSpeedReset(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_NameplateHitboxHeight(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_NameplateHitboxWidth(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateStacking(Console::CVar*, const char*, const char* value, LPVOID)
 {
     lua_State* L = GetLuaState();
@@ -217,13 +221,16 @@ static void NameplateStackingUpdate(lua_State* L, NamePlateVars* vars)
         lua_pop(L, 1);
     }
 
-    int xspace = std::atoi(s_cvar_nameplateXSpace->vStr);
-    int yspace = std::atoi(s_cvar_nameplateYSpace->vStr);
-    int upperborder = std::atoi(s_cvar_nameplateUpperBorder->vStr);
-    int originpos = std::atoi(s_cvar_nameplateOriginPos->vStr);
-    int speedraise = std::atoi(s_cvar_nameplateSpeedRaise->vStr);
-    int speedreset = std::atoi(s_cvar_nameplateSpeedReset->vStr);
-    int speedlower = std::atoi(s_cvar_nameplateSpeedLower->vStr);
+    int xSpace = std::atoi(s_cvar_nameplateXSpace->vStr);
+    int ySpace = std::atoi(s_cvar_nameplateYSpace->vStr);
+    int upperBorder = std::atoi(s_cvar_nameplateUpperBorder->vStr);
+    int originPos = std::atoi(s_cvar_nameplateOriginPos->vStr);
+    int speedRaise = std::atoi(s_cvar_nameplateSpeedRaise->vStr);
+    int speedReset = std::atoi(s_cvar_nameplateSpeedReset->vStr);
+    int speedLower = std::atoi(s_cvar_nameplateSpeedLower->vStr);
+    int nameplateHitboxHeight = std::atoi(s_cvar_nameplateHitboxHeight->vStr);
+    int nameplateHitboxWidth = std::atoi(s_cvar_nameplateHitboxWidth->vStr);
+
 
     for (size_t i = 0; i < vars->nameplates.size(); ++i) {
         NamePlateEntry& nameplate_1 = vars->nameplates[i];
@@ -233,6 +240,13 @@ static void NameplateStackingUpdate(lua_State* L, NamePlateVars* vars)
 
         double width = 0, height = 0;
         GetSize(L, frame_1, width, height);
+        if (nameplateHitboxHeight > 0) {
+            SetHeight(L, frame_1, nameplateHitboxHeight);
+        }
+
+        if (nameplateHitboxWidth > 0) {
+            SetWidth(L, frame_1, nameplateHitboxWidth);
+        }
 
         if (nameplate_1.flags & NamePlateFlag_Visible) {
             double min = 1000;
@@ -248,11 +262,11 @@ static void NameplateStackingUpdate(lua_State* L, NamePlateVars* vars)
                         double ydiff = nameplate_1.ypos + nameplate_1.position - nameplate_2.ypos - nameplate_2.position;
                         double ydiff_origin = nameplate_1.ypos - nameplate_2.ypos - nameplate_2.position;
 
-                        if (std::abs(xdiff) < xspace) {
+                        if (std::abs(xdiff) < xSpace) {
                             if (ydiff >= 0 && std::abs(ydiff) < min) {
                                 min = std::abs(ydiff);
                             }
-                            if (std::abs(ydiff_origin) < yspace + 2 * delta) {
+                            if (std::abs(ydiff_origin) < ySpace + 2 * delta) {
                                 reset = false;
                             }
                         }
@@ -264,17 +278,17 @@ static void NameplateStackingUpdate(lua_State* L, NamePlateVars* vars)
             double oldposition = nameplate_1.position;
 
             if (oldposition >= 2 * delta && reset == 1) {
-                nameplate_1.position = oldposition - std::exp(-10.0f / oldposition) * delta * speedreset;
+                nameplate_1.position = oldposition - std::exp(-10.0f / oldposition) * delta * speedReset;
             }
-            else if (min < yspace) {
-                nameplate_1.position = oldposition + std::exp(-min / yspace) * delta * speedraise;
+            else if (min < ySpace) {
+                nameplate_1.position = oldposition + std::exp(-min / ySpace) * delta * speedRaise;
             }
-            else if ((oldposition >= 2 * delta) && (min > yspace + delta * 2)) {
-                nameplate_1.position = oldposition - std::exp(-yspace / min) * delta * 0.8f * speedlower;
+            else if ((oldposition >= 2 * delta) && (min > ySpace + delta * 2)) {
+                nameplate_1.position = oldposition - std::exp(-ySpace / min) * delta * 0.8f * speedLower;
             }
 
             SetClampedToScreen(L, frame_1, true);
-            SetClampRectInsets(L, frame_1, -10, 10, upperborder, -nameplate_1.ypos - nameplate_1.position - originpos + height);
+            SetClampRectInsets(L, frame_1, -10, 10, upperBorder, -nameplate_1.ypos - nameplate_1.position - originPos + height);
         }
 
         lua_pop(L, 1);
@@ -406,6 +420,8 @@ void NamePlates::initialize()
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateSpeedRaise, "nameplateSpeedRaise", NULL, (Console::CVarFlags)1, "1", CVarHandler_NameplateSpeedRaise);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateSpeedReset, "nameplateSpeedReset", NULL, (Console::CVarFlags)1, "1", CVarHandler_NameplateSpeedReset);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateSpeedLower, "nameplateSpeedLower", NULL, (Console::CVarFlags)1, "1", CVarHandler_NameplateSpeedLower);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateHitboxHeight, "nameplateHitboxHeight", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateHitboxHeight);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateHitboxWidth, "nameplateHitboxWidth", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateHitboxWidth);
     Hooks::FrameScript::registerToken("nameplate", getTokenGuid, getTokenId);
     Hooks::FrameScript::registerOnUpdate(onUpdateCallback);
 

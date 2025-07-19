@@ -40,7 +40,9 @@ ___
     - nameplateOriginPos<br>
     - nameplateSpeedRaise<br>
     - nameplateSpeedReset<br>
-    - nameplateSpeedLower
+    - nameplateSpeedLower<br>
+    - nameplateHitboxHeight<br>
+    - nameplateHitboxWidth
 > - New Interaction Keybind:<br>
     - loots mob, skins mob, interacts with closest objects to mine, sit, loot, open, etc.<br>
     - u can create macro /script QueueInteract()<br>
