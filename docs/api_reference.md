@@ -129,14 +129,14 @@ Default: **1**
 
 Speed at which nameplates move **downward** during stacking resolution. 
 
-### nameplateHitboxHeight`CVar` 
+## nameplateHitboxHeight`CVar` 
 Arguments: **height**`number`
 
 Default: **0**
 
 Height of a clickable nameplate hitbox, addons may override or break this, reload or disable/enable nameplates afterwards.
 
-### nameplateHitboxWidth`CVar` 
+## nameplateHitboxWidth`CVar` 
 Arguments: **width**`number`
 
 Default: **0**
