@@ -135,6 +135,7 @@ Arguments: **height**`number`
 Default: **0**
 
 Height of a clickable nameplate hitbox, addons may override or break this, reload or disable/enable nameplates afterwards.
+Use 0 to disable this and use default values.
 
 ## nameplateHitboxWidth`CVar` 
 Arguments: **width**`number`
@@ -142,6 +143,7 @@ Arguments: **width**`number`
 Default: **0**
 
 Width of a clickable nameplate hitbox, addons may override or break this, reload or disable/enable nameplates afterwards.
+Use 0 to disable this and use default values.
 
 # Unit
 
