@@ -80,14 +80,14 @@ Default: **0**
 
 Enables or disables nameplateStacking feature
 
-### nameplateXSpace`CVar`
+## nameplateXSpace`CVar`
 Arguments: **width**`number`
 
 Default: **130**
 
 Sets the effective width of a nameplate used in the collision/stacking calculation.
 
-### nameplateYSpace`CVar`  
+## nameplateYSpace`CVar`  
 Arguments: **height**`number`
 
 Default: **20**
@@ -101,14 +101,14 @@ Default: **30**
 
 Defines the vertical offset from the top of the screen where nameplates stop stacking upward.
 
-### nameplateOriginPos`CVar`
+## nameplateOriginPos`CVar`
 Arguments: **offset**`number`
 
 Default: **20**
 
 Offset used to push nameplate bit higher than its default position
 
-### nameplateSpeedRaise`CVar` 
+## nameplateSpeedRaise`CVar` 
 Arguments: **speed**`number`
 
 Default: **1**
@@ -122,7 +122,7 @@ Default: **1**
 
 Speed at which nameplates **reset** during stacking resolution. 
 
-### nameplateSpeedLower`CVar` 
+## nameplateSpeedLower`CVar` 
 Arguments: **speed**`number`
 
 Default: **1**
