@@ -50,7 +50,7 @@ ___
 > - New Nameplate Stacking:<br>
     - based on https://wago.io/AQdGXNEBH <br>
     - enable stacking nameplates by doing /console nameplateStacking 1 - /reload recommended after both disabling or enabling <br>
-    - also remember to delete this weakaura https://wago.io/AQdGXNEBH and restarting client before using this feature
+    - also remember to delete this weakaura https://wago.io/AQdGXNEBH and restarting client before using this feature <br>
     - see docs for more cvar details <br>
 See [Docs](https://github.com/someweirdhuman/awesome_wotlk/blob/main/docs/api_reference.md) for details
 
