@@ -73,6 +73,69 @@ Default: **41**
 
 Sets the display distance of nameplates in yards
 
+## nameplateStacking`CVar`
+Arguments: **enabled**`boolean`
+
+Default: **0**
+
+Enables or disables nameplateStacking feature
+
+### `nameplateXSpace`  
+**Arguments:** `width` *(number)*  
+**Default:** `130`  
+
+Sets the effective width of a nameplate used in the collision/stacking calculation.
+
+---
+
+### `nameplateYSpace`  
+**Arguments:** `height` *(number)*  
+**Default:** `20`  
+
+Sets the effective height of a nameplate used in the stacking collision calculation. 
+
+---
+
+### `nameplateUpperBorder`  
+**Arguments:** `offset` *(number)*  
+**Default:** `30`  
+
+Defines the vertical offset from the top of the screen where nameplates stop stacking upward.
+
+---
+
+### `nameplateOriginPos`  
+**Arguments:** `offset` *(number)*  
+**Default:** `20`  
+
+Offset used to push nameplate bit higher than its default position
+
+---
+
+### `nameplateSpeedRaise`  
+**Arguments:** `speed` *(number)*  
+**Default:** `1`  
+
+Speed at which nameplates move **upward** during stacking resolution. 
+
+---
+
+### `nameplateSpeedReset`  
+**Arguments:** `speed` *(number)*  
+**Default:** `1`  
+
+Speed at which nameplates **reset** during stacking resolution. 
+
+---
+
+### `nameplateSpeedLower`  
+**Arguments:** `speed` *(number)*  
+**Default:** `1`  
+
+Speed at which nameplates move **downward** during stacking resolution. 
+
+---
+
 # Unit
 
 ## UnitIsControlled`API`

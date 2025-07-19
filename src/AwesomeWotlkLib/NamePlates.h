@@ -6,6 +6,9 @@
 #include <vector>
 #include <cstring>
 #include "Hooks.h"
+#include <string>
+
+using namespace std;
 
 namespace NamePlates {
     void initialize();
@@ -33,6 +36,10 @@ struct NamePlateEntry {
     guid_t guid;
     NamePlateFlags flags;
     uint32_t updateId;
+
+    double position;
+    double ypos;
+    double xpos;
 };
 
 // Main state struct
@@ -68,6 +75,184 @@ inline NamePlateVars& lua_findorcreatevars(lua_State* L)
         lua_setfield(L, LUA_REGISTRYINDEX, "nameplatevars");
     }
     return *result;
+}
+
+inline bool GetPoint(lua_State* L, int frame_idx, int point_index,
+    std::string& point, std::string& relativeToName, std::string& relativePoint,
+    double& xOfs, double& yOfs)
+{
+    lua_getfield(L, frame_idx, "GetPoint");  // push frame.GetPoint function
+    if (lua_type(L, -1) != 6) {              // LUA_TFUNCTION
+        lua_pop(L, 1);
+        return false;
+    }
+
+    lua_pushvalue(L, frame_idx);             // push frame as self
+    lua_pushnumber(L, point_index);          // push index n
+
+    if (lua_pcall(L, 2, 5, 0) != 0) {
+        const char* err = lua_tostringnew(L, -1);
+        lua_pop(L, 1);
+        return false;
+    }
+
+
+    if (lua_type(L, -5) == 4)
+        point = lua_tostringnew(L, -5);
+    else
+        point.clear();
+
+    relativeToName.clear();
+    if (!lua_isnil(L, -4)) {
+        lua_pushvalue(L, -4); // push relativeTo object
+        lua_getfield(L, -1, "GetName"); // push relativeTo:GetName
+        if (lua_type(L, -1) == 6) { // is function
+            lua_pushvalue(L, -2); // push relativeTo as self
+            if (lua_pcall(L, 1, 1, 0) == 0) {
+                if (lua_type(L, -1) == 4) {
+                    relativeToName = lua_tostringnew(L, -1);
+                }
+                lua_pop(L, 1); // pop returned name
+            }
+            else {
+                lua_pop(L, 1); // error msg
+            }
+        }
+        else {
+            lua_pop(L, 1); // pop non-function
+        }
+        lua_pop(L, 1); // pop relativeTo object
+    }
+
+    // relativePoint
+    if (lua_type(L, -3) == 4)
+        relativePoint = lua_tostringnew(L, -3);
+    else
+        relativePoint.clear();
+
+    // xOfs
+    xOfs = lua_tonumber(L, -2);
+
+    // yOfs
+    yOfs = lua_tonumber(L, -1);
+
+    lua_pop(L, 5); // pop all return values
+
+    return true;
+}
+
+inline bool SetPoint(
+    lua_State* L,
+    int frame_idx,
+    const char* point,
+    int relativeTo_idx,
+    const char* relativePoint,
+    double x, double y)
+{
+    lua_getfield(L, frame_idx, "SetPoint");  // push frame.SetPoint function
+    if (lua_type(L, -1) != LUA_TFUNCTION) {
+        lua_pop(L, 1);
+        return false;  // function not found
+    }
+
+    lua_pushvalue(L, frame_idx);  // push frame as self
+    lua_pushstring(L, point);
+
+    if (relativeTo_idx != -2) {
+        lua_pushvalue(L, relativeTo_idx);  // push relativeTo frame
+    }
+    else {
+        lua_pushnil(L);  // push nil for relativeTo if none
+    }
+
+    lua_pushstring(L, relativePoint);
+    lua_pushnumber(L, x);
+    lua_pushnumber(L, y);
+
+    if (lua_pcall(L, 6, 0, 0) != 1) {
+        const char* err = lua_tostringnew(L, -1);
+        // handle error, e.g. print or log
+        lua_pop(L, 1);
+        return false;
+    }
+
+    return true;
+}
+
+
+inline bool SetClampRectInsets(lua_State* L, int frame_idx, double left, double right, double top, double bottom)
+{
+    lua_getfield(L, frame_idx, "SetClampRectInsets");  // push frame.SetClampRectInsets function
+    if (lua_type(L, -1) != LUA_TFUNCTION) {
+        lua_pop(L, 1);
+        return false;  // function not found
+    }
+
+    lua_pushvalue(L, frame_idx);   // push frame as self
+    lua_pushnumber(L, left);
+    lua_pushnumber(L, right);
+    lua_pushnumber(L, top);
+    lua_pushnumber(L, bottom);
+
+    if (lua_pcall(L, 5, 0, 0) != 0) {  // 5 args, 0 results
+        lua_pop(L, 1);                  // pop error message
+        return false;
+    }
+
+    return true;
+}
+
+inline bool SetClampedToScreen(lua_State* L, int frame_idx, bool clamped)
+{
+    lua_getfield(L, frame_idx, "SetClampedToScreen");  // push frame.SetClampedToScreen function
+    if (lua_type(L, -1) != LUA_TFUNCTION) {
+        lua_pop(L, 1);
+        return false;  // function not found
+    }
+
+    lua_pushvalue(L, frame_idx);  // push frame as self
+
+    // Push boolean as number 0 or 1 if no lua_pushboolean:
+    lua_pushnumber(L, clamped ? 1 : 0);
+
+    if (lua_pcall(L, 2, 0, 0) != 0) {  // 2 args, 0 results
+        lua_pop(L, 1);                  // pop error message
+        return false;
+    }
+
+    return true;
+}
+
+inline bool GetSize(lua_State* L, int frame_idx, double& width, double& height)
+{
+    lua_getfield(L, frame_idx, "GetSize");       // push frame.GetSize function
+    if (lua_type(L, -1) != LUA_TFUNCTION) {
+        lua_pop(L, 1);
+        return false;  // function not found
+    }
+
+    lua_pushvalue(L, frame_idx);                  // push frame as self
+
+    if (lua_pcall(L, 1, 2, 0) != 0) {            // call with 1 arg (self), expect 2 results (width, height)
+        lua_pop(L, 1);                            // pop error message
+        return false;
+    }
+
+    // Expecting two numbers on the stack now
+    if (lua_type(L, -2) != LUA_TNUMBER || lua_type(L, -1) != LUA_TNUMBER) {
+        lua_pop(L, 2);
+        return false;  // unexpected return types
+    }
+
+    // If no lua_tonumber, try lua_tostringnew + atof or custom function:
+    const char* widthStr = lua_tostringnew(L, -2);
+    const char* heightStr = lua_tostringnew(L, -1);
+    width = widthStr ? atof(widthStr) : 0.0;
+    height = heightStr ? atof(heightStr) : 0.0;
+
+    lua_pop(L, 2);  // pop width and height
+
+    return true;
 }
 
 inline NamePlateEntry* getEntryByGuid(guid_t guid)

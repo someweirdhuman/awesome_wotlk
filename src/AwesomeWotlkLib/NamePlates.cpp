@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <vector>
 #include <cstring>
+#include <chrono>
 #define NAME_PLATE_CREATED "NAME_PLATE_CREATED"
 #define NAME_PLATE_UNIT_ADDED "NAME_PLATE_UNIT_ADDED"
 #define NAME_PLATE_UNIT_REMOVED "NAME_PLATE_UNIT_REMOVED"
@@ -13,6 +14,14 @@
 
 
 static Console::CVar* s_cvar_nameplateDistance;
+static Console::CVar* s_cvar_nameplateStacking;
+static Console::CVar* s_cvar_nameplateXSpace;
+static Console::CVar* s_cvar_nameplateYSpace;
+static Console::CVar* s_cvar_nameplateUpperBorder;
+static Console::CVar* s_cvar_nameplateOriginPos;
+static Console::CVar* s_cvar_nameplateSpeedRaise;
+static Console::CVar* s_cvar_nameplateSpeedReset;
+static Console::CVar* s_cvar_nameplateSpeedLower;
 
 guid_t parseGuidFromString(const char* str)
 {
@@ -98,6 +107,38 @@ static int CVarHandler_NameplateDistance(Console::CVar*, const char*, const char
     *(float*)0x00ADAA7C = (float)(f * f);
     return 1;
 }
+std::chrono::steady_clock::time_point gLastCallTime = std::chrono::steady_clock::now();
+static int CVarHandler_NameplateXSpace(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_NameplateYSpace(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_NameplateUpperBorder(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_NameplateOriginPos(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_NameplateSpeedRaise(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_NameplateSpeedLower(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_NameplateSpeedReset(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_NameplateStacking(Console::CVar*, const char*, const char* value, LPVOID)
+{
+    lua_State* L = GetLuaState();
+    NamePlateVars& vars = lua_findorcreatevars(L);
+    for (size_t i = 0; i < vars.nameplates.size(); ++i)
+    {
+        NamePlateEntry& entry = vars.nameplates[i];
+
+        lua_pushframe(L, entry.nameplate);
+        int frame_idx = lua_gettop(L);
+        entry.xpos = 0.f;
+        entry.ypos = 0.f; 
+        entry.position = 0.f;
+        SetClampedToScreen(L, frame_idx, false);
+        SetClampRectInsets(L, frame_idx, 0, 0, 0, 0);
+        lua_pop(L, 1);
+    }
+
+    //always set this to 1
+    if (Console::CVar* cvar = Console::FindCVar("nameplateAllowOverlap"); cvar)
+        Console::SetCVarValue(cvar, "1", 1, 0, 0, 1);
+
+    return 1;
+}
 
 static int C_NamePlate_GetNamePlates(lua_State* L)
 {
@@ -124,14 +165,14 @@ static int C_NamePlate_GetNamePlateForUnit(lua_State* L)
     return 1;
 }
 
-static int lua_openlibnameplates(lua_State* L)
+static int lua_openlibnameplates(lua_State* L) 
 {
     luaL_Reg methods[] = {
         {"GetNamePlates", C_NamePlate_GetNamePlates},
         {"GetNamePlateForUnit", C_NamePlate_GetNamePlateForUnit},
         {"GetNamePlateByGUID", C_NamePlate_GetNamePlateByGUID},
         {"GetNamePlateTokenByGUID", C_NamePlate_GetNamePlateTokenByGUID},
-    };
+    }; 
     
     lua_createtable(L, 0, std::size(methods));
     for (size_t i = 0; i < std::size(methods); i++) {
@@ -142,6 +183,104 @@ static int lua_openlibnameplates(lua_State* L)
     return 0;
 }
 
+static void NameplateStackingUpdate(lua_State* L, NamePlateVars* vars)
+{
+
+    auto now = std::chrono::steady_clock::now();
+    double delta = std::chrono::duration<float>(now - gLastCallTime).count() * 500;  // delta 
+    gLastCallTime = now;
+
+    for (size_t i = 0; i < vars->nameplates.size(); ++i)
+    {
+        NamePlateEntry& entry = vars->nameplates[i];
+        std::string point;
+        std::string relativeToName;
+        std::string relativePoint;
+        double xOfs, yOfs;
+
+        lua_pushframe(L, entry.nameplate);
+        int frame_idx = lua_gettop(L);
+
+        if (entry.flags & NamePlateFlag_Visible) {
+            bool status = GetPoint(L, frame_idx, 1, point, relativeToName, relativePoint, xOfs, yOfs);
+            if (status) {
+                entry.xpos = xOfs;
+                entry.ypos = yOfs;
+            }
+        }
+        else {
+            entry.xpos = 0.f;
+            entry.ypos = 0.f;
+            SetClampedToScreen(L, frame_idx, false);
+            SetClampRectInsets(L, frame_idx, 0, 0, 0, 0);
+        }
+        lua_pop(L, 1);
+    }
+
+    int xspace = std::atoi(s_cvar_nameplateXSpace->vStr);
+    int yspace = std::atoi(s_cvar_nameplateYSpace->vStr);
+    int upperborder = std::atoi(s_cvar_nameplateUpperBorder->vStr);
+    int originpos = std::atoi(s_cvar_nameplateOriginPos->vStr);
+    int speedraise = std::atoi(s_cvar_nameplateSpeedRaise->vStr);
+    int speedreset = std::atoi(s_cvar_nameplateSpeedReset->vStr);
+    int speedlower = std::atoi(s_cvar_nameplateSpeedLower->vStr);
+
+    for (size_t i = 0; i < vars->nameplates.size(); ++i) {
+        NamePlateEntry& nameplate_1 = vars->nameplates[i];
+
+        lua_pushframe(L, nameplate_1.nameplate);
+        int frame_1 = lua_gettop(L);
+
+        double width = 0, height = 0;
+        GetSize(L, frame_1, width, height);
+
+        if (nameplate_1.flags & NamePlateFlag_Visible) {
+            double min = 1000;
+            bool reset = true;
+            for (size_t j = 0; j < vars->nameplates.size(); ++j) {
+                NamePlateEntry& nameplate_2 = vars->nameplates[j];
+                lua_pushframe(L, nameplate_2.nameplate);
+
+                int frame_2 = lua_gettop(L);
+                if (nameplate_2.flags & NamePlateFlag_Visible) {
+                    if (nameplate_1.guid != nameplate_2.guid) {
+                        double xdiff = nameplate_1.xpos - nameplate_2.xpos;
+                        double ydiff = nameplate_1.ypos + nameplate_1.position - nameplate_2.ypos - nameplate_2.position;
+                        double ydiff_origin = nameplate_1.ypos - nameplate_2.ypos - nameplate_2.position;
+
+                        if (std::abs(xdiff) < xspace) {
+                            if (ydiff >= 0 && std::abs(ydiff) < min) {
+                                min = std::abs(ydiff);
+                            }
+                            if (std::abs(ydiff_origin) < yspace + 2 * delta) {
+                                reset = false;
+                            }
+                        }
+                    }
+                }
+                lua_pop(L, 1);
+            }
+
+            double oldposition = nameplate_1.position;
+
+            if (oldposition >= 2 * delta && reset == 1) {
+                nameplate_1.position = oldposition - std::exp(-10.0f / oldposition) * delta * speedreset;
+            }
+            else if (min < yspace) {
+                nameplate_1.position = oldposition + std::exp(-min / yspace) * delta * speedraise;
+            }
+            else if ((oldposition >= 2 * delta) && (min > yspace + delta * 2)) {
+                nameplate_1.position = oldposition - std::exp(-yspace / min) * delta * 0.8f * speedlower;
+            }
+
+            SetClampedToScreen(L, frame_1, true);
+            SetClampRectInsets(L, frame_1, -10, 10, upperborder, -nameplate_1.ypos - nameplate_1.position - originpos + height);
+        }
+
+        lua_pop(L, 1);
+    }
+}
+
 static void onUpdateCallback()
 {
     if (!IsInWorld()) return;
@@ -150,6 +289,10 @@ static void onUpdateCallback()
 
     lua_State* L = GetLuaState();
     NamePlateVars& vars = lua_findorcreatevars(L);
+
+    if (strcmp(s_cvar_nameplateStacking->vStr, "1") == 0) {
+        NameplateStackingUpdate(L, &vars);
+    }
 
     Player* player = ObjectMgr::GetPlayer();
     VecXYZ posPlayer;
@@ -227,6 +370,9 @@ static void onUpdateCallback()
                 FrameScript::FireEvent(NAME_PLATE_UNIT_REMOVED, "%s", token);
                 entry.guid = 0;
                 entry.flags &= ~NamePlateFlag_Visible;
+                entry.position = 0;
+                entry.xpos = 0;
+                entry.ypos = 0;
             }
         }
     }
@@ -252,6 +398,14 @@ void NamePlates::initialize()
     Hooks::FrameXML::registerEvent(NAME_PLATE_UNIT_REMOVED);
     Hooks::FrameXML::registerEvent(NAME_PLATE_OWNER_CHANGED);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateDistance, "nameplateDistance", NULL, (Console::CVarFlags)1, "43", CVarHandler_NameplateDistance);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateStacking, "nameplateStacking", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateStacking);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateXSpace, "nameplateXSpace", NULL, (Console::CVarFlags)1, "130", CVarHandler_NameplateXSpace);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateYSpace, "nameplateYSpace", NULL, (Console::CVarFlags)1, "20", CVarHandler_NameplateYSpace);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateUpperBorder, "nameplateUpperBorder", NULL, (Console::CVarFlags)1, "30", CVarHandler_NameplateUpperBorder);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateOriginPos, "nameplateOriginPos", NULL, (Console::CVarFlags)1, "20", CVarHandler_NameplateOriginPos);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateSpeedRaise, "nameplateSpeedRaise", NULL, (Console::CVarFlags)1, "1", CVarHandler_NameplateSpeedRaise);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateSpeedReset, "nameplateSpeedReset", NULL, (Console::CVarFlags)1, "1", CVarHandler_NameplateSpeedReset);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateSpeedLower, "nameplateSpeedLower", NULL, (Console::CVarFlags)1, "1", CVarHandler_NameplateSpeedLower);
     Hooks::FrameScript::registerToken("nameplate", getTokenGuid, getTokenId);
     Hooks::FrameScript::registerOnUpdate(onUpdateCallback);
 

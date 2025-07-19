@@ -1113,6 +1113,8 @@ inline void luaL_checktype(lua_State* L, int idx, int t) { return ((decltype(&lu
 inline const char* luaL_checklstring(lua_State* L, int idx, size_t* len) { return ((decltype(&luaL_checklstring))0x0084F9F0)(L, idx, len); }
 inline lua_Number luaL_checknumber(lua_State* L, int idx) { return ((decltype(&luaL_checknumber))0x84FAB0)(L, idx); }
 inline void* lua_touserdata(lua_State* L, int idx) { return ((decltype(&lua_touserdata))0x0084E1C0)(L, idx); }
+inline double lua_tonumber(lua_State* L, int n_param) { return ((double(__cdecl*)(lua_State*, int))0x0084E030)(L, n_param); }
+inline char* lua_tostringnew(lua_State* state, int n_param){ return ((char* (__cdecl*)(lua_State*, int, int))0x0084E0E0)(state, n_param, 0); }
 inline void lua_pushstring(lua_State* L, const char* str) { return ((decltype(&lua_pushstring))0x0084E350)(L, str); }
 inline void lua_pushvalue(lua_State* L, int idx) { return ((decltype(&lua_pushvalue))0x0084DE50)(L, idx); }
 inline void lua_pushnumber(lua_State* L, lua_Number v) { return ((decltype(&lua_pushnumber))0x0084E2A0)(L, v); }

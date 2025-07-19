@@ -33,11 +33,23 @@ ___
     - NAME_PLATE_OWNER_CHANGED
 > - New CVars:<br>
     - nameplateDistance<br>
-    - cameraFov<br>
+    - nameplateStacking<br>
+    - nameplateXSpace<br>
+    - nameplateYSpace<br>
+    - nameplateUpperBorder<br>
+    - nameplateOriginPos<br>
+    - nameplateSpeedRaise<br>
+    - nameplateSpeedReset<br>
+    - nameplateSpeedLower
 > - New Interaction Keybind:<br>
     - loots mob, skins mob, interacts with closest objects to mine, sit, loot, open, etc.<br>
     - u can create macro /script QueueInteract()<br>
     - or u can use [Addon](https://github.com/someweirdhuman/awesome_wotlk/tree/main/Interaction) and go to keybinds and keybind the feature<br>
+> - New Nameplate Stacking:<br>
+    - based on https://wago.io/AQdGXNEBH <br>
+    - enable stacking nameplates by doing /console nameplateStacking 1 - /reload recommended after both disabling or enabling <br>
+    - also remember to delete this weakaura https://wago.io/AQdGXNEBH and restarting client before using this feature
+    - see docs for more cvar details <br>
 See [Docs](https://github.com/someweirdhuman/awesome_wotlk/blob/main/docs/api_reference.md) for details
 
 ## Installation
