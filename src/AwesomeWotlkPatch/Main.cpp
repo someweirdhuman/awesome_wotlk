@@ -11,7 +11,7 @@ static std::string s_appName;
 
 const char* findGameClientExecutable()
 {
-    static const char* possibleNames[] = { "Wow.exe", "WowCircle.exe", "run.exe" };
+    static const char* possibleNames[] = { "Project-Epoch.exe", "Wow.exe" };
     for (const char* name : possibleNames)
         if (std::filesystem::is_regular_file(name))
             return name;
@@ -86,16 +86,18 @@ int main(int argc, char** argv)
 
     if (std::filesystem::is_regular_file(libInGamePath)) {
         message(MB_ICONINFORMATION,
-            "Patch succesfully applied\n"
-            "Now you can enter the game"
+            "Patch succesfully applied on {} \n"
+            "Now you can enter the game",
+            exePath
         );
     } else {
         message(MB_ICONWARNING,
-            "Patch succesfully applied\n"
+            "Patch succesfully applied on {}\n"
             "But look like `" AWESOMEWOTLKLIB_DLL "` is missed\n"
-            "Before entering game you must place it to game folder"
+            "Before entering game you must place it to game folder",
+            exePath
         );
     }
 
     return 0;
-}
+} 
