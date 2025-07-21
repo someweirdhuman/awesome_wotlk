@@ -5,32 +5,26 @@
 
 extern int getTokenId(guid_t guid);
 
-
-static int lua_UnitIsControlled(lua_State* L)
-{
+static int lua_UnitHasFlag(lua_State* L, uint32_t flag) {
     Unit* unit = (Unit*)ObjectMgr::Get(luaL_checkstring(L, 1), TYPEMASK_UNIT);
-    if (!unit || !(unit->entry->flags & (UNIT_FLAG_FLEEING | UNIT_FLAG_CONFUSED | UNIT_FLAG_STUNNED | UNIT_FLAG_PACIFIED)))
-        return 0;
-    lua_pushnumber(L, 1);
-    return 1;
+    if (unit && (unit->entry->flags & flag)) {
+        lua_pushnumber(L, 1);
+        return 1;
+    }
+    return 0;
 }
 
-static int lua_UnitIsDisarmed(lua_State* L)
-{
-    Unit* unit = (Unit*)ObjectMgr::Get(luaL_checkstring(L, 1), TYPEMASK_UNIT);
-    if (!unit || !(unit->entry->flags & UNIT_FLAG_DISARMED))
-        return 0;
-    lua_pushnumber(L, 1);
-    return 1;
+static int lua_UnitIsControlled(lua_State* L) {
+    static constexpr uint32_t controlledFlags = UNIT_FLAG_FLEEING | UNIT_FLAG_CONFUSED | UNIT_FLAG_STUNNED | UNIT_FLAG_PACIFIED;
+    return lua_UnitHasFlag(L, controlledFlags);
 }
 
-static int lua_UnitIsSilenced(lua_State* L)
-{
-    Unit* unit = (Unit*)ObjectMgr::Get(luaL_checkstring(L, 1), TYPEMASK_UNIT);
-    if (!unit || !(unit->entry->flags & UNIT_FLAG_SILENCED))
-        return 0;
-    lua_pushnumber(L, 1);
-    return 1;
+static int lua_UnitIsDisarmed(lua_State* L) {
+    return lua_UnitHasFlag(L, UNIT_FLAG_DISARMED);
+}
+
+static int lua_UnitIsSilenced(lua_State* L) {
+    return lua_UnitHasFlag(L, UNIT_FLAG_SILENCED);
 }
 
 /*
