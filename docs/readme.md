@@ -27,7 +27,8 @@ ___
     - UnitOwner<br>
     - UnitTokenFromGUID<br>
     - GetSpellBaseCooldown<br>
-    - GetItemInfoInstant
+    - GetItemInfoInstant<br>
+    - QueueInteraction
 > - New events:<br>
     - NAME_PLATE_CREATED<br>
     - NAME_PLATE_UNIT_ADDED<br>
@@ -44,9 +45,11 @@ ___
     - nameplateSpeedReset<br>
     - nameplateSpeedLower<br>
     - nameplateHitboxHeight<br>
-    - nameplateHitboxWidth
-    - interactionMode
-    - interactionAngle
+    - nameplateHitboxWidth<br>
+    - interactionMode<br>
+    - interactionAngle<br>
+    - nameplateStackFriendly<br>
+    - nameplateStackFriendlyMode
 > - New Interaction Keybind:<br>
     - It loots mobs, skins mobs, interacts with near object like veins, chairs, doors, etc, mailboxes, etc.<br>
     - You can keybind this in options menu like any other keybind (Requires Interaction Addon, bundled in release rar)<br>

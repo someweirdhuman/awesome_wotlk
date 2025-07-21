@@ -162,6 +162,24 @@ Default: **60**
 The size of the cone-shaped area in front of the player (measured in degrees) within which a mob or entity must be located to be eligible for interaction. <br>
 This is only used if `interactionMode` is set to 1, which is the default.
 
+## nameplateStackFriendly`CVar` 
+Arguments: **toggle**`bool`
+
+Default: **0**
+
+Toggles if friendly nameplates are stacking or overlapping. <br>
+If set to **0** then it overlaps<br>
+If set to **1** it stacks. 
+
+## nameplateStackFriendlyMode`CVar` 
+Arguments: **mode**`number`
+
+Default: **0**
+
+Changes how friendliness of mobs is decided. <br>
+If set to **0** a UnitReaction("player", "nameplate%") > 2 is used.<br>
+If set to **1** a parsing of healthbar color is used, same as weakaura did it.
+
 # Unit
 
 ## UnitIsControlled`API`
