@@ -4,6 +4,8 @@
 #include "Misc.h"
 #include "Hooks.h"
 #include "Inventory.h"
+#include "Item.h"
+#include "Spell.h"
 #include "UnitAPI.h"
 #include <Windows.h>
 #include <Detours/detours.h>
@@ -47,9 +49,11 @@ static void OnAttach()
     BugFixes::initialize();
     CommandLine::initialize();
     Inventory::initialize();
+    Item::initialize();
     NamePlates::initialize();
     Misc::initialize();
     UnitAPI::initialize();
+    Spell::initialize();
     DetourTransactionCommit();
 
     // Register base
