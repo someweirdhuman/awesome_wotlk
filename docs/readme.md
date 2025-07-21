@@ -43,10 +43,12 @@ ___
     - nameplateSpeedLower<br>
     - nameplateHitboxHeight<br>
     - nameplateHitboxWidth
+    - interactionMode
+    - interactionAngle
 > - New Interaction Keybind:<br>
-    - loots mob, skins mob, interacts with closest objects to mine, sit, loot, open, etc.<br>
-    - u can create macro /script QueueInteract()<br>
-    - or u can use [Addon](https://github.com/someweirdhuman/awesome_wotlk/tree/main/Interaction) and go to keybinds and keybind the feature<br>
+    - It loots mobs, skins mobs, interacts with near object like veins, chairs, doors, etc, mailboxes, etc.<br>
+    - You can keybind this in options menu like any other keybind (Requires Interaction Addon, bundled in release rar)
+    - You can macro this using /interact, interact should also support some modifiers like @mouseover - /interact [@mouseover], blizzard rules apply
 > - New Nameplate Stacking:<br>
     - based on https://wago.io/AQdGXNEBH <br>
     - enable stacking nameplates by doing /console nameplateStacking 1 - /reload recommended after both disabling or enabling <br>

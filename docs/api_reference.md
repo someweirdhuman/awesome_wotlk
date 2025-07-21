@@ -145,6 +145,23 @@ Default: **0**
 Width of a clickable nameplate hitbox, addons may override or break this, reload or disable/enable nameplates afterwards.
 Use 0 to disable this and use default values.
 
+## interactionMode`CVar` 
+Arguments: **mode**`bool`
+
+Default: **1**
+
+Toggles behaviour of interaction keybind, or macro. 
+If set to **1**, interaction is limited to entities located in front of the player within the angle defined by the `interactionAngle` CVar and within 20 yards.
+If set to **0**, interaction will occur with the nearest entity within 20 yards of the player, regardless of its direction.
+
+## interactionAngle`CVar` 
+Arguments: **angle**`number`
+
+Default: **60**
+
+The size of the cone-shaped area in front of the player (measured in degrees) within which a mob or entity must be located to be eligible for interaction. 
+This is only used if `interactionMode` is set to 1, which is the default.
+
 # Unit
 
 ## UnitIsControlled`API`
