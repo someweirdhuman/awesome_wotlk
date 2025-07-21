@@ -165,7 +165,7 @@ This is only used if `interactionMode` is set to 1, which is the default.
 ## nameplateStackFriendly`CVar` 
 Arguments: **toggle**`bool`
 
-Default: **0**
+Default: **1**
 
 Toggles if friendly nameplates are stacking or overlapping. <br>
 If set to **0** then it overlaps<br>
