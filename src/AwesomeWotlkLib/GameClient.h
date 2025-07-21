@@ -41,6 +41,228 @@ struct VecXYZ : Vec3D<float> {
     }
 };
 
+const char* idToStr[35] = {
+    "INVTYPE_NON_EQUIP",              //  0
+    "INVTYPE_HEAD",                   //  1
+    "INVTYPE_NECK",                   //  2
+    "INVTYPE_SHOULDER",               //  3
+    "INVTYPE_BODY",                   //  4
+    "INVTYPE_CHEST",                  //  5
+    "INVTYPE_WAIST",                  //  6
+    "INVTYPE_LEGS",                   //  7
+    "INVTYPE_FEET",                   //  8
+    "INVTYPE_WRIST",                  //  9
+    "INVTYPE_HAND",                   // 10
+    "INVTYPE_FINGER",                 // 11
+    "INVTYPE_TRINKET",                // 12
+    "INVTYPE_WEAPON",                 // 13
+    "INVTYPE_SHIELD",                 // 14
+    "INVTYPE_RANGED",                 // 15
+    "INVTYPE_CLOAK",                  // 16
+    "INVTYPE_2HWEAPON",               // 17
+    "INVTYPE_BAG",                    // 18
+    "INVTYPE_TABARD",                 // 19
+    "INVTYPE_ROBE",                   // 20
+    "INVTYPE_WEAPONMAINHAND",         // 21
+    "INVTYPE_WEAPONOFFHAND",          // 22
+    "INVTYPE_HOLDABLE",               // 23
+    "INVTYPE_AMMO",                   // 24
+    "INVTYPE_THROWN",                 // 25
+    "INVTYPE_RANGEDRIGHT",            // 26
+    "INVTYPE_QUIVER",                 // 27
+    "INVTYPE_RELIC",                  // 28
+    "INVTYPE_PROFESSION_TOOL",        // 29
+    "INVTYPE_PROFESSION_GEAR",        // 30
+    "INVTYPE_EQUIPABLESPELL_OFFENSIVE", // 31
+    "INVTYPE_EQUIPABLESPELL_UTILITY",   // 32
+    "INVTYPE_EQUIPABLESPELL_DEFENSIVE", // 33
+    "INVTYPE_EQUIPABLESPELL_WEAPON"     // 34
+};
+
+struct DBCHeader {
+    uint32_t junk[3];
+    uint32_t MaxIndex;
+    uint32_t MinIndex;
+};
+
+struct ItemCacheRec {
+    uint32_t ID;
+    uint32_t ClassId;
+    uint32_t SubClassId;
+    int32_t Unk0;
+    uint32_t DisplayInfoId;
+    uint32_t gap0[5]; // ItemQuality Quality; ItemFlags TypeFlags; int32_t BuyPrice; int32_t Faction; int32_t SellPrice;
+    uint32_t InventoryType;
+    //...
+};
+
+struct ItemClassRec {
+    uint32_t m_classID;
+    uint32_t m_subclassMapID;
+    uint32_t m_flags;
+    uint32_t m_className_lang;
+};
+
+struct ItemSubClassRec {
+    uint32_t m_classID;
+    uint32_t m_subClassID;
+    uint32_t m_prerequisiteProficiency;
+    uint32_t m_postrequisiteProficiency;
+    uint32_t m_flags;
+    uint32_t m_displayFlags;
+    uint32_t m_weaponParrySeq;
+    uint32_t m_weaponReadySeq;
+    uint32_t m_weaponAttackSeq;
+    uint32_t m_WeaponSwingSize;
+    uint32_t m_displayName_lang;
+    //uint32_t m_verboseName_lang;
+};
+
+struct ItemDisplayInfoRec {
+    uint32_t m_ID;
+    uint32_t m_modelName[2];
+    uint32_t m_modelTexture[2];
+    uint32_t m_inventoryIcon;
+    //uint32_t m_groundModel;
+    //uint32_t m_geosetGroup[3];
+    //uint32_t m_spellVisualID;
+    //uint32_t m_groupSoundIndex;
+    //uint32_t m_helmetGeosetVisID[2];
+    //uint32_t m_texture[8];
+    //uint32_t m_itemVisual;
+};
+
+typedef uint32_t(__cdecl* GetItemIDByName_t)(const char* name);
+static GetItemIDByName_t getItemIDByName = (GetItemIDByName_t)0x00709DE0;
+
+typedef uintptr_t(__thiscall* GetItemInfoBlockByIdDelegate)(void* instance, uint32_t id, uint64_t* guid, int a4, int a5, int a6);
+static auto getItemInfoById = (GetItemInfoBlockByIdDelegate)(0x0067CA30);
+static void* itemCachePtr = (void*)(0x00C5D828);
+
+struct Flag96 {
+    uint32_t part1;
+    uint32_t part2;
+    uint32_t part3;
+};
+
+struct SpellRec {
+    uint32_t Id;
+    uint32_t Category;
+    uint32_t Dispel;
+    int32_t Mechanic;
+
+    uint32_t Attributes;
+    uint32_t AttributesEx;
+    uint32_t AttributesEx2;
+    uint32_t AttributesEx3;
+    uint32_t AttributesEx4;
+    uint32_t AttributesEx5;
+    uint32_t AttributesEx6;
+    uint32_t AttributesEx7;
+
+    uint32_t Stances;
+    uint32_t unk_320_2;
+    uint32_t StancesNot;
+    uint32_t unk_320_3;
+    uint32_t Targets;
+    uint32_t TargetCreatureType;
+    uint32_t RequiresSpellFocus;
+    uint32_t FacingCasterFlags;
+    uint32_t CasterAuraState;
+    uint32_t TargetAuraState;
+    uint32_t CasterAuraStateNot;
+    uint32_t TargetAuraStateNot;
+    uint32_t casterAuraSpell;
+    uint32_t targetAuraSpell;
+    uint32_t excludeCasterAuraSpell;
+    uint32_t excludeTargetAuraSpell;
+    uint32_t CastingTimeIndex;
+    uint32_t RecoveryTime;
+    uint32_t CategoryRecoveryTime;
+    uint32_t InterruptFlags;
+    uint32_t AuraInterruptFlags;
+    uint32_t ChannelInterruptFlags;
+    uint32_t procFlags;
+    uint32_t procChance;
+    uint32_t procCharges;
+    uint32_t maxLevel;
+    uint32_t baseLevel;
+    uint32_t spellLevel;
+    uint32_t DurationIndex;
+    int32_t powerType;
+    uint32_t manaCost;
+    uint32_t manaCostPerlevel;
+    uint32_t manaPerSecond;
+    uint32_t manaPerSecondPerLevel;
+    uint32_t rangeIndex;
+    float speed;
+    uint32_t modalNextSpell;
+    uint32_t StackAmount;
+    uint32_t Totem[2];
+    int32_t Reagent[8];
+    uint32_t ReagentCount[8];
+    int32_t EquippedItemClass;
+    int32_t EquippedItemSubClassMask;
+    int32_t EquippedItemInventoryTypeMask;
+
+    int32_t Effect[3];
+    int32_t EffectDieSides[3];
+    //int32_t EffectBaseDice[3];
+    //float EffectDicePerLevel[3];
+    float EffectRealPointsPerLevel[3];
+    int32_t EffectBasePoints[3];
+    uint32_t EffectMechanic[3];
+    uint32_t EffectImplicitTargetA[3];
+    uint32_t EffectImplicitTargetB[3];
+    uint32_t EffectRadiusIndex[3];
+    uint32_t EffectApplyAuraName[3];
+    uint32_t EffectAmplitude[3];
+    float EffectMultipleValue[3];
+    uint32_t EffectChainTarget[3];
+    uint32_t EffectItemType[3];
+    int32_t EffectMiscValue[3];
+    int32_t EffectMiscValueB[3];
+    uint32_t EffectTriggerSpell[3];
+    float EffectPointsPerComboPoint[3];
+    Flag96 EffectSpellClassMask[3];
+
+    uint32_t SpellVisual[2];
+    uint32_t SpellIconID;
+    uint32_t activeIconID;
+    uint32_t spellPriority;
+
+    uint32_t SpellNameOffset;  // string block
+    uint32_t RankOffset;
+    uint32_t DescriptionOffset;
+    uint32_t ToolTipOffset;
+
+    uint32_t ManaCostPercentage;
+    uint32_t StartRecoveryCategory;
+    uint32_t StartRecoveryTime;
+    uint32_t MaxTargetLevel;
+    uint32_t SpellFamilyName;
+    Flag96 SpellFamilyFlags;
+    uint32_t MaxAffectedTargets;
+    uint32_t DmgClass;
+    uint32_t PreventionType;
+    uint32_t StanceBarOrder;
+
+    float DmgMultiplier[3];
+    uint32_t MinFactionId;
+    uint32_t MinReputation;
+    uint32_t RequiredAuraVision;
+    uint32_t TotemCategory[2];
+    int32_t AreaGroupId;
+    int32_t SchoolMask;
+    uint32_t runeCostID;
+    uint32_t spellMissileID;
+    uint32_t PowerDisplayId;
+    float unk_320_4[3];
+    uint32_t spellDescriptionVariableID;
+    uint32_t SpellDifficultyId;
+};
+static_assert(sizeof(SpellRec) == 0x2A8);
+
 enum UnitFlags : uint32_t {
     UNIT_FLAG_SERVER_CONTROLLED = 0x00000001,           // set only when unit movement is controlled by server - by SPLINE/MONSTER_MOVE packets, together with UNIT_FLAG_STUNNED; only set to units controlled by client; client function CGUnit_C::IsClientControlled returns false when set for owner
     UNIT_FLAG_NON_ATTACKABLE = 0x00000002,           // not attackable, set when creature starts to cast spells with SPELL_EFFECT_SPAWN and cast time, removed when spell hits caster, original name is UNIT_FLAG_SPAWNING. Rename when it will be removed from all scripts
@@ -807,6 +1029,23 @@ inline uint32_t __stdcall hash(const char* str) { return ((decltype(&hash))0x007
 
 inline bool IsInWorld() { return *(char*)0x00BD0792; }
 
+inline uintptr_t GetDbcTable(uint32_t dbIndex)
+{
+    for (uintptr_t tableBase = 0x006337D0; *(uint8_t*)tableBase != 0xC3; tableBase += 0x11) {
+        uint32_t index = *(uint32_t*)(tableBase + 1);
+        if (index == dbIndex) {
+            uintptr_t tablePtr = *(uintptr_t*)(tableBase + 0xB) + 0x18;
+            return tablePtr;
+        }
+    }
+    return 0;
+}
+
+typedef int(__thiscall* ClientDb_GetLocalizedRow)(void* pThis, int index, void* rowBuffer);
+inline auto GetLocalizedRow = (ClientDb_GetLocalizedRow)(0x004CFD20);
+
+typedef int(__thiscall* ClientDb_GetRow)(void* pThis, int index);
+inline auto GetRow = (ClientDb_GetRow)(0x004BB1C0);
 // ObjectMgr
 namespace ObjectMgr {
 
@@ -861,6 +1100,45 @@ inline int UnitLeftClickByGuid(guid_t guid) { return ((decltype(&UnitLeftClickBy
 inline void SetMouseoverByGuid(guid_t guid, guid_t prev) { return ((decltype(&SetMouseoverByGuid))0x0051F790)(guid, prev); }
 inline guid_t GetTargetGuid() { return *(guid_t*)0x00BD07B0; }
 
+const uintptr_t nameStore = 0x00C5D938 + 0x8;
+inline const char* PlayerNameFromGuid(guid_t guid) {
+    Unit* owner = (Unit*)ObjectMgr::Get(guid, ObjectFlags_Unit);
+
+    if (*(uint32_t*)((uintptr_t)owner + 0x14) == 0x4) {
+        uint32_t base = *(uint32_t*)(nameStore + 0x1C);
+
+        if (base == 0)
+            return "UNKNOWN";
+
+        uint32_t shortGUID = guid & 0xffffffff;
+        uint32_t offset = 12 * (*(uint32_t*)(nameStore + 0x24) & shortGUID);
+
+        uint32_t current = *(uint32_t*)(base + offset + 8);
+
+        if ((current & 0x1) == 0x1 || current == 0)
+            return "UNKNOWN";
+
+        uint32_t testGUID = *(uint32_t*)(current);
+        uint32_t offsetValue = *(uint32_t*)(base + offset);
+
+        int iterations = 0;
+        while (testGUID != shortGUID && iterations < 10) {
+            iterations++;
+            current = *(uint32_t*)(current + offsetValue + 4);
+
+            if ((current & 0x1) == 0x1 || current == 0)
+                return "UNKNOWN";
+
+            testGUID = *(uint32_t*)(current);
+        }
+
+        if (iterations >= 10)
+            return "UNKNOWN";
+
+        return (char*)(current + 0x20);
+    }
+    return (char*)*(uint32_t*)(*(uint32_t*)((uintptr_t)owner + 0x964) + 0x05C);
+}
 }
 
 namespace Console {
@@ -1075,6 +1353,8 @@ struct __declspec(novtable) XMLObject {
 #define lua_islightuserdata(L,n)	(lua_type(L, (n)) == LUA_TLIGHTUSERDATA)
 #define lua_isuserdata(L,n) (lua_type(L,n) == LUA_TLIGHTUSERDATA) || (lua_type(L, n) == LUA_TUSERDATA)
 #define lua_isnil(L,n)		(lua_type(L, (n)) == LUA_TNIL)
+#define lua_isstring(L,n)	(lua_type(L, (n)) == LUA_TSTRING)
+#define lua_isnumber(L,n)	(lua_type(L, (n)) == LUA_TNUMBER)
 #define lua_isboolean(L,n)	(lua_type(L, (n)) == LUA_TBOOLEAN)
 #define lua_isthread(L,n)	(lua_type(L, (n)) == LUA_TTHREAD)
 #define lua_isnone(L,n)		(lua_type(L, (n)) == LUA_TNONE)
@@ -1116,6 +1396,7 @@ inline void* lua_touserdata(lua_State* L, int idx) { return ((decltype(&lua_tous
 inline double lua_tonumber(lua_State* L, int n_param) { return ((double(__cdecl*)(lua_State*, int))0x0084E030)(L, n_param); }
 inline char* lua_tostringnew(lua_State* state, int n_param){ return ((char* (__cdecl*)(lua_State*, int, int))0x0084E0E0)(state, n_param, 0); }
 inline void lua_pushstring(lua_State* L, const char* str) { return ((decltype(&lua_pushstring))0x0084E350)(L, str); }
+inline void lua_pushboolean(lua_State* L, bool b) { return ((decltype(&lua_pushboolean))0x0084E4D0)(L, b); }
 inline void lua_pushvalue(lua_State* L, int idx) { return ((decltype(&lua_pushvalue))0x0084DE50)(L, idx); }
 inline void lua_pushnumber(lua_State* L, lua_Number v) { return ((decltype(&lua_pushnumber))0x0084E2A0)(L, v); }
 inline void lua_pushcclosure(lua_State* L, lua_CFunction func, int c) { return ((decltype(&lua_pushcclosure))0x0084E400)(L, func, c); }

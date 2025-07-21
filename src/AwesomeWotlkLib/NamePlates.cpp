@@ -90,7 +90,7 @@ static guid_t getTokenGuid(int id)
     return vars.nameplates[id].guid;
 }
 
-static int getTokenId(guid_t guid)
+int getTokenId(guid_t guid)
 {
     if (!guid) return -1;
     NamePlateVars& vars = lua_findorcreatevars(GetLuaState());
