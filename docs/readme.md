@@ -47,7 +47,7 @@ ___
     - interactionAngle
 > - New Interaction Keybind:<br>
     - It loots mobs, skins mobs, interacts with near object like veins, chairs, doors, etc, mailboxes, etc.<br>
-    - You can keybind this in options menu like any other keybind (Requires Interaction Addon, bundled in release rar)
+    - You can keybind this in options menu like any other keybind (Requires Interaction Addon, bundled in release rar)<br>
     - You can macro this using /interact, interact should also support some modifiers like @mouseover - /interact [@mouseover], blizzard rules apply
 > - New Nameplate Stacking:<br>
     - based on https://wago.io/AQdGXNEBH <br>
