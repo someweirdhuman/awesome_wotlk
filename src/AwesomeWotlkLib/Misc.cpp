@@ -8,6 +8,8 @@
 #undef min
 #undef max
 
+static Console::CVar* s_cvar_interactionMode;
+static Console::CVar* s_cvar_interactionAngle;
 static Console::CVar* s_cvar_cameraFov = NULL;
 
 
@@ -84,6 +86,26 @@ bool IsGoodObject(uint8_t gameObjectType)
 
 static int lua_QueueInteract(lua_State* L)
 {
+    std::string modifier = "";
+    bool hasModifier = !lua_isnoneornil(L, 1);
+
+    if (hasModifier) {
+        const char* raw = lua_tostringnew(L, 1);
+        if (!raw) {
+            return 0;
+        }
+
+        std::string modStr = raw;
+
+        for (char c : modStr) {
+            if (!std::isalnum(static_cast<unsigned char>(c))) {
+                return 0;
+            }
+        }
+
+        modifier = modStr;
+    }
+
     if (!IsInWorld())
         return 0;
 
@@ -95,18 +117,10 @@ static int lua_QueueInteract(lua_State* L)
         return 0;
     }
 
-    ObjectMgr::EnumObjects([&](guid_t guid) {
-        if (guid == player->GetGUID()) return true;
+    if (!player) return 0;
 
-        CGObject_C* object = ObjectMgr::GetObjectPtr(guid, TYPEMASK_GAMEOBJECT | TYPEMASK_UNIT);
-        if (!object) return true;
 
-        float distance = player->distance(object);
-
-        if (distance > 20.0f || distance == 0.f || distance > bestDistance) {
-            return true;
-        }
-
+    auto isValidObject = [&](CGObject_C* object) -> bool {
         if (object->GetTypeID() == TYPEID_UNIT) {
             uint32_t dynFlags = object->GetValue<uint32_t>(UNIT_DYNAMIC_FLAGS);
             uint32_t unitFlags = object->GetValue<uint32_t>(UNIT_FIELD_FLAGS);
@@ -117,29 +131,159 @@ static int lua_QueueInteract(lua_State* L)
             bool canAssist = player->CanAssist((CGUnit_C*)object, true);
 
             if (!isLootable && !isSkinnable && (!canAssist || npcFlags == 0)) {
-                return true;
+                return false;
             }
-        }
-        else if (object->GetTypeID() == TYPEID_GAMEOBJECT) {
+            return true;
+        }else if (object->GetTypeID() == TYPEID_GAMEOBJECT) {
             uint32_t bytes = object->GetValue<uint32_t>(GAMEOBJECT_BYTES_1);
             uint8_t gameObjectType = (bytes >> 8) & 0xFF;
 
-            if (!IsGoodObject(gameObjectType)) return true;
+            if (!IsGoodObject(gameObjectType)) return false;
 
             if (!static_cast<CGGameObject_C*>(object)->CanUseNow()) {
-                return true;
+                return false;
             }
+            return true;
+        }
+        return false;
+    };
+
+    uint16_t angleDegrees = std::atoi(s_cvar_interactionAngle->vStr);
+    bool lookInAngle = std::atoi(s_cvar_interactionMode->vStr) == 1;
+
+    VecXYZ posPlayer;
+    player->GetPosition(*reinterpret_cast<C3Vector*>(&posPlayer));
+
+    auto trySetCandidate = [&](guid_t guid) {
+        CGObject_C* object = ObjectMgr::GetObjectPtr(guid, TYPEMASK_GAMEOBJECT | TYPEMASK_UNIT);
+        if (!object) return;
+
+        float distance = player->distance(object);
+        if (distance == 0.f || distance > 20.0f || distance > bestDistance) return;
+
+        if (!isValidObject(object)) return;
+
+        if (lookInAngle) {
+            VecXYZ posObject;
+            object->GetPosition(*reinterpret_cast<C3Vector*>(&posObject));
+            float dx = posObject.x - posPlayer.x;
+            float dy = posObject.y - posPlayer.y;
+
+            float length = sqrtf(dx * dx + dy * dy);
+            if (length == 0.f) return;
+
+            dx /= length;
+            dy /= length;
+
+            float facing = player->GetFacing();
+
+            float fx = cosf(facing);
+            float fy = sinf(facing);
+
+            float dot = dx * fx + dy * fy;
+
+            float cosAngle = cosf(angleDegrees * (3.14159265f / 180.0f));
+            if (dot < cosAngle) return;
         }
 
         candidate = guid;
         bestDistance = distance;
+    };
 
-        return true;
-    });
+    if (!hasModifier) {
+        ObjectMgr::EnumObjects([&](guid_t guid) {
+            if (guid != player->GetGUID()) {
+                trySetCandidate(guid);
+            }
+            return true;
+        });
+    }else {
+        guid_t guid = ObjectMgr::GetGuidByUnitID(modifier.c_str());
+        if (guid) {
+            trySetCandidate(guid);
+        }
+    }
 
     if (candidate != 0)
         s_requestedInteraction = candidate;
 
+    return 0;
+}
+
+static int InteractFunction_C(lua_State* L) {
+    const char* param = nullptr;
+    if (!lua_isnoneornil(L, 1)) {
+        param = lua_tostringnew(L, 1);
+    }
+
+    lua_getglobal(L, "SecureCmdOptionParse");
+    if (!lua_isfunction(L, -1)) {
+        lua_pop(L, 1);
+        lua_pushcfunction(L, lua_QueueInteract);
+        if (lua_isfunction(L, -1)) {
+            if (lua_pcall(L, 0, 0, 0) != 0) {
+                lua_pop(L, 1);
+            }
+        }
+        return 0;
+    }
+
+    if (param)
+        lua_pushstring(L, param);
+    else
+        lua_pushnil(L);
+
+    if (lua_pcall(L, 1, 2, 0) != 0) {
+        lua_pop(L, 1);
+        lua_pushcfunction(L, lua_QueueInteract);
+        if (lua_isfunction(L, -1)) {
+            if (lua_pcall(L, 0, 0, 0) != 0) {
+                lua_pop(L, 1);
+            }
+        }
+        return 0;
+    }
+
+    if (!lua_isnil(L, -1)) {
+        lua_pushcfunction(L, lua_QueueInteract);
+        if (lua_isfunction(L, -1)) {
+            lua_pushvalue(L, -2);
+            if (lua_pcall(L, 1, 0, 0) != 0) {
+                lua_pop(L, 1);
+            }
+        }
+        lua_pop(L, 3);
+    }
+    else {
+        lua_pop(L, 1);
+        lua_pushcfunction(L, lua_QueueInteract);
+        if (lua_isfunction(L, -1)) {
+            if (lua_pcall(L, 0, 0, 0) != 0) {
+                lua_pop(L, 1);
+            }
+        }
+        lua_pop(L, 1);
+    }
+
+    return 0;
+}
+
+static int RegisterInteractCommand(lua_State* L) {
+    lua_pushcfunction(L, InteractFunction_C);    
+
+    lua_getglobal(L, "SlashCmdList");
+    if (!lua_istable(L, -1)) {
+        lua_pop(L, 2);
+        return 0;
+    }
+
+    lua_pushvalue(L, -2);
+    lua_setfield(L, -2, "INTERACTCMD");
+
+    lua_pop(L, 2);
+
+    lua_pushstring(L, "/interact");
+    lua_setglobal(L, "SLASH_INTERACTCMD1");
     return 0;
 }
 
@@ -150,7 +294,6 @@ static int lua_openmisclib(lua_State* L)
         { "IsWindowFocused", lua_IsWindowFocused },
         { "FocusWindow", lua_FocusWindow },
         { "CopyToClipboard", lua_CopyToClipboard },
-        { "QueueInteract", lua_QueueInteract, },
     };
 
     for (const auto& [name, func] : funcs) {
@@ -164,7 +307,8 @@ static int lua_openmisclib(lua_State* L)
 }
 
 static double parseFov(const char* v) { return  M_PI / 200.f * double(std::max(std::min(gc_atoi(&v), 200), 1)); }
-
+static int CVarHandler_interactionAngle(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_interactionMode(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_cameraFov(Console::CVar* cvar, const char* prevV, const char* newV, void* udata)
 {
     if (Camera* camera = GetActiveCamera()) camera->fovInRadians = parseFov(newV);
@@ -172,16 +316,25 @@ static int CVarHandler_cameraFov(Console::CVar* cvar, const char* prevV, const c
 }
 
 static void(__fastcall* Camera_Initialize_orig)(Camera* self, void* edx, float a2, float a3, float fov) = (decltype(Camera_Initialize_orig))0x00607C20;
+static void(__fastcall* CGGameUI__EnterWorld)() = (decltype(CGGameUI__EnterWorld))0x00528010;
 static void __fastcall Camera_Initialize_hk(Camera* self, void* edx, float a2, float a3, float fov)
 {
     fov = parseFov(s_cvar_cameraFov->vStr);
     Camera_Initialize_orig(self, edx, a2, a3, fov);
 }
+static void __fastcall OnEnterWorld()
+{
+    RegisterInteractCommand(GetLuaState());
+    CGGameUI__EnterWorld();
+}
 
 void Misc::initialize()
 {
     Hooks::FrameXML::registerCVar(&s_cvar_cameraFov, "cameraFov", NULL, (Console::CVarFlags)1, "100", CVarHandler_cameraFov);
+    Hooks::FrameXML::registerCVar(&s_cvar_interactionAngle, "interactionAngle", NULL, (Console::CVarFlags)1, "60", CVarHandler_interactionAngle);
+    Hooks::FrameXML::registerCVar(&s_cvar_interactionMode, "interactionMode", NULL, (Console::CVarFlags)1, "1", CVarHandler_interactionMode);
     Hooks::FrameXML::registerLuaLib(lua_openmisclib);
 
     DetourAttach(&(LPVOID&)Camera_Initialize_orig, Camera_Initialize_hk);
+    DetourAttach(&(LPVOID&)CGGameUI__EnterWorld, OnEnterWorld);
 }
