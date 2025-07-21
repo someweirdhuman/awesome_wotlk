@@ -174,7 +174,7 @@ If set to **1** it stacks.
 ## nameplateStackFriendlyMode`CVar` 
 Arguments: **mode**`number`
 
-Default: **0**
+Default: **1**
 
 Changes how friendliness of mobs is decided. <br>
 If set to **0** a UnitReaction("player", "nameplate%") > 2 is used.<br>
