@@ -1049,96 +1049,65 @@ inline auto GetRow = (ClientDb_GetRow)(0x004BB1C0);
 // ObjectMgr
 namespace ObjectMgr {
 
-inline int EnumObjects_internal(int(*func)(guid_t, void*), void* udata) { return ((decltype(&EnumObjects_internal))0x004D4B30)(func, udata); }
+    inline int EnumObjects_internal(int(*func)(guid_t, void*), void* udata) { return ((decltype(&EnumObjects_internal))0x004D4B30)(func, udata); }
 
-using EnumVisibleObject_func_t = std::function<bool(guid_t guid)>;
-inline bool EnumObjects(EnumVisibleObject_func_t func)
-{
-    struct Wrapper {
-        static int foo(guid_t guid, void* udata)
-        {
-            EnumVisibleObject_func_t& func = *(EnumVisibleObject_func_t*)udata;
-            return func(guid) ? 1 : 0;
-        }
+    using EnumVisibleObject_func_t = std::function<bool(guid_t guid)>;
+    inline bool EnumObjects(EnumVisibleObject_func_t func)
+    {
+        struct Wrapper {
+            static int foo(guid_t guid, void* udata)
+            {
+                EnumVisibleObject_func_t& func = *(EnumVisibleObject_func_t*)udata;
+                return func(guid) ? 1 : 0;
+            }
+        };
+        return EnumObjects_internal(&Wrapper::foo, (void*)&func);
     };
-    return EnumObjects_internal(&Wrapper::foo, (void*)&func);
-};
 
-inline Player* GetPlayer() { return ((decltype(&GetPlayer))0x004038F0)(); }
-inline Object* Get(guid_t guid, ObjectFlags flags) { return ((Object*(*)(guid_t, ObjectFlags))0x004D4DB0)(guid, flags); }
-inline void Guid2HexString(guid_t guid, char* buf) { return ((decltype(&Guid2HexString))0x0074D0D0)(guid, buf); }
-inline guid_t HexString2Guid(const char* str) { return ((decltype(&HexString2Guid))0x0074D120)(str); }
-inline guid_t GetGuidByUnitID(const char* unitId) { return ((decltype(&GetGuidByUnitID))0x0060C1C0)(unitId); }
-inline CGObject_C* GetObjectPtr(uint64_t objectGuid, uint32_t objectTypeMask) {
-    typedef CGObject_C* (__cdecl* FuncPtr)(uint64_t, uint32_t, const char*, int);
-    return ((FuncPtr)0x004D4DB0)(objectGuid, objectTypeMask, "", 0);
-}
-inline CGUnit_C* GetCGUnitPlayer() {
-    long long lpguid = ((long long(__cdecl*)())(0x004D3790))();
-    if (!(lpguid && ((int(__cdecl*)(long long, int))0x004D4DB0)(lpguid, 0x0010)))
-        return nullptr;
-
-    CGUnit_C* player = (CGUnit_C*)(ObjectMgr::GetObjectPtr(lpguid, TYPEMASK_UNIT));
-    if (!player) {
-        return nullptr;
+    inline Player* GetPlayer() { return ((decltype(&GetPlayer))0x004038F0)(); }
+    inline Object* Get(guid_t guid, ObjectFlags flags) { return ((Object * (*)(guid_t, ObjectFlags))0x004D4DB0)(guid, flags); }
+    inline void Guid2HexString(guid_t guid, char* buf) { return ((decltype(&Guid2HexString))0x0074D0D0)(guid, buf); }
+    inline guid_t HexString2Guid(const char* str) { return ((decltype(&HexString2Guid))0x0074D120)(str); }
+    inline guid_t GetGuidByUnitID(const char* unitId) { return ((decltype(&GetGuidByUnitID))0x0060C1C0)(unitId); }
+    inline CGObject_C* GetObjectPtr(uint64_t objectGuid, uint32_t objectTypeMask) {
+        typedef CGObject_C* (__cdecl* FuncPtr)(uint64_t, uint32_t, const char*, int);
+        return ((FuncPtr)0x004D4DB0)(objectGuid, objectTypeMask, "", 0);
     }
-    return player;
-}
-inline guid_t String2Guid(const char* str)
-{
-    if (!str) return 0;
-    if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
-        return HexString2Guid(str);
-    else
-        return GetGuidByUnitID(str);
-}
+    inline CGUnit_C* GetCGUnitPlayer() {
+        long long lpguid = ((long long(__cdecl*)())(0x004D3790))();
+        if (!(lpguid && ((int(__cdecl*)(long long, int))0x004D4DB0)(lpguid, 0x0010)))
+            return nullptr;
 
-inline Object* Get(const char* str, ObjectFlags flags) { return Get(String2Guid(str), flags); }
-
-inline int UnitRightClickByGuid(guid_t guid) { return ((decltype(&UnitRightClickByGuid))0x005277B0)(guid); }
-inline int UnitLeftClickByGuid(guid_t guid) { return ((decltype(&UnitLeftClickByGuid))0x005274F0)(guid); }
-inline void SetMouseoverByGuid(guid_t guid, guid_t prev) { return ((decltype(&SetMouseoverByGuid))0x0051F790)(guid, prev); }
-inline guid_t GetTargetGuid() { return *(guid_t*)0x00BD07B0; }
-
-const uintptr_t nameStore = 0x00C5D938 + 0x8;
-inline const char* PlayerNameFromGuid(guid_t guid) {
-    Unit* owner = (Unit*)ObjectMgr::Get(guid, ObjectFlags_Unit);
-
-    if (*(uint32_t*)((uintptr_t)owner + 0x14) == 0x4) {
-        uint32_t base = *(uint32_t*)(nameStore + 0x1C);
-
-        if (base == 0)
-            return "UNKNOWN";
-
-        uint32_t shortGUID = guid & 0xffffffff;
-        uint32_t offset = 12 * (*(uint32_t*)(nameStore + 0x24) & shortGUID);
-
-        uint32_t current = *(uint32_t*)(base + offset + 8);
-
-        if ((current & 0x1) == 0x1 || current == 0)
-            return "UNKNOWN";
-
-        uint32_t testGUID = *(uint32_t*)(current);
-        uint32_t offsetValue = *(uint32_t*)(base + offset);
-
-        int iterations = 0;
-        while (testGUID != shortGUID && iterations < 10) {
-            iterations++;
-            current = *(uint32_t*)(current + offsetValue + 4);
-
-            if ((current & 0x1) == 0x1 || current == 0)
-                return "UNKNOWN";
-
-            testGUID = *(uint32_t*)(current);
+        CGUnit_C* player = (CGUnit_C*)(ObjectMgr::GetObjectPtr(lpguid, TYPEMASK_UNIT));
+        if (!player) {
+            return nullptr;
         }
+        return player;
+    }
+    inline guid_t String2Guid(const char* str)
+    {
+        if (!str) return 0;
+        if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
+            return HexString2Guid(str);
+        else
+            return GetGuidByUnitID(str);
+    }
 
-        if (iterations >= 10)
+    inline Object* Get(const char* str, ObjectFlags flags) { return Get(String2Guid(str), flags); }
+
+    inline int UnitRightClickByGuid(guid_t guid) { return ((decltype(&UnitRightClickByGuid))0x005277B0)(guid); }
+    inline int UnitLeftClickByGuid(guid_t guid) { return ((decltype(&UnitLeftClickByGuid))0x005274F0)(guid); }
+    inline void SetMouseoverByGuid(guid_t guid, guid_t prev) { return ((decltype(&SetMouseoverByGuid))0x0051F790)(guid, prev); }
+    inline guid_t GetTargetGuid() { return *(guid_t*)0x00BD07B0; }
+
+    const uintptr_t nameStore = 0x00C5D938 + 0x8;
+    inline const char* UnitNameFromGuid(guid_t guid) {
+        CGUnit_C* unit = (CGUnit_C*)(ObjectMgr::GetObjectPtr(guid, TYPEMASK_UNIT));
+        if (!unit)
             return "UNKNOWN";
 
-        return (char*)(current + 0x20);
+        return unit->GetObjectName();
     }
-    return (char*)*(uint32_t*)(*(uint32_t*)((uintptr_t)owner + 0x964) + 0x05C);
-}
 }
 
 namespace Console {

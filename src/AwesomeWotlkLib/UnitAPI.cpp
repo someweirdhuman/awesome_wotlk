@@ -86,7 +86,7 @@ static int lua_UnitOwner(lua_State* L)
 
     char guidStr[32];
     snprintf(guidStr, sizeof(guidStr), "0x%llx", ownerGuid);
-    lua_pushstring(L, ObjectMgr::PlayerNameFromGuid(ownerGuid));
+    lua_pushstring(L, ObjectMgr::UnitNameFromGuid(ownerGuid));
     lua_pushstring(L, guidStr);
 
     return 2;
