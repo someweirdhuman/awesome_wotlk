@@ -25,7 +25,9 @@ ___
     - CopyToClipboard<br>
     - UnitOccupations<br>
     - UnitOwner<br>
-    - UnitTokenFromGUID
+    - UnitTokenFromGUID<br>
+    - GetSpellBaseCooldown<br>
+    - GetItemInfoInstant
 > - New events:<br>
     - NAME_PLATE_CREATED<br>
     - NAME_PLATE_UNIT_ADDED<br>
