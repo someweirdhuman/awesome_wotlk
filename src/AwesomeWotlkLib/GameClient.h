@@ -962,6 +962,14 @@ public:
         return CanAssistFn(this, unit, ignoreFlags);
     }
 
+    int UnitReaction(const CGUnit_C* unit) const
+    {
+        using UnitReaction_t = int(__thiscall*)(const CGUnit_C* thisPtr, const CGUnit_C* unit);
+        static const UnitReaction_t UnitReactionFn = reinterpret_cast<UnitReaction_t>(0x007251C0);
+
+        return UnitReactionFn(this, unit);
+    }
+
     uint64_t GetGUID() const
     {
         return GetValue<uint64_t>(OBJECT_FIELD_GUID);

@@ -36,6 +36,7 @@ struct NamePlateEntry {
     guid_t guid;
     NamePlateFlags flags;
     uint32_t updateId;
+    bool isFriendly = false;
 
     double position;
     double ypos;
@@ -224,20 +225,20 @@ inline bool SetPoint(
 
 inline bool SetClampRectInsets(lua_State* L, int frame_idx, double left, double right, double top, double bottom)
 {
-    lua_getfield(L, frame_idx, "SetClampRectInsets");  // push frame.SetClampRectInsets function
+    lua_getfield(L, frame_idx, "SetClampRectInsets");  
     if (lua_type(L, -1) != LUA_TFUNCTION) {
         lua_pop(L, 1);
-        return false;  // function not found
+        return false; 
     }
 
-    lua_pushvalue(L, frame_idx);   // push frame as self
+    lua_pushvalue(L, frame_idx);   
     lua_pushnumber(L, left);
     lua_pushnumber(L, right);
     lua_pushnumber(L, top);
     lua_pushnumber(L, bottom);
 
-    if (lua_pcall(L, 5, 0, 0) != 0) {  // 5 args, 0 results
-        lua_pop(L, 1);                  // pop error message
+    if (lua_pcall(L, 5, 0, 0) != 0) {  
+        lua_pop(L, 1);                  
         return false;
     }
 
@@ -246,19 +247,17 @@ inline bool SetClampRectInsets(lua_State* L, int frame_idx, double left, double 
 
 inline bool SetClampedToScreen(lua_State* L, int frame_idx, bool clamped)
 {
-    lua_getfield(L, frame_idx, "SetClampedToScreen");  // push frame.SetClampedToScreen function
+    lua_getfield(L, frame_idx, "SetClampedToScreen");  
     if (lua_type(L, -1) != LUA_TFUNCTION) {
         lua_pop(L, 1);
-        return false;  // function not found
+        return false;  
     }
 
-    lua_pushvalue(L, frame_idx);  // push frame as self
-
-    // Push boolean as number 0 or 1 if no lua_pushboolean:
+    lua_pushvalue(L, frame_idx); 
     lua_pushnumber(L, clamped ? 1 : 0);
 
-    if (lua_pcall(L, 2, 0, 0) != 0) {  // 2 args, 0 results
-        lua_pop(L, 1);                  // pop error message
+    if (lua_pcall(L, 2, 0, 0) != 0) { 
+        lua_pop(L, 1);                  
         return false;
     }
 
@@ -267,26 +266,24 @@ inline bool SetClampedToScreen(lua_State* L, int frame_idx, bool clamped)
 
 inline bool GetSize(lua_State* L, int frame_idx, double& width, double& height)
 {
-    lua_getfield(L, frame_idx, "GetSize");       // push frame.GetSize function
+    lua_getfield(L, frame_idx, "GetSize");       
     if (lua_type(L, -1) != LUA_TFUNCTION) {
         lua_pop(L, 1);
-        return false;  // function not found
+        return false;  
     }
 
-    lua_pushvalue(L, frame_idx);                  // push frame as self
+    lua_pushvalue(L, frame_idx);                 
 
-    if (lua_pcall(L, 1, 2, 0) != 0) {            // call with 1 arg (self), expect 2 results (width, height)
-        lua_pop(L, 1);                            // pop error message
+    if (lua_pcall(L, 1, 2, 0) != 0) {            
+        lua_pop(L, 1);                           
         return false;
     }
 
-    // Expecting two numbers on the stack now
     if (lua_type(L, -2) != LUA_TNUMBER || lua_type(L, -1) != LUA_TNUMBER) {
         lua_pop(L, 2);
-        return false;  // unexpected return types
+        return false;  
     }
 
-    // If no lua_tonumber, try lua_tostringnew + atof or custom function:
     const char* widthStr = lua_tostringnew(L, -2);
     const char* heightStr = lua_tostringnew(L, -1);
     width = widthStr ? atof(widthStr) : 0.0;
@@ -296,6 +293,47 @@ inline bool GetSize(lua_State* L, int frame_idx, double& width, double& height)
 
     return true;
 }
+inline int IsFriendlyByColor(lua_State* L, int frame_idx)
+{
+    lua_getfield(L, frame_idx, "GetChildren");
+    if (!lua_isfunction(L, -1)) {
+        lua_pop(L, 1);
+        return -1;
+    }
+
+    lua_pushvalue(L, frame_idx); 
+
+    if (lua_pcall(L, 1, 1, 0) != 0) {
+        lua_pop(L, 1);
+        return -1;
+    }
+
+    int healthbar_idx = lua_gettop(L);
+
+    lua_getfield(L, healthbar_idx, "GetStatusBarColor");
+    if (!lua_isfunction(L, -1)) {
+        lua_pop(L, 2); 
+        return -1;
+    }
+
+    lua_pushvalue(L, healthbar_idx); 
+
+    if (lua_pcall(L, 1, 3, 0) != 0) {
+        lua_pop(L, 1); 
+        return -1;
+    }
+
+    float r = static_cast<float>(lua_tonumber(L, -3));
+    float g = static_cast<float>(lua_tonumber(L, -2));
+    float b = static_cast<float>(lua_tonumber(L, -1));
+    lua_pop(L, 4); 
+
+    if (r < 0.1f && g > 0.9f && b < 0.1f) return 5; 
+    if (r > 0.9f && g > 0.9f && b < 0.1f) return 4; 
+    if (r > 0.9f && g < 0.1f && b < 0.1f) return 1; 
+
+    return 0; 
+}
 
 inline NamePlateEntry* getEntryByGuid(guid_t guid)
 {
@@ -303,6 +341,6 @@ inline NamePlateEntry* getEntryByGuid(guid_t guid)
     NamePlateVars& vars = lua_findorcreatevars(GetLuaState());
     auto it = std::find_if(vars.nameplates.begin(), vars.nameplates.end(), [guid](const NamePlateEntry& entry) {
         return (entry.flags & NamePlateFlag_Visible) && entry.guid == guid;
-        });
+       });
     return it != vars.nameplates.end() ? &(*it) : NULL;
 }
