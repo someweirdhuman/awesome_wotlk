@@ -150,7 +150,7 @@ Arguments: **mode**`bool`
 
 Default: **1**
 
-Toggles behaviour of interaction keybind, or macro. 
+Toggles behaviour of interaction keybind, or macro. <br>
 If set to **1**, interaction is limited to entities located in front of the player within the angle defined by the `interactionAngle` CVar and within 20 yards.<br>
 If set to **0**, interaction will occur with the nearest entity within 20 yards of the player, regardless of its direction.
 
