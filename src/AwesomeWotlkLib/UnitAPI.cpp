@@ -86,70 +86,44 @@ static int lua_UnitOwner(lua_State* L)
     return 2;
 }
 
-static int lua_UnitTokenFromGUID(lua_State* L)
-{
+static int lua_UnitTokenFromGUID(lua_State* L) {
     guid_t guid = ObjectMgr::HexString2Guid(luaL_checkstring(L, 1));
     if (!guid || !((Unit*)ObjectMgr::Get(guid, TYPEMASK_UNIT)))
         return 0;
 
-    Unit* player = (Unit*)ObjectMgr::Get("player", TYPEMASK_UNIT);
-    if (player && ObjectMgr::GetGuidByUnitID("player") == guid) {
-        lua_pushstring(L, "player");
-        return 1;
-    }
+    auto checkToken = [&](const char* token) -> bool {
+        Unit* unit = (Unit*)ObjectMgr::Get(token, TYPEMASK_UNIT);
+        return unit && ObjectMgr::GetGuidByUnitID(token) == guid;
+    };
 
-    Unit* vehicle = (Unit*)ObjectMgr::Get("vehicle", TYPEMASK_UNIT);
-    if (vehicle && ObjectMgr::GetGuidByUnitID("vehicle") == guid) {
-        lua_pushstring(L, "vehicle");
-        return 1;
-    }
-
-    Unit* pet = (Unit*)ObjectMgr::Get("pet", TYPEMASK_UNIT);
-    if (pet && ObjectMgr::GetGuidByUnitID("pet") == guid) {
-        lua_pushstring(L, "pet");
-        return 1;
-    }
-
-    for (int i = 1; i <= 4; i++) {
-        char token[16];
-        snprintf(token, sizeof(token), "party%d", i);
-        Unit* partyUnit = (Unit*)ObjectMgr::Get(token, TYPEMASK_UNIT);
-        if (partyUnit && ObjectMgr::GetGuidByUnitID(token) == guid) {
+    const char* singleTokens[] = { "player", "vehicle", "pet", "target", "focus", "mouseover" };
+    for (const char* token : singleTokens) {
+        if (checkToken(token)) {
             lua_pushstring(L, token);
             return 1;
         }
     }
 
-    for (int i = 1; i <= 4; i++) {
+    auto checkIndexedTokens = [&](const char* base, int start, int end) -> bool {
         char token[16];
-        snprintf(token, sizeof(token), "partypet%d", i);
-        Unit* partyPet = (Unit*)ObjectMgr::Get(token, TYPEMASK_UNIT);
-        if (partyPet && ObjectMgr::GetGuidByUnitID(token) == guid) {
-            lua_pushstring(L, token);
-            return 1;
+        for (int i = start; i <= end; ++i) {
+            snprintf(token, sizeof(token), "%s%d", base, i);
+            if (checkToken(token)) {
+                lua_pushstring(L, token);
+                return true;
+            }
         }
-    }
+        return false;
+    };
 
-    for (int i = 1; i <= 40; i++) {
-        char token[16];
-        snprintf(token, sizeof(token), "raid%d", i);
-        Unit* raidUnit = (Unit*)ObjectMgr::Get(token, TYPEMASK_UNIT);
-        if (raidUnit && ObjectMgr::GetGuidByUnitID(token) == guid) {
-            lua_pushstring(L, token);
-            return 1;
-        }
-    }
+    if (checkIndexedTokens("party", 1, 4)) return 1;
+    if (checkIndexedTokens("partypet", 1, 4)) return 1;
+    if (checkIndexedTokens("raid", 1, 40)) return 1;
+    if (checkIndexedTokens("raidpet", 1, 40)) return 1;
+    if (checkIndexedTokens("arena", 1, 5)) return 1;
+    if (checkIndexedTokens("arenapet", 1, 5)) return 1;
+    if (checkIndexedTokens("boss", 1, 5)) return 1;
 
-    for (int i = 1; i <= 40; i++) {
-        char token[16];
-        snprintf(token, sizeof(token), "raidpet%d", i);
-        Unit* raidPet = (Unit*)ObjectMgr::Get(token, TYPEMASK_UNIT);
-        if (raidPet && ObjectMgr::GetGuidByUnitID(token) == guid) {
-            lua_pushstring(L, token);
-            return 1;
-        }
-    }
-    
     int tokenId = getTokenId(guid);
     if (tokenId > 0) {
         char token[16];
@@ -158,48 +132,8 @@ static int lua_UnitTokenFromGUID(lua_State* L)
         return 1;
     }
 
-    for (int i = 1; i <= 5; i++) {
-        char token[16];
-        snprintf(token, sizeof(token), "arena%d", i);
-        Unit* arenaUnit = (Unit*)ObjectMgr::Get(token, TYPEMASK_UNIT);
-        if (arenaUnit && ObjectMgr::GetGuidByUnitID(token) == guid) {
-            lua_pushstring(L, token);
-            return 1;
-        }
-    }
-
-    for (int i = 1; i <= 5; i++) {
-        char token[16];
-        snprintf(token, sizeof(token), "arenapet%d", i);
-        Unit* arenaPet = (Unit*)ObjectMgr::Get(token, TYPEMASK_UNIT);
-        if (arenaPet && ObjectMgr::GetGuidByUnitID(token) == guid) {
-            lua_pushstring(L, token);
-            return 1;
-        }
-    }
-
-    for (int i = 1; i <= 5; i++) {
-        char token[16];
-        snprintf(token, sizeof(token), "boss%d", i);
-        Unit* bossUnit = (Unit*)ObjectMgr::Get(token, TYPEMASK_UNIT);
-        if (bossUnit && ObjectMgr::GetGuidByUnitID(token) == guid) {
-            lua_pushstring(L, token);
-            return 1;
-        }
-    }
-
-    Unit* target = (Unit*)ObjectMgr::Get("target", TYPEMASK_UNIT);
-    if (target && ObjectMgr::GetGuidByUnitID("target") == guid) {
-        lua_pushstring(L, "target");
-        return 1;
-    }
-
-    Unit* focus = (Unit*)ObjectMgr::Get("focus", TYPEMASK_UNIT);
-    if (focus && ObjectMgr::GetGuidByUnitID("focus") == guid) {
-        lua_pushstring(L, "focus");
-        return 1;
-    }
-
+    return 0;
+}
     /*
     Unit* npc = (Unit*)ObjectMgr::Get("npc", TYPEMASK_UNIT);
     if (npc && ObjectMgr::GetGuidByUnitID("npc") == guid) {
@@ -207,12 +141,6 @@ static int lua_UnitTokenFromGUID(lua_State* L)
         return 1;
     }
     */
-
-    Unit* mouseover = (Unit*)ObjectMgr::Get("mouseover", TYPEMASK_UNIT);
-    if (mouseover && ObjectMgr::GetGuidByUnitID("mouseover") == guid) {
-        lua_pushstring(L, "mouseover");
-        return 1;
-    }
 
     /*
     Unit* softenemy = (Unit*)ObjectMgr::Get("softenemy", TYPEMASK_UNIT);
@@ -234,8 +162,6 @@ static int lua_UnitTokenFromGUID(lua_State* L)
     }
     */
 
-    return 0;
-}
 
 static int lua_openunitlib(lua_State* L)
 {
