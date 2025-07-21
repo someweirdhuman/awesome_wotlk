@@ -148,7 +148,7 @@ static int lua_QueueInteract(lua_State* L)
         return false;
     };
 
-    uint16_t angleDegrees = std::atoi(s_cvar_interactionAngle->vStr);
+    uint16_t angleDegrees = std::atoi(s_cvar_interactionAngle->vStr) / 2;
     bool lookInAngle = std::atoi(s_cvar_interactionMode->vStr) == 1;
 
     VecXYZ posPlayer;
