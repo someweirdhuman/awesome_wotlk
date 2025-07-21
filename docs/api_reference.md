@@ -61,10 +61,10 @@ Parameters: **unitId**`string`
 
 Notifies that a nameplate will be hidden
 
-## NAME_PLATE_UNIT_CHANGED`Event`
+## NAME_PLATE_OWNER_CHANGED`Event`
 Parameters: **unitId**`string`
 
-Fires when nameplate owner changed(?)
+Fires when nameplate owner changed (workaround for [this issue](https://github.com/FrostAtom/awesome_wotlk/blob/main/src/AwesomeWotlkLib/NamePlates.cpp#L170))
 
 ## nameplateDistance`CVar`
 Arguments: **distance**`number`
@@ -178,13 +178,33 @@ Returns: **isDisarmed**`bool`
 
 Returns true if unit is disarmed
 
-
 ## UnitIsSilenced`API`
 Arguments: **unitId**`string`
 
 Returns: **isSilenced**`bool`
 
 Returns true if unit is silenced
+
+## UnitOccupations`API`
+Arguments: **unitID**`string`
+
+Returns: **npcFlags**`number`
+
+Returns [npcFlags bitmask](https://github.com/someweirdhuman/awesome_wotlk/blob/7ab28cea999256d4c769b8a1e335a7d93c5cac32/src/AwesomeWotlkLib/UnitAPI.cpp#L37) if passed valid unitID else returns nothing
+
+## UnitOwner`API`
+Arguments: **unitID**`string`
+
+Returns: **ownerName**`string`, **ownerGuid**`string`
+
+Returns ownerName and ownerGuid if passed valid unitID else returns nothing
+
+## UnitTokenFromGUID`API`
+Arguments: **GUID**`string`
+
+Returns: **UnitToken**`string`
+
+Returns UnitToken if passed valid GUID else returns nothing
 
 # Inventory
 
@@ -194,6 +214,24 @@ Arguments: **unitId**`string`, **slot**`number`
 Returns: **itemId**`number`, **enchantId**`number`
 
 Returns info about item transmogrification
+
+# Spell
+
+## GetSpellBaseCooldown`API`
+Arguments: **spellId**`string`
+
+Returns: **cdMs**`number`, **gcdMs**`number`
+
+Returns cooldown and global cooldown in milliseconds if passed valid spellId else returns nothing
+
+# Item
+
+## GetItemInfoInstant`API`
+Arguments: **itemId/itemName/itemHyperlink**`string`
+
+Returns: **itemID**`number`, **itemType**`string`, **itemSubType**`string`, **itemEquipLoc**`string`, **icon**`string`, **classID**`number`, **subclassID**`number`,
+
+Returns id, type, sub-type, equipment slot, icon, class id, and sub-class id if passed valid argument else returns nothing
 
 # Misc
 
@@ -224,27 +262,6 @@ Arguments: **text**`string`
 Returns: `none`
 
 Copies text to clipboard
-
-## UnitOccupations`API`
-Arguments: **unitID**`string`
-
-Returns: **npcFlags**`number`
-
-Returns npcFlags if passed valid unitID else returns nothing
-
-## UnitOwner`API`
-Arguments: **unitID**`string`
-
-Returns: **ownerName**`string`, **ownerGuid**`string`, 
-
-Returns ownerName and ownerGuid if passed valid unitID else returns nothing
-
-## UnitTokenFromGUID`API`
-Arguments: **GUID**`string`
-
-Returns: **UnitToken**`string`
-
-Returns UnitToken if passed valid GUID else returns nothing
 
 ## cameraFov`CVar`
 Parameters: **value**`number`
