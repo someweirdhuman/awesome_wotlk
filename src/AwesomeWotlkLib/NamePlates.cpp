@@ -313,7 +313,7 @@ static void onUpdateCallback()
     if (player) player->ToUnit()->vmt->GetPosition(player->ToUnit(), &posPlayer);
 
     ObjectMgr::EnumObjects([&vars, player, &posPlayer](guid_t guid) -> bool {
-        Unit* unit = (Unit*)ObjectMgr::Get(guid, ObjectFlags_Unit);
+        Unit* unit = (Unit*)ObjectMgr::Get(guid, TYPEMASK_UNIT);
         if (!unit || !unit->nameplate) return true;
         auto it = std::find_if(vars.nameplates.begin(), vars.nameplates.end(), [nameplate = unit->nameplate](const NamePlateEntry& entry) {
             return entry.nameplate == nameplate;

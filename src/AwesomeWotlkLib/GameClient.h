@@ -850,10 +850,6 @@ struct Player {
     inline Unit* ToUnit() { return (Unit*)this; }
 };
 
-enum ObjectFlags : uint32_t {
-    ObjectFlags_Unit = 0x8,
-};
-
 // Base
 
 
