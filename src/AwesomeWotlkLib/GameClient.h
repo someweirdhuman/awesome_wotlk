@@ -1061,7 +1061,7 @@ namespace ObjectMgr {
     };
 
     inline Player* GetPlayer() { return ((decltype(&GetPlayer))0x004038F0)(); }
-    inline Object* Get(guid_t guid, ObjectFlags flags) { return ((Object * (*)(guid_t, ObjectFlags))0x004D4DB0)(guid, flags); }
+    inline Object* Get(guid_t guid, TypeMask flags) { return ((Object * (*)(guid_t, TypeMask))0x004D4DB0)(guid, flags); }
     inline void Guid2HexString(guid_t guid, char* buf) { return ((decltype(&Guid2HexString))0x0074D0D0)(guid, buf); }
     inline guid_t HexString2Guid(const char* str) { return ((decltype(&HexString2Guid))0x0074D120)(str); }
     inline guid_t GetGuidByUnitID(const char* unitId) { return ((decltype(&GetGuidByUnitID))0x0060C1C0)(unitId); }
@@ -1089,7 +1089,7 @@ namespace ObjectMgr {
             return GetGuidByUnitID(str);
     }
 
-    inline Object* Get(const char* str, ObjectFlags flags) { return Get(String2Guid(str), flags); }
+    inline Object* Get(const char* str, TypeMask flags) { return Get(String2Guid(str), flags); }
 
     inline int UnitRightClickByGuid(guid_t guid) { return ((decltype(&UnitRightClickByGuid))0x005277B0)(guid); }
     inline int UnitLeftClickByGuid(guid_t guid) { return ((decltype(&UnitLeftClickByGuid))0x005274F0)(guid); }
