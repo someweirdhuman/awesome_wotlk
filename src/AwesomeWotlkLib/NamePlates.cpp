@@ -25,6 +25,8 @@ static Console::CVar* s_cvar_nameplateSpeedReset;
 static Console::CVar* s_cvar_nameplateSpeedLower;
 static Console::CVar* s_cvar_nameplateHitboxHeight;
 static Console::CVar* s_cvar_nameplateHitboxWidth;
+static Console::CVar* s_cvar_nameplateFriendlyHitboxHeight;
+static Console::CVar* s_cvar_nameplateFriendlyHitboxWidth;
 static Console::CVar* s_cvar_nameplateStackFriendly;
 static Console::CVar* s_cvar_nameplateStackFriendlyMode;
 static Console::CVar* s_cvar_nameplateMaxRaiseDistance;
@@ -124,6 +126,8 @@ static int CVarHandler_NameplateSpeedLower(Console::CVar*, const char*, const ch
 static int CVarHandler_NameplateSpeedReset(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateHitboxHeight(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateHitboxWidth(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_NameplateFriendlyHitboxHeight(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_NameplateFriendlyHitboxWidth(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateMaxRaiseDistance(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateStackFunction(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static void UpdateNameplateFriendliness(const char* name, const char* value)
@@ -361,6 +365,8 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
     double speedLower = std::atof(s_cvar_nameplateSpeedLower->vStr) / 100;
     int nameplateHitboxHeight = std::atoi(s_cvar_nameplateHitboxHeight->vStr);
     int nameplateHitboxWidth = std::atoi(s_cvar_nameplateHitboxWidth->vStr);
+    int nameplateFriendlyHitboxHeight = std::atoi(s_cvar_nameplateFriendlyHitboxHeight->vStr);
+    int nameplateFriendlyHitboxWidth = std::atoi(s_cvar_nameplateFriendlyHitboxWidth->vStr);
     const double nameplateMaxRaiseDistance = std::atoi(s_cvar_nameplateMaxRaiseDistance->vStr);
 
     for (size_t i = 0; i < vars->nameplates.size(); ++i) {
@@ -376,8 +382,14 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
 
         double width = 0, height = 0;
         GetSize(L, frame_idx, width, height); // Get actual size for clamping
-        if (nameplateHitboxHeight > 0) SetHeight(L, frame_idx, nameplateHitboxHeight);
-        if (nameplateHitboxWidth > 0) SetWidth(L, frame_idx, nameplateHitboxWidth);
+
+        if (nameplate.isFriendly) {
+            if (nameplateFriendlyHitboxHeight > 0) SetHeight(L, frame_idx, nameplateFriendlyHitboxHeight);
+            if (nameplateFriendlyHitboxWidth > 0) SetWidth(L, frame_idx, nameplateFriendlyHitboxWidth);
+        }else {
+            if (nameplateHitboxHeight > 0) SetHeight(L, frame_idx, nameplateHitboxHeight);
+            if (nameplateHitboxWidth > 0) SetWidth(L, frame_idx, nameplateHitboxWidth);
+        }
 
         if (nameplate.flags & NamePlateFlag_Visible) {
             double diffToTarget = nameplate.targetStackOffset - nameplate.currentStackOffset;
@@ -723,6 +735,8 @@ void NamePlates::initialize()
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateSpeedLower, "nameplateSpeedLower", NULL, (Console::CVarFlags)1, "1", CVarHandler_NameplateSpeedLower);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateHitboxHeight, "nameplateHitboxHeight", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateHitboxHeight);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateHitboxWidth, "nameplateHitboxWidth", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateHitboxWidth);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateFriendlyHitboxHeight, "nameplateFriendlyHitboxHeight", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateFriendlyHitboxHeight);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateFriendlyHitboxWidth, "nameplateFriendlyHitboxWidth", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateFriendlyHitboxWidth);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateStackFriendly, "nameplateStackFriendly", NULL, (Console::CVarFlags)1, "1", CVarHandler_NameplateStackFriendly);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateStackFriendlyMode, "nameplateStackFriendlyMode", NULL, (Console::CVarFlags)1, "1", CVarHandler_NameplateStackFriendlyMode);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateStackFunction, "nameplateStackFunction", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateStackFunction);
