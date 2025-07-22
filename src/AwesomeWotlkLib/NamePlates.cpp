@@ -372,10 +372,6 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
     for (size_t i = 0; i < vars->nameplates.size(); ++i) {
         NamePlateEntry& nameplate = vars->nameplates[i];
 
-        // Skip if not stacking friendly or not visible
-        if (!nameplateStackFriendly && nameplate.isFriendly) {
-            continue;
-        }
 
         lua_pushframe(L, nameplate.nameplate);
         int frame_idx = lua_gettop(L);
@@ -389,6 +385,12 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
         }else {
             if (nameplateHitboxHeight > 0) SetHeight(L, frame_idx, nameplateHitboxHeight);
             if (nameplateHitboxWidth > 0) SetWidth(L, frame_idx, nameplateHitboxWidth);
+        }
+
+        // Skip if not stacking friendly or not visible
+        if (!nameplateStackFriendly && nameplate.isFriendly) {
+            lua_pop(L, 1);
+            continue;
         }
 
         if (nameplate.flags & NamePlateFlag_Visible) {
@@ -445,7 +447,7 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
             SetClampedToScreen(L, frame_idx, true);
             // The bottom inset needs to account for the nameplate's base Y, its current stack offset,
             // the origin position, and its height to keep it within the screen bounds.
-            SetClampRectInsets(L, frame_idx, -10, 10, upperBorder, -nameplate.ypos - nameplate.currentStackOffset - originPos + height);
+            SetClampRectInsets(L, frame_idx, -10, 10, upperBorder, -nameplate.ypos - nameplate.currentStackOffset - originPos + height / 2);
         }
         else {
             // If not visible, ensure its offset is zero and it's not clamped.
@@ -505,7 +507,8 @@ static void NameplateStackingUpdate(lua_State* L, NamePlateVars* vars)
     int speedLower = std::atoi(s_cvar_nameplateSpeedLower->vStr);
     int nameplateHitboxHeight = std::atoi(s_cvar_nameplateHitboxHeight->vStr);
     int nameplateHitboxWidth = std::atoi(s_cvar_nameplateHitboxWidth->vStr);
-
+    int nameplateFriendlyHitboxHeight = std::atoi(s_cvar_nameplateFriendlyHitboxHeight->vStr);
+    int nameplateFriendlyHitboxWidth = std::atoi(s_cvar_nameplateFriendlyHitboxWidth->vStr);
 
     for (size_t i = 0; i < vars->nameplates.size(); ++i) {
         NamePlateEntry& nameplate_1 = vars->nameplates[i];
@@ -519,12 +522,13 @@ static void NameplateStackingUpdate(lua_State* L, NamePlateVars* vars)
 
         double width = 0, height = 0;
         GetSize(L, frame_1, width, height);
-        if (nameplateHitboxHeight > 0) {
-            SetHeight(L, frame_1, nameplateHitboxHeight);
+        if (nameplate_1.isFriendly) {
+            if (nameplateFriendlyHitboxHeight > 0) SetHeight(L, frame_1, nameplateFriendlyHitboxHeight);
+            if (nameplateFriendlyHitboxWidth > 0) SetWidth(L, frame_1, nameplateFriendlyHitboxWidth);
         }
-
-        if (nameplateHitboxWidth > 0) {
-            SetWidth(L, frame_1, nameplateHitboxWidth);
+        else {
+            if (nameplateHitboxHeight > 0) SetHeight(L, frame_1, nameplateHitboxHeight);
+            if (nameplateHitboxWidth > 0) SetWidth(L, frame_1, nameplateHitboxWidth);
         }
 
         if (nameplate_1.flags & NamePlateFlag_Visible) {
@@ -567,7 +571,7 @@ static void NameplateStackingUpdate(lua_State* L, NamePlateVars* vars)
             }
 
             SetClampedToScreen(L, frame_1, true);
-            SetClampRectInsets(L, frame_1, -10, 10, upperBorder, -nameplate_1.ypos - nameplate_1.position - originPos + height);
+            SetClampRectInsets(L, frame_1, -10, 10, upperBorder, -nameplate_1.ypos - nameplate_1.position - originPos + height / 2);
         }
 
         lua_pop(L, 1);
