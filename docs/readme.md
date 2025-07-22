@@ -46,6 +46,8 @@ ___
     - nameplateSpeedLower<br>
     - nameplateHitboxHeight<br>
     - nameplateHitboxWidth<br>
+    - nameplateFriendlyHitboxHeight<br>
+    - nameplateFriendlyHitboxWidth<br>
     - interactionMode<br>
     - interactionAngle<br>
     - nameplateStackFriendly<br>

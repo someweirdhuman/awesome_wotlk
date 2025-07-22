@@ -129,6 +129,23 @@ Default: **1**
 
 Speed at which nameplates move **downward** during stacking resolution. 
 
+## nameplateFriendlyHitboxHeight`CVar` 
+Arguments: **height**`number`
+
+Default: **0**
+
+Height of a clickable **Friendly** nameplate hitbox, addons may override or break this, reload or disable/enable nameplates afterwards.<br>
+Use 0 to disable this and use default values.
+Affected by choice of `nameplateStackFriendlyMode`, which has unintuitive name.
+
+## nameplateFriendlyHitboxWidth`CVar` 
+Arguments: **width**`number`
+
+Default: **0**
+
+Width of a clickable **Friendly** nameplate hitbox, addons may override or break this, reload or disable/enable nameplates afterwards.<br>
+Use 0 to disable this and use default values.
+
 ## nameplateHitboxHeight`CVar` 
 Arguments: **height**`number`
 
