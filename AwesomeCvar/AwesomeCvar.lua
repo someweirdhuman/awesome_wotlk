@@ -129,6 +129,22 @@ local CVARS_DEFINITIONS = {
         step = 1
     },
     {
+        name = "nameplateFriendlyHitboxHeight",
+        label = "FRIENDLY Nameplate Hitbox Height (CHANGES SIZE OF DEFAULT PLATES)",
+        type = "slider",
+        min = 0,
+        max = 50,
+        step = 1
+    },
+    {
+        name = "nameplateFriendlyHitboxWidth",
+        label = "FRIENDLY Nameplate Hitbox Width (CHANGES SIZE OF DEFAULT PLATES)",
+        type = "slider",
+        min = 0,
+        max = 200,
+        step = 1
+    },
+    {
         name = "interactionMode",
         label = "Interaction Mode",
         type = "mode",
