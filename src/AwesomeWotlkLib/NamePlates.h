@@ -333,11 +333,25 @@ inline int IsFriendlyByColor(lua_State* L, int frame_idx)
     float b = static_cast<float>(lua_tonumber(L, -1));
     lua_pop(L, 4);
 
-    if (r < 0.1f && g > 0.9f && b < 0.1f) return 5;
-    if (r > 0.9f && g > 0.9f && b < 0.1f) return 4;
-    if (r > 0.9f && g < 0.1f && b < 0.1f) return 1;
 
-    return 0;
+    if (r < 0.01f) {
+        if (b < 0.01f && g > 0.99f)
+            return 5; // FRIENDLY_NPC
+        else if (b > 0.99f && g < 0.01f)
+            return 5; // FRIENDLY_PLAYER
+    }
+    else if (r > 0.99f) {
+        if (b < 0.01f && g > 0.99f)
+            return 4; // ENEMY_NPC
+        else if (b < 0.01f && g < 0.01f)
+            return 2; // ENEMY_NPC
+    }
+    else if (r > 0.5f && r < 0.6f) {
+        if (g > 0.5f && g < 0.6f && b > 0.5f && b < 0.6f)
+            return 1; // ENEMY_NPC (TAPPED)
+    }
+
+    return 3; // Default: ENEMY_PLAYER (ignored in your case)
 }
 
 inline NamePlateEntry* getEntryByGuid(guid_t guid)
