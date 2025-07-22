@@ -125,7 +125,7 @@ local CVARS_DEFINITIONS = {
         label = "Nameplate Hitbox Width (CHANGES SIZE OF DEFAULT PLATES)",
         type = "slider",
         min = 0,
-        max = 50,
+        max = 200,
         step = 1
     },
     {
