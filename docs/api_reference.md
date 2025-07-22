@@ -180,6 +180,23 @@ Changes how friendliness of mobs is decided. <br>
 If set to **0** a UnitReaction("player", "nameplate%") > 2 is used.<br>
 If set to **1** a parsing of healthbar color is used, same as weakaura did it.
 
+## nameplateStackFunction`CVar` 
+Arguments: **mode**`number`
+
+Default: **0**
+
+Sets which function is used to stack nameplates. <br>
+If set to **0** it will use the original weakaura behaviour, or close to it.<br>
+If set to **1** it will use brand new smoother function, that **must** be tweaked by you so it fits your preferences, speeds, max raise distance etc.
+
+## nameplateMaxRaiseDistance`CVar` 
+Arguments: **height**`number`
+
+Default: **200**
+
+Only works with `nameplateStackFunction` set to **1**<br>
+Sets maximum height nameplate can go up, before deciding to go down, or staying there. 
+
 # Unit
 
 ## UnitIsControlled`API`

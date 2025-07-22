@@ -1,0 +1,8 @@
+## Interface: 30300
+## Title: Awesome Cvar Manager
+## Notes: Manage CVars via UI
+## Author: Widget
+## Version: 1.0
+
+AwesomeCvar.xml
+AwesomeCvar.lua

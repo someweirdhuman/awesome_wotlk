@@ -49,17 +49,23 @@ ___
     - interactionMode<br>
     - interactionAngle<br>
     - nameplateStackFriendly<br>
-    - nameplateStackFriendlyMode
+    - nameplateStackFriendlyMode<br>
+    - nameplateStackFunction<br>
+    - nameplateMaxRaiseDistance
 > - New Interaction Keybind:<br>
     - It loots mobs, skins mobs, interacts with near object like veins, chairs, doors, etc, mailboxes, etc.<br>
     - You can keybind this in options menu like any other keybind (Requires Interaction Addon, bundled in release rar)<br>
     - You can macro this using /interact, interact should also support some modifiers like @mouseover - /interact [@mouseover], blizzard rules apply
 > - New Nameplate Stacking:<br>
-    - based on https://wago.io/AQdGXNEBH <br>
+    - default function based on https://wago.io/AQdGXNEBH <br>
+    - second function is bit smoother, but requires more messing with cvars to be usable
     - enable stacking nameplates by doing /console nameplateStacking 1 - /reload recommended after both disabling or enabling <br>
     - also remember to delete this weakaura https://wago.io/AQdGXNEBH and restarting client before using this feature <br>
     - see docs for more cvar details <br>
+    - everything configurable in /awesome (addon) <br>
 See [Docs](https://github.com/someweirdhuman/awesome_wotlk/blob/main/docs/api_reference.md) for details
+
+**Recommended to use AwesomeCvar addon and use ingame command /awesome to configure all cvars**
 
 ## Installation
 1) Download latest [release](https://github.com/someweirdhuman/awesome_wotlk/releases)

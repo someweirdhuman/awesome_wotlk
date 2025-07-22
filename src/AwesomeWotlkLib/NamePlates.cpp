@@ -7,6 +7,7 @@
 #include <vector>
 #include <cstring>
 #include <chrono>
+#include <numeric>
 #define NAME_PLATE_CREATED "NAME_PLATE_CREATED"
 #define NAME_PLATE_UNIT_ADDED "NAME_PLATE_UNIT_ADDED"
 #define NAME_PLATE_UNIT_REMOVED "NAME_PLATE_UNIT_REMOVED"
@@ -26,7 +27,8 @@ static Console::CVar* s_cvar_nameplateHitboxHeight;
 static Console::CVar* s_cvar_nameplateHitboxWidth;
 static Console::CVar* s_cvar_nameplateStackFriendly;
 static Console::CVar* s_cvar_nameplateStackFriendlyMode;
-
+static Console::CVar* s_cvar_nameplateMaxRaiseDistance;
+static Console::CVar* s_cvar_nameplateStackFunction;
 
 guid_t parseGuidFromString(const char* str)
 {
@@ -63,7 +65,7 @@ static int C_NamePlate_GetNamePlateTokenByGUID(lua_State* L)
         return 1;
     }
 
-    guid_t guid = parseGuidFromString(guidStr); 
+    guid_t guid = parseGuidFromString(guidStr);
     if (!guid) return 0;
 
     NamePlateVars& vars = lua_findorcreatevars(GetLuaState());
@@ -122,6 +124,8 @@ static int CVarHandler_NameplateSpeedLower(Console::CVar*, const char*, const ch
 static int CVarHandler_NameplateSpeedReset(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateHitboxHeight(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateHitboxWidth(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_NameplateMaxRaiseDistance(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_NameplateStackFunction(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static void UpdateNameplateFriendliness(const char* name, const char* value)
 {
     if (!IsInWorld()) return;
@@ -148,7 +152,8 @@ static void UpdateNameplateFriendliness(const char* name, const char* value)
 
         if (nameplateStackFriendlyMode == 0) {
             entry.isFriendly = ObjectMgr::GetCGUnitPlayer()->UnitReaction(unit) > 2;
-        } else {
+        }
+        else {
             entry.isFriendly = IsFriendlyByColor(L, frame_idx) == 5;
         }
 
@@ -184,7 +189,7 @@ static int CVarHandler_NameplateStacking(Console::CVar*, const char*, const char
         lua_pushframe(L, entry.nameplate);
         int frame_idx = lua_gettop(L);
         entry.xpos = 0.f;
-        entry.ypos = 0.f; 
+        entry.ypos = 0.f;
         entry.position = 0.f;
         SetClampedToScreen(L, frame_idx, false);
         SetClampRectInsets(L, frame_idx, 0, 0, 0, 0);
@@ -223,15 +228,15 @@ static int C_NamePlate_GetNamePlateForUnit(lua_State* L)
     return 1;
 }
 
-static int lua_openlibnameplates(lua_State* L) 
+static int lua_openlibnameplates(lua_State* L)
 {
     luaL_Reg methods[] = {
         {"GetNamePlates", C_NamePlate_GetNamePlates},
         {"GetNamePlateForUnit", C_NamePlate_GetNamePlateForUnit},
         {"GetNamePlateByGUID", C_NamePlate_GetNamePlateByGUID},
         {"GetNamePlateTokenByGUID", C_NamePlate_GetNamePlateTokenByGUID},
-    }; 
-    
+    };
+
     lua_createtable(L, 0, std::size(methods));
     for (size_t i = 0; i < std::size(methods); i++) {
         lua_pushcfunction(L, methods[i].func);
@@ -239,6 +244,207 @@ static int lua_openlibnameplates(lua_State* L)
     }
     lua_setglobal(L, "C_NamePlate");
     return 0;
+}
+static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
+{
+    bool nameplateStackFriendly = std::atoi(s_cvar_nameplateStackFriendly->vStr) == 1;
+    auto now = std::chrono::steady_clock::now();
+    double delta = std::chrono::duration<float>(now - gLastCallTime).count() * 500;  // delta 
+    gLastCallTime = now;
+
+    for (size_t i = 0; i < vars->nameplates.size(); ++i)
+    {
+        NamePlateEntry& entry = vars->nameplates[i];
+
+        if (!nameplateStackFriendly && entry.isFriendly) {
+            // If friendly nameplates are not stacked, ensure their offsets are zero.
+            entry.xpos = 0.f;
+            entry.ypos = 0.f;
+            entry.currentStackOffset = 0.f;
+            entry.targetStackOffset = 0.f;
+            entry.isResetting = false; // Not relevant if not stacking
+            lua_pushframe(L, entry.nameplate);
+            int frame_idx = lua_gettop(L);
+            SetClampedToScreen(L, frame_idx, false);
+            SetClampRectInsets(L, frame_idx, 0, 0, 0, 0);
+            lua_pop(L, 1);
+            continue;
+        }
+
+        lua_pushframe(L, entry.nameplate);
+        int frame_idx = lua_gettop(L);
+
+        if (entry.flags & NamePlateFlag_Visible) {
+            std::string point, relativeToName, relativePoint;
+            double xOfs, yOfs;
+            bool status = GetPoint(L, frame_idx, 1, point, relativeToName, relativePoint, xOfs, yOfs);
+            if (status) {
+                entry.xpos = xOfs;
+                entry.ypos = yOfs;
+            }
+            // If not visible, ensure it's not contributing to stacking and its offset is zero.
+        }
+        else {
+            entry.xpos = 0.f;
+            entry.ypos = 0.f;
+            entry.currentStackOffset = 0.f; // Ensure offset is zero when not visible
+            entry.targetStackOffset = 0.f;  // Ensure target offset is zero when not visible
+            entry.isResetting = false;      // Not resetting if not visible
+            SetClampedToScreen(L, frame_idx, false);
+            SetClampRectInsets(L, frame_idx, 0, 0, 0, 0);
+        }
+        lua_pop(L, 1);
+    }
+
+    int xSpace = std::atoi(s_cvar_nameplateXSpace->vStr);
+    int ySpace = std::atoi(s_cvar_nameplateYSpace->vStr);
+
+    std::vector<size_t> sorted_indices(vars->nameplates.size());
+    std::iota(sorted_indices.begin(), sorted_indices.end(), 0);
+
+    // Sort nameplates based on their effective Y position (base Y + current interpolated offset)
+    // This ensures that plates are processed in the correct stacking order.
+    std::sort(sorted_indices.begin(), sorted_indices.end(), [&](size_t a, size_t b) {
+        const auto& plate_a = vars->nameplates[a];
+        const auto& plate_b = vars->nameplates[b];
+        // The inertiaFactor helps in maintaining a stable sort order during movement.
+        const double inertiaFactor = 1.1;
+        double effectivePosA = plate_a.ypos + (plate_a.currentStackOffset * inertiaFactor);
+        double effectivePosB = plate_b.ypos + (plate_b.currentStackOffset * inertiaFactor);
+        return effectivePosA < effectivePosB;
+        });
+
+    // --- Second Pass: Calculate targetStackOffset for each nameplate ---
+    // This pass determines where each nameplate *should* be based on stacking rules.
+    for (size_t i = 0; i < sorted_indices.size(); ++i) {
+        size_t idx1 = sorted_indices[i];
+        NamePlateEntry& nameplate_1 = vars->nameplates[idx1];
+
+        // If not visible or friendly stacking is off for friendly plates, its target offset is 0.
+        if (!(nameplate_1.flags & NamePlateFlag_Visible) || (!nameplateStackFriendly && nameplate_1.isFriendly)) {
+            nameplate_1.targetStackOffset = 0.0;
+            continue;
+        }
+
+        double currentCalculatedTargetOffset = 0.0;
+
+        // Iterate through previously sorted nameplates to find potential overlaps
+        for (size_t j = 0; j < i; ++j) {
+            size_t idx2 = sorted_indices[j];
+            NamePlateEntry& nameplate_2 = vars->nameplates[idx2];
+
+            // Only consider visible and stackable nameplates for calculating overlaps
+            if (!(nameplate_2.flags & NamePlateFlag_Visible) || (!nameplateStackFriendly && nameplate_2.isFriendly)) {
+                continue;
+            }
+
+            // Check for horizontal overlap within xSpace
+            if (std::abs(nameplate_1.xpos - nameplate_2.xpos) < xSpace) {
+                // Calculate the required Y position for nameplate_1 to be below nameplate_2
+                // Use nameplate_2's *current* interpolated position for stability.
+                double requiredY = (nameplate_2.ypos + nameplate_2.currentStackOffset + ySpace);
+                double requiredOffset = requiredY - nameplate_1.ypos;
+
+                // nameplate_1's target offset should be at least this requiredOffset
+                if (requiredOffset > currentCalculatedTargetOffset) {
+                    currentCalculatedTargetOffset = requiredOffset;
+                }
+            }
+        }
+        nameplate_1.targetStackOffset = currentCalculatedTargetOffset;
+    }
+
+    int upperBorder = std::atoi(s_cvar_nameplateUpperBorder->vStr);
+    int originPos = std::atoi(s_cvar_nameplateOriginPos->vStr);
+    double speedRaise = std::atof(s_cvar_nameplateSpeedRaise->vStr) / 100;
+    double speedReset = std::atof(s_cvar_nameplateSpeedReset->vStr) / 100;
+    double speedLower = std::atof(s_cvar_nameplateSpeedLower->vStr) / 100;
+    int nameplateHitboxHeight = std::atoi(s_cvar_nameplateHitboxHeight->vStr);
+    int nameplateHitboxWidth = std::atoi(s_cvar_nameplateHitboxWidth->vStr);
+    const double nameplateMaxRaiseDistance = std::atoi(s_cvar_nameplateMaxRaiseDistance->vStr);
+
+    for (size_t i = 0; i < vars->nameplates.size(); ++i) {
+        NamePlateEntry& nameplate = vars->nameplates[i];
+
+        // Skip if not stacking friendly or not visible
+        if (!nameplateStackFriendly && nameplate.isFriendly) {
+            continue;
+        }
+
+        lua_pushframe(L, nameplate.nameplate);
+        int frame_idx = lua_gettop(L);
+
+        double width = 0, height = 0;
+        GetSize(L, frame_idx, width, height); // Get actual size for clamping
+        if (nameplateHitboxHeight > 0) SetHeight(L, frame_idx, nameplateHitboxHeight);
+        if (nameplateHitboxWidth > 0) SetWidth(L, frame_idx, nameplateHitboxWidth);
+
+        if (nameplate.flags & NamePlateFlag_Visible) {
+            double diffToTarget = nameplate.targetStackOffset - nameplate.currentStackOffset;
+            double interpolationSpeed = speedRaise; // Default speed
+
+            // Determine if the nameplate is currently in a "resetting" state.
+            // Condition 1: It should be at target 0, but isn't (original reset logic).
+            bool shouldResetDueToTargetZero = (std::abs(nameplate.targetStackOffset) < 0.01 && std::abs(nameplate.currentStackOffset) > 0.01);
+
+            // Condition 2: It has been pushed too high from its original position.
+            bool shouldResetDueToMaxRaise = nameplate.currentStackOffset > nameplateMaxRaiseDistance;
+
+            nameplate.isResetting = shouldResetDueToTargetZero || shouldResetDueToMaxRaise;
+
+            if (nameplate.isResetting) {
+                // When resetting, use the reset speed and ensure it moves towards 0.
+                interpolationSpeed = speedReset;
+                // Cap reset speed for smoothness, especially if speedReset CVar is very high.
+                interpolationSpeed = min(interpolationSpeed, 0.5); // Adjust this cap as needed for desired reset feel
+                // The target for interpolation is 0 when resetting.
+                diffToTarget = 0 - nameplate.currentStackOffset;
+            }
+            else if (diffToTarget < -0.01) {
+                // If moving down (diffToTarget is negative), use lower speed.
+                interpolationSpeed = speedLower;
+            }
+            // If diffToTarget is positive, it uses speedRaise (default).
+
+            double interpolationFactor = interpolationSpeed * delta;
+
+            // Cap interpolation factor to prevent overshooting and jitter, especially at low frame rates.
+            const double maxInterpolationFactor = 0.5; // Increased slightly for potentially faster response
+            interpolationFactor = min(interpolationFactor, maxInterpolationFactor);
+
+            // Apply interpolation
+            nameplate.currentStackOffset += diffToTarget * interpolationFactor;
+
+            // Snap to target if very close to prevent tiny oscillations
+            if (std::abs(nameplate.currentStackOffset - nameplate.targetStackOffset) < 0.01) {
+                nameplate.currentStackOffset = nameplate.targetStackOffset;
+                // If it snapped to zero, then resetting is complete.
+                if (std::abs(nameplate.currentStackOffset) < 0.01) {
+                    nameplate.isResetting = false;
+                }
+            }
+
+            // Ensure offset doesn't go negative (nameplates only stack upwards)
+            if (nameplate.currentStackOffset < 0) {
+                nameplate.currentStackOffset = 0;
+            }
+
+            // Apply clamping to screen based on the interpolated position
+            SetClampedToScreen(L, frame_idx, true);
+            // The bottom inset needs to account for the nameplate's base Y, its current stack offset,
+            // the origin position, and its height to keep it within the screen bounds.
+            SetClampRectInsets(L, frame_idx, -10, 10, upperBorder, -nameplate.ypos - nameplate.currentStackOffset - originPos + height);
+        }
+        else {
+            // If not visible, ensure its offset is zero and it's not clamped.
+            nameplate.currentStackOffset = 0.f;
+            nameplate.targetStackOffset = 0.f;
+            nameplate.isResetting = false;
+            SetClampedToScreen(L, frame_idx, false);
+            SetClampRectInsets(L, frame_idx, 0, 0, 0, 0);
+        }
+        lua_pop(L, 1);
+    }
 }
 
 static void NameplateStackingUpdate(lua_State* L, NamePlateVars* vars)
@@ -364,9 +570,13 @@ static void onUpdateCallback()
 
     lua_State* L = GetLuaState();
     NamePlateVars& vars = lua_findorcreatevars(L);
-
     if (strcmp(s_cvar_nameplateStacking->vStr, "1") == 0) {
-        NameplateStackingUpdate(L, &vars);
+        if (strcmp(s_cvar_nameplateStackFunction->vStr, "1") == 0) {
+            NameplateStackingUpdateSmooth(L, &vars);
+        }
+        else {
+            NameplateStackingUpdate(L, &vars);
+        }
     }
 
     Player* player = ObjectMgr::GetPlayer();
@@ -380,13 +590,14 @@ static void onUpdateCallback()
         if (!unit || !unit->nameplate) return true;
         auto it = std::find_if(vars.nameplates.begin(), vars.nameplates.end(), [nameplate = unit->nameplate](const NamePlateEntry& entry) {
             return entry.nameplate == nameplate;
-        });
+            });
         if (it == vars.nameplates.end()) {
             NamePlateEntry& entry = vars.nameplates.emplace_back();
             entry.guid = guid;
             entry.nameplate = unit->nameplate;
             entry.updateId = vars.updateId;
-        } else {
+        }
+        else {
             if (it->guid != guid) {
                 it->guid = guid;
                 if (it->flags & NamePlateFlag_Visible) {
@@ -399,7 +610,8 @@ static void onUpdateCallback()
                         int frame_idx = lua_gettop(L);
                         if (nameplateStackFriendlyMode == 0) {
                             it->isFriendly = ObjectMgr::GetCGUnitPlayer()->UnitReaction(unit) > 2 ? true : false;
-                        } else {
+                        }
+                        else {
                             it->isFriendly = IsFriendlyByColor(L, frame_idx) == 5;
                         }
                         lua_pop(L, 1);
@@ -415,9 +627,9 @@ static void onUpdateCallback()
             unit->vmt->GetPosition(unit, &unitPos);
             s_plateSort.push_back({ unit->nameplate, guid, posPlayer.distance(unitPos) });
         }
-        
+
         return true;
-    });
+        });
 
     if (!s_plateSort.empty()) {
         std::sort(s_plateSort.begin(), s_plateSort.end(), [targetGuid = ObjectMgr::GetTargetGuid()](auto& a1, auto& a2) {
@@ -426,7 +638,7 @@ static void onUpdateCallback()
             if (guid1 == targetGuid) return false;
             if (guid2 == targetGuid) return true;
             return distance1 > distance2;
-        });
+            });
 
         int level = 10;
         for (auto& entry : s_plateSort)
@@ -464,7 +676,8 @@ static void onUpdateCallback()
                     lua_pop(L, 1);
                 }
             }
-        } else {
+        }
+        else {
             if (entry.flags & NamePlateFlag_Visible) {
                 char token[16];
                 snprintf(token, std::size(token), "nameplate%d", i + 1);
@@ -512,6 +725,8 @@ void NamePlates::initialize()
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateHitboxWidth, "nameplateHitboxWidth", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateHitboxWidth);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateStackFriendly, "nameplateStackFriendly", NULL, (Console::CVarFlags)1, "1", CVarHandler_NameplateStackFriendly);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateStackFriendlyMode, "nameplateStackFriendlyMode", NULL, (Console::CVarFlags)1, "1", CVarHandler_NameplateStackFriendlyMode);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateStackFunction, "nameplateStackFunction", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateStackFunction);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateMaxRaiseDistance, "nameplateMaxRaiseDistance", NULL, (Console::CVarFlags)1, "200", CVarHandler_NameplateMaxRaiseDistance);
     Hooks::FrameScript::registerToken("nameplate", getTokenGuid, getTokenId);
     Hooks::FrameScript::registerOnUpdate(onUpdateCallback);
 
