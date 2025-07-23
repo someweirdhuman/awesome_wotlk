@@ -194,7 +194,7 @@ Arguments: **mode**`number`
 Default: **1**
 
 Changes how friendliness of mobs is decided. <br>
-If set to **0** a UnitReaction("player", "nameplate%") > 2 is used.<br>
+If set to **0** a UnitReaction("player", "nameplate%") >= 5 + CanAttack check for reaction 4 is used.<br>
 If set to **1** a parsing of healthbar color is used, same as weakaura did it.
 
 ## nameplateStackFunction`CVar` 
