@@ -8,6 +8,7 @@
 #define AWESOMEWOTLKLIB_DLL "AwesomeWotlkLib.dll"
 
 static std::string s_appName;
+static bool s_quietMode = false;
 
 const char* findGameClientExecutable()
 {
@@ -41,18 +42,37 @@ bool applyPatches(const char* path)
 template<typename... Args>
 void message(DWORD icon, const char* fmt, Args&&... args)
 {
-    MessageBoxA(NULL, std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...)).c_str(), s_appName.c_str(), icon | MB_OK);
+    std::string formatted = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
+
+    if (s_quietMode) {
+        if (icon & MB_ICONERROR) {
+            std::cerr << "ERROR: " << formatted << std::endl;
+        } else if (icon & MB_ICONWARNING) {
+            std::cout << "WARNING: " << formatted << std::endl;
+        } else {
+            std::cout << "INFO: " << formatted << std::endl;
+        }
+    } else {
+        MessageBoxA(NULL, formatted.c_str(), s_appName.c_str(), icon | MB_OK);
+    }
 }
 
 int main(int argc, char** argv)
 {
     s_appName = std::filesystem::path(argv[0]).filename().string();
+    
+    const char* exePath = nullptr;
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "--quiet") == 0 || strcmp(argv[i], "-q") == 0) {
+            s_quietMode = true;
+        } else if (!exePath) {
+            exePath = argv[i];
+        }
+    }
 
-    const char* exePath = NULL;
-    if (argc > 1)
-        exePath = argv[1];
-    else
+    if (!exePath) {
         exePath = findGameClientExecutable();
+    }
 
     if (!exePath) {
         message(MB_ICONERROR,
@@ -76,7 +96,7 @@ int main(int argc, char** argv)
             exePath, msg, lastError);
         return 1;
     }
-    
+
     std::filesystem::path libInGamePath = std::filesystem::path(exePath).parent_path() / AWESOMEWOTLKLIB_DLL;
     std::filesystem::path libInAppPath = std::filesystem::absolute(argv[0]).parent_path() / AWESOMEWOTLKLIB_DLL;
     if (!std::filesystem::is_regular_file(libInGamePath) && std::filesystem::is_regular_file(libInAppPath)) {
@@ -100,4 +120,4 @@ int main(int argc, char** argv)
     }
 
     return 0;
-} 
+}
