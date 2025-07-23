@@ -294,7 +294,7 @@ static int lua_openmisclib(lua_State* L)
         { "IsWindowFocused", lua_IsWindowFocused },
         { "FocusWindow", lua_FocusWindow },
         { "CopyToClipboard", lua_CopyToClipboard },
-        { "QueueInteraction", lua_QueueInteract }
+        { "QueueInteract", lua_QueueInteract }
     };
 
     for (const auto& [name, func] : funcs) {
