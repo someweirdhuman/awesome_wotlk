@@ -60,7 +60,7 @@ void message(DWORD icon, const char* fmt, Args&&... args)
 int main(int argc, char** argv)
 {
     s_appName = std::filesystem::path(argv[0]).filename().string();
-    
+
     const char* exePath = nullptr;
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "--quiet") == 0 || strcmp(argv[i], "-q") == 0) {
@@ -90,9 +90,7 @@ int main(int argc, char** argv)
         const char* msg = NULL;
         FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, lastError, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, NULL);
         message(MB_ICONERROR,
-            "Can't apply patch to {}\n"
-            "{}",
-            "Error code {}",
+            "Can't apply patch to {} - {} - {}",
             exePath, msg, lastError);
         return 1;
     }
