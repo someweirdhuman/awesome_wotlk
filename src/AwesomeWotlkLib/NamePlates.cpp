@@ -155,7 +155,7 @@ static void UpdateNameplateFriendliness(const char* name, const char* value)
         int frame_idx = lua_gettop(L);
 
         if (nameplateStackFriendlyMode == 0) {
-            entry.isFriendly = ObjectMgr::GetCGUnitPlayer()->UnitReaction(unit) > 4;
+            entry.isFriendly = IsFriendlyByReaction(unit);
         }
         else {
             entry.isFriendly = IsFriendlyByColor(L, frame_idx) == 5;
@@ -260,7 +260,7 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
     {
         NamePlateEntry& entry = vars->nameplates[i];
 
-        if (!nameplateStackFriendly && entry.isFriendly) {
+        /*if (!nameplateStackFriendly && entry.isFriendly) {
             // If friendly nameplates are not stacked, ensure their offsets are zero.
             entry.xpos = 0.f;
             entry.ypos = 0.f;
@@ -273,7 +273,7 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
             SetClampRectInsets(L, frame_idx, 0, 0, 0, 0);
             lua_pop(L, 1);
             continue;
-        }
+        }*/
 
         lua_pushframe(L, entry.nameplate);
         int frame_idx = lua_gettop(L);
@@ -389,6 +389,8 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
 
         // Skip if not stacking friendly or not visible
         if (!nameplateStackFriendly && nameplate.isFriendly) {
+            SetClampedToScreen(L, frame_idx, true);
+            SetClampRectInsets(L, frame_idx, -10, 10, upperBorder, -nameplate.ypos - originPos + height / 2);
             lua_pop(L, 1);
             continue;
         }
@@ -530,7 +532,7 @@ static void NameplateStackingUpdate(lua_State* L, NamePlateVars* vars)
 
         if (!nameplateStackFriendly && nameplate_1.isFriendly) {
             SetClampedToScreen(L, frame_1, true);
-            SetClampRectInsets(L, frame_1, -10, 10, upperBorder, -nameplate_1.ypos - nameplate_1.position - originPos + height / 2);
+            SetClampRectInsets(L, frame_1, -10, 10, upperBorder, -nameplate_1.ypos - originPos + height / 2);
             lua_pop(L, 1);
             continue;
         }
@@ -688,7 +690,7 @@ static void onUpdateCallback()
                     lua_pushframe(L, entry.nameplate);
                     int frame_idx = lua_gettop(L);
                     if (nameplateStackFriendlyMode == 0) {
-                        entry.isFriendly = ObjectMgr::GetCGUnitPlayer()->UnitReaction(unit) > 4 ? true : false;
+                        entry.isFriendly = IsFriendlyByReaction(unit);
                     }
                     else {
                         entry.isFriendly = IsFriendlyByColor(L, frame_idx) == 5;

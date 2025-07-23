@@ -354,6 +354,22 @@ inline int IsFriendlyByColor(lua_State* L, int frame_idx)
     return 3; // Default: ENEMY_PLAYER (ignored in your case)
 }
 
+inline bool IsFriendlyByReaction(CGUnit_C* unit) {
+    int reaction = ObjectMgr::GetCGUnitPlayer()->UnitReaction(unit);
+    bool canAttack = ObjectMgr::GetCGUnitPlayer()->CanAttack(unit);
+
+    if (reaction >= 5) {
+        return true;
+    }
+    else if (reaction == 4 && canAttack) {
+        return false;
+    }
+    else if (reaction == 4 && !canAttack) {
+        return true;
+    }
+    return false;
+}
+
 inline NamePlateEntry* getEntryByGuid(guid_t guid)
 {
     if (!guid) return NULL;
