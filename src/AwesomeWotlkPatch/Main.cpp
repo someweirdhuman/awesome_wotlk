@@ -42,18 +42,8 @@ bool applyPatches(const char* path)
 template<typename... Args>
 void message(DWORD icon, const char* fmt, Args&&... args)
 {
-    std::string formatted = std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...));
-
-    if (s_quietMode) {
-        if (icon & MB_ICONERROR) {
-            std::cerr << "ERROR: " << formatted << std::endl;
-        } else if (icon & MB_ICONWARNING) {
-            std::cout << "WARNING: " << formatted << std::endl;
-        } else {
-            std::cout << "INFO: " << formatted << std::endl;
-        }
-    } else {
-        MessageBoxA(NULL, formatted.c_str(), s_appName.c_str(), icon | MB_OK);
+    if (!s_quietMode) {
+        MessageBoxA(NULL, std::vformat(fmt, std::make_format_args(std::forward<Args>(args)...)).c_str(), s_appName.c_str(), icon | MB_OK);
     }
 }
 
