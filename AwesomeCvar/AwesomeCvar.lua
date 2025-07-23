@@ -114,7 +114,7 @@ local CVARS_DEFINITIONS = {
     },
     {
         name = "nameplateHitboxHeight",
-        label = "Nameplate Hitbox Height (CHANGES SIZE OF DEFAULT PLATES)",
+        label = "Nameplate Hitbox Height (0=DISABLED, dont use without nameplate addon)",
         type = "slider",
         min = 0,
         max = 50,
@@ -122,7 +122,7 @@ local CVARS_DEFINITIONS = {
     },
     {
         name = "nameplateHitboxWidth",
-        label = "Nameplate Hitbox Width (CHANGES SIZE OF DEFAULT PLATES)",
+        label = "Nameplate Hitbox Width (0=DISABLED, dont use without nameplate addon)",
         type = "slider",
         min = 0,
         max = 200,
@@ -130,7 +130,7 @@ local CVARS_DEFINITIONS = {
     },
     {
         name = "nameplateFriendlyHitboxHeight",
-        label = "FRIENDLY Nameplate Hitbox Height (CHANGES SIZE OF DEFAULT PLATES)",
+        label = "FRIENDLY Nameplate Hitbox Height (0=DISABLED, dont use without nameplate addon)",
         type = "slider",
         min = 0,
         max = 50,
@@ -138,7 +138,7 @@ local CVARS_DEFINITIONS = {
     },
     {
         name = "nameplateFriendlyHitboxWidth",
-        label = "FRIENDLY Nameplate Hitbox Width (CHANGES SIZE OF DEFAULT PLATES)",
+        label = "FRIENDLY Nameplate Hitbox Width (0=DISABLED, dont use without nameplate addon)",
         type = "slider",
         min = 0,
         max = 200,
