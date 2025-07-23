@@ -1,7 +1,7 @@
 #include "UnitAPI.h"
 #include "GameClient.h"
 #include "Hooks.h"
-#include "Nameplates.h"
+#include "NamePlates.h"
 
 extern int getTokenId(guid_t guid);
 
