@@ -970,6 +970,14 @@ public:
         return UnitReactionFn(this, unit);
     }
 
+    bool CanAttack(const CGUnit_C* unit) const
+    {
+        using CanAttack_t = bool(__thiscall*)(const CGUnit_C* thisPtr, const CGUnit_C* unit);
+        static const CanAttack_t CanAttackFn = reinterpret_cast<CanAttack_t>(0x00729A70);
+
+        return CanAttackFn(this, unit);
+    }
+
     uint64_t GetGUID() const
     {
         return GetValue<uint64_t>(OBJECT_FIELD_GUID);
