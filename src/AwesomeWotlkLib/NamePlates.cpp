@@ -155,7 +155,7 @@ static void UpdateNameplateFriendliness(const char* name, const char* value)
         int frame_idx = lua_gettop(L);
 
         if (nameplateStackFriendlyMode == 0) {
-            entry.isFriendly = ObjectMgr::GetCGUnitPlayer()->UnitReaction(unit) > 2;
+            entry.isFriendly = ObjectMgr::GetCGUnitPlayer()->UnitReaction(unit) > 4;
         }
         else {
             entry.isFriendly = IsFriendlyByColor(L, frame_idx) == 5;
@@ -372,7 +372,6 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
     for (size_t i = 0; i < vars->nameplates.size(); ++i) {
         NamePlateEntry& nameplate = vars->nameplates[i];
 
-
         lua_pushframe(L, nameplate.nameplate);
         int frame_idx = lua_gettop(L);
 
@@ -382,7 +381,8 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
         if (nameplate.isFriendly) {
             if (nameplateFriendlyHitboxHeight > 0) SetHeight(L, frame_idx, nameplateFriendlyHitboxHeight);
             if (nameplateFriendlyHitboxWidth > 0) SetWidth(L, frame_idx, nameplateFriendlyHitboxWidth);
-        }else {
+        }
+        else {
             if (nameplateHitboxHeight > 0) SetHeight(L, frame_idx, nameplateHitboxHeight);
             if (nameplateHitboxWidth > 0) SetWidth(L, frame_idx, nameplateHitboxWidth);
         }
@@ -502,9 +502,9 @@ static void NameplateStackingUpdate(lua_State* L, NamePlateVars* vars)
     int ySpace = std::atoi(s_cvar_nameplateYSpace->vStr);
     int upperBorder = std::atoi(s_cvar_nameplateUpperBorder->vStr);
     int originPos = std::atoi(s_cvar_nameplateOriginPos->vStr);
-    int speedRaise = std::atoi(s_cvar_nameplateSpeedRaise->vStr);
-    int speedReset = std::atoi(s_cvar_nameplateSpeedReset->vStr);
-    int speedLower = std::atoi(s_cvar_nameplateSpeedLower->vStr);
+    double speedRaise = std::atof(s_cvar_nameplateSpeedRaise->vStr);
+    double speedReset = std::atof(s_cvar_nameplateSpeedReset->vStr);
+    double speedLower = std::atof(s_cvar_nameplateSpeedLower->vStr);
     int nameplateHitboxHeight = std::atoi(s_cvar_nameplateHitboxHeight->vStr);
     int nameplateHitboxWidth = std::atoi(s_cvar_nameplateHitboxWidth->vStr);
     int nameplateFriendlyHitboxHeight = std::atoi(s_cvar_nameplateFriendlyHitboxHeight->vStr);
@@ -513,15 +513,12 @@ static void NameplateStackingUpdate(lua_State* L, NamePlateVars* vars)
     for (size_t i = 0; i < vars->nameplates.size(); ++i) {
         NamePlateEntry& nameplate_1 = vars->nameplates[i];
 
-        if (!nameplateStackFriendly && nameplate_1.isFriendly) {
-            continue;
-        }
-
         lua_pushframe(L, nameplate_1.nameplate);
         int frame_1 = lua_gettop(L);
 
         double width = 0, height = 0;
         GetSize(L, frame_1, width, height);
+
         if (nameplate_1.isFriendly) {
             if (nameplateFriendlyHitboxHeight > 0) SetHeight(L, frame_1, nameplateFriendlyHitboxHeight);
             if (nameplateFriendlyHitboxWidth > 0) SetWidth(L, frame_1, nameplateFriendlyHitboxWidth);
@@ -529,6 +526,13 @@ static void NameplateStackingUpdate(lua_State* L, NamePlateVars* vars)
         else {
             if (nameplateHitboxHeight > 0) SetHeight(L, frame_1, nameplateHitboxHeight);
             if (nameplateHitboxWidth > 0) SetWidth(L, frame_1, nameplateHitboxWidth);
+        }
+
+        if (!nameplateStackFriendly && nameplate_1.isFriendly) {
+            SetClampedToScreen(L, frame_1, true);
+            SetClampRectInsets(L, frame_1, -10, 10, upperBorder, -nameplate_1.ypos - nameplate_1.position - originPos + height / 2);
+            lua_pop(L, 1);
+            continue;
         }
 
         if (nameplate_1.flags & NamePlateFlag_Visible) {
@@ -581,7 +585,6 @@ static void NameplateStackingUpdate(lua_State* L, NamePlateVars* vars)
 static void onUpdateCallback()
 {
     if (!IsInWorld()) return;
-
     static std::vector<std::tuple<Frame*, guid_t, float>> s_plateSort;
 
     lua_State* L = GetLuaState();
@@ -604,6 +607,7 @@ static void onUpdateCallback()
     ObjectMgr::EnumObjects([&vars, player, &posPlayer, &nameplateStackFriendlyMode, &L](guid_t guid) -> bool {
         Unit* unit = (Unit*)ObjectMgr::Get(guid, TYPEMASK_UNIT);
         if (!unit || !unit->nameplate) return true;
+
         auto it = std::find_if(vars.nameplates.begin(), vars.nameplates.end(), [nameplate = unit->nameplate](const NamePlateEntry& entry) {
             return entry.nameplate == nameplate;
             });
@@ -625,7 +629,7 @@ static void onUpdateCallback()
 
                         int frame_idx = lua_gettop(L);
                         if (nameplateStackFriendlyMode == 0) {
-                            it->isFriendly = ObjectMgr::GetCGUnitPlayer()->UnitReaction(unit) > 2 ? true : false;
+                            it->isFriendly = ObjectMgr::GetCGUnitPlayer()->UnitReaction(unit) > 4 ? true : false;
                         }
                         else {
                             it->isFriendly = IsFriendlyByColor(L, frame_idx) == 5;
@@ -684,7 +688,7 @@ static void onUpdateCallback()
                     lua_pushframe(L, entry.nameplate);
                     int frame_idx = lua_gettop(L);
                     if (nameplateStackFriendlyMode == 0) {
-                        entry.isFriendly = ObjectMgr::GetCGUnitPlayer()->UnitReaction(unit) > 2 ? true : false;
+                        entry.isFriendly = ObjectMgr::GetCGUnitPlayer()->UnitReaction(unit) > 4 ? true : false;
                     }
                     else {
                         entry.isFriendly = IsFriendlyByColor(L, frame_idx) == 5;
