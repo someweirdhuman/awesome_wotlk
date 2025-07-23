@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 
+project(AwesomeWotlk)
+
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_SUPPRESS_REGENERATION ON)
