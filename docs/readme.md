@@ -28,7 +28,7 @@ ___
     - UnitTokenFromGUID<br>
     - GetSpellBaseCooldown<br>
     - GetItemInfoInstant<br>
-    - QueueInteraction
+    - QueueInteract
 > - New events:<br>
     - NAME_PLATE_CREATED<br>
     - NAME_PLATE_UNIT_ADDED<br>
