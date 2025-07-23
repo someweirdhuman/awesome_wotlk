@@ -83,7 +83,7 @@ int main(int argc, char** argv)
             "Can't apply patch to {} - {} - {}",
             exePath, msg, lastError);
         return 1;
-    }
+    } 
 
     std::filesystem::path libInGamePath = std::filesystem::path(exePath).parent_path() / AWESOMEWOTLKLIB_DLL;
     std::filesystem::path libInAppPath = std::filesystem::absolute(argv[0]).parent_path() / AWESOMEWOTLKLIB_DLL;

@@ -254,7 +254,7 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
 {
     bool nameplateStackFriendly = std::atoi(s_cvar_nameplateStackFriendly->vStr) == 1;
     auto now = std::chrono::steady_clock::now();
-    double delta = std::chrono::duration<float>(now - gLastCallTime).count() * 500;  // delta
+    double delta = std::chrono::duration<float>(now - gLastCallTime).count() * 500;
     gLastCallTime = now;
 
     for (size_t i = 0; i < vars->nameplates.size(); ++i)
@@ -276,9 +276,8 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
         else {
             entry.xpos = 0.f;
             entry.ypos = 0.f;
-            entry.currentStackOffset = 0.f; 
-            entry.targetStackOffset = 0.f;  
-            entry.isResetting = false; 
+            entry.currentStackOffset = 0.f;
+            entry.targetStackOffset = 0.f;
             SetClampedToScreen(L, frame_idx, false);
             SetClampRectInsets(L, frame_idx, 0, 0, 0, 0);
         }
@@ -309,18 +308,13 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
             continue;
         }
 
-        if (nameplate_1.isResetting) {
-            nameplate_1.targetStackOffset = 0.0;
-            continue; 
-        }
-
         double currentCalculatedTargetOffset = 0.0;
 
         for (size_t j = 0; j < i; ++j) {
             size_t idx2 = sorted_indices[j];
             NamePlateEntry& nameplate_2 = vars->nameplates[idx2];
 
-            if (!(nameplate_2.flags & NamePlateFlag_Visible) || (!nameplateStackFriendly && nameplate_2.isFriendly) || nameplate_2.isResetting) {
+            if (!(nameplate_2.flags & NamePlateFlag_Visible) || (!nameplateStackFriendly && nameplate_2.isFriendly)) {
                 continue;
             }
 
@@ -328,9 +322,7 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
                 double requiredY = (nameplate_2.ypos + nameplate_2.currentStackOffset + ySpace);
                 double requiredOffset = requiredY - nameplate_1.ypos;
 
-                if (requiredOffset > currentCalculatedTargetOffset) {
-                    currentCalculatedTargetOffset = requiredOffset;
-                }
+                currentCalculatedTargetOffset = max(currentCalculatedTargetOffset, requiredOffset);
             }
         }
         nameplate_1.targetStackOffset = currentCalculatedTargetOffset;
@@ -345,7 +337,7 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
     int nameplateHitboxWidth = std::atoi(s_cvar_nameplateHitboxWidth->vStr);
     int nameplateFriendlyHitboxHeight = std::atoi(s_cvar_nameplateFriendlyHitboxHeight->vStr);
     int nameplateFriendlyHitboxWidth = std::atoi(s_cvar_nameplateFriendlyHitboxWidth->vStr);
-    const double nameplateMaxRaiseDistance = std::atoi(s_cvar_nameplateMaxRaiseDistance->vStr); 
+    const double nameplateMaxRaiseDistance = std::atoi(s_cvar_nameplateMaxRaiseDistance->vStr);
 
     for (size_t i = 0; i < vars->nameplates.size(); ++i) {
         NamePlateEntry& nameplate = vars->nameplates[i];
@@ -354,7 +346,7 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
         int frame_idx = lua_gettop(L);
 
         double width = 0, height = 0;
-        GetSize(L, frame_idx, width, height); 
+        GetSize(L, frame_idx, width, height);
 
         if (nameplate.isFriendly) {
             if (nameplateFriendlyHitboxHeight > 0) SetHeight(L, frame_idx, nameplateFriendlyHitboxHeight);
@@ -374,41 +366,33 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
 
         if (nameplate.flags & NamePlateFlag_Visible) {
             double diffToTarget = nameplate.targetStackOffset - nameplate.currentStackOffset;
-            double interpolationSpeed = speedRaise; // Default speed
+            double interpolationSpeed = speedRaise;
 
-            nameplate.isResetting = (std::abs(nameplate.targetStackOffset) < 0.01 && std::abs(nameplate.currentStackOffset) > 0.01);
-
-            if (nameplate.isResetting) {
-                interpolationSpeed = speedReset;
-                interpolationSpeed = min(interpolationSpeed, 0.5); 
-                diffToTarget = 0 - nameplate.currentStackOffset; 
-            }
-            else if (diffToTarget < -0.01) {
+            if (nameplate.targetStackOffset < nameplate.currentStackOffset - 0.01) {
                 interpolationSpeed = speedLower;
+            }
+            else if (nameplate.targetStackOffset > nameplate.currentStackOffset + 0.01) {
+                interpolationSpeed = speedRaise;
+            }
+            else {
+                interpolationSpeed = speedReset;
             }
 
             double interpolationFactor = interpolationSpeed * delta;
 
             const double maxInterpolationFactor = 0.5;
-            interpolationFactor = min(interpolationFactor, maxInterpolationFactor); 
+            interpolationFactor = min(interpolationFactor, maxInterpolationFactor);
 
             nameplate.currentStackOffset += diffToTarget * interpolationFactor;
 
             if (std::abs(nameplate.currentStackOffset - nameplate.targetStackOffset) < 0.01) {
                 nameplate.currentStackOffset = nameplate.targetStackOffset;
-                if (std::abs(nameplate.currentStackOffset) < 0.01) {
-                    nameplate.isResetting = false;
-                }
             }
 
-            if (nameplate.currentStackOffset < 0) {
-                nameplate.currentStackOffset = 0;
+            nameplate.currentStackOffset = max(0.0, nameplate.currentStackOffset);
+            if (nameplateMaxRaiseDistance > 0) {
+                nameplate.currentStackOffset = min(nameplate.currentStackOffset, nameplateMaxRaiseDistance);
             }
-
-            if (nameplate.currentStackOffset > nameplateMaxRaiseDistance && nameplateMaxRaiseDistance > 0) {
-                nameplate.currentStackOffset = nameplateMaxRaiseDistance;
-            }
-
 
             SetClampedToScreen(L, frame_idx, true);
             SetClampRectInsets(L, frame_idx, -10, 10, upperBorder, -nameplate.ypos - nameplate.currentStackOffset - originPos + height / 2);
@@ -416,7 +400,6 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
         else {
             nameplate.currentStackOffset = 0.f;
             nameplate.targetStackOffset = 0.f;
-            nameplate.isResetting = false;
             SetClampedToScreen(L, frame_idx, false);
             SetClampRectInsets(L, frame_idx, 0, 0, 0, 0);
         }
