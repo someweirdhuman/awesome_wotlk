@@ -45,7 +45,6 @@ struct NamePlateEntry {
     //smoth fc stuff
     double currentStackOffset; 
     double targetStackOffset;  
-    bool isResetting; 
 };
 
 // Main state struct
