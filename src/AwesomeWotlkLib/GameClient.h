@@ -41,6 +41,11 @@ struct VecXYZ : Vec3D<float> {
     }
 };
 
+struct TerrainClickEvent {
+    uint64_t GUID;
+    float x, y, z;
+    uint32_t button;
+};
 const char* idToStr[35] = {
     "INVTYPE_NON_EQUIP",              //  0
     "INVTYPE_HEAD",                   //  1
@@ -817,7 +822,10 @@ struct PlayerEntry : UnitEntry {
     PlayerVisibleItem visibleItems[19];
 };
 
-struct ObjectVtbl {};
+struct ObjectVtbl {
+    DWORD gap0[11];
+    void(__thiscall* GetPosition)(Object* self, VecXYZ* pos);
+};
 
 struct UnitVtbl {
     DWORD gap0[11];
@@ -1111,6 +1119,7 @@ namespace ObjectMgr {
     inline int UnitLeftClickByGuid(guid_t guid) { return ((decltype(&UnitLeftClickByGuid))0x005274F0)(guid); }
     inline void SetMouseoverByGuid(guid_t guid, guid_t prev) { return ((decltype(&SetMouseoverByGuid))0x0051F790)(guid, prev); }
     inline guid_t GetTargetGuid() { return *(guid_t*)0x00BD07B0; }
+    inline guid_t GetPlayerGuid() { return *(guid_t*)0x004D3790; }
 
     const uintptr_t nameStore = 0x00C5D938 + 0x8;
     inline const char* UnitNameFromGuid(guid_t guid) {

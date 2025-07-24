@@ -5,6 +5,19 @@
 #include <vector>
 #include <unordered_map>
 
+static constexpr float MAX_TRACE_DISTANCE = 1000.0f;
+static constexpr uint32_t TERRAIN_HIT_FLAGS = 0x10111;
+static bool g_cursorKeywordActive = false;
+
+typedef int(__cdecl* SecureCmdOptionParse_t)(lua_State* L);
+SecureCmdOptionParse_t SecureCmdOptionParse_orig = (SecureCmdOptionParse_t)0x00564AE0;
+
+typedef void(__cdecl* HandleTerrainClick_t)(TerrainClickEvent*);
+static HandleTerrainClick_t HandleTerrainClick_orig = (HandleTerrainClick_t)0x00527830;
+
+typedef uint8_t(__cdecl* TraceLine_t)(C3Vector* start, C3Vector* end, C3Vector* hitPoint, float* distance, uint32_t flag, uint32_t optional);
+static TraceLine_t TraceLine_orig = (TraceLine_t)0x007A3B70;
+
 struct CVarArgs {
     Console::CVar** dst;
     const char* name;
@@ -72,10 +85,12 @@ struct CustomTokenDetails {
     CustomTokenDetails() { memset(this, NULL, sizeof(*this)); }
     CustomTokenDetails(Hooks::FrameScript::TokenGuidGetter* getGuid, Hooks::FrameScript::TokenIdGetter* getId)
         : hasN(false), getGuid(getGuid), getId(getId)
-    {}
+    {
+    }
     CustomTokenDetails(Hooks::FrameScript::TokenNGuidGetter* getGuid, Hooks::FrameScript::TokenIdNGetter* getId)
         : hasN(true), getGuidN(getGuid), getIdN(getId)
-    {}
+    {
+    }
 
     bool hasN;
     union {
@@ -100,7 +115,8 @@ static void GetGuidByKeyword_bulk(const char** stackStr, guid_t* guid)
             if (conv.hasN) {
                 int n = gc_atoi(stackStr);
                 *guid = n > 0 ? conv.getGuidN(n - 1) : 0;
-            } else {
+            }
+            else {
                 *guid = conv.getGuid();
             }
             GetGuidByKeyword_jmpbackaddr = 0x0060AD57;
@@ -140,7 +156,8 @@ static char** GetKeywordsByGuid_hk(guid_t* guid, size_t* size)
             int id = conv.getIdN(*guid);
             if (id >= 0)
                 snprintf(buf[(*size)++], 32, "%s%d", token.c_str(), id + 1);
-        } else {
+        }
+        else {
             if (conv.getId(*guid))
                 snprintf(buf[(*size)++], 32, "%s", token.c_str());
         }
@@ -208,8 +225,152 @@ static void __declspec(naked) LoadCharacters_hk()
     }
 }
 
+static bool TerrainClick(float x, float y, float z) {
+    TerrainClickEvent tc = {};
+    tc.GUID = 0;
+    tc.x = x;
+    tc.y = y;
+    tc.z = z;
+    tc.button = 1;
+
+    HandleTerrainClick_orig(&tc);
+    return true;
+}
+
+static bool TraceLine(const C3Vector& start, const C3Vector& end, uint32_t hitFlags,
+    C3Vector& intersectionPoint, float& completedBeforeIntersection) {
+    completedBeforeIntersection = 1.0f;
+    intersectionPoint = { 0.0f, 0.0f, 0.0f };
+
+    uint8_t result = TraceLine_orig(
+        const_cast<C3Vector*>(&start),
+        const_cast<C3Vector*>(&end),
+        &intersectionPoint,
+        &completedBeforeIntersection,
+        hitFlags,
+        0
+    );
+
+    if (result != 0 && result != 1)
+        return false;
+
+    completedBeforeIntersection *= 100.0f;
+    return static_cast<bool>(result);
+}
+
+static bool GetCursorWorldPosition(VecXYZ& worldPos) {
+    Camera* camera = GetActiveCamera();
+    if (!camera)
+        return false;
+
+    POINT cursorPos;
+    if (!GetCursorPos(&cursorPos))
+        return false;
+
+    HWND activeWindow = GetActiveWindow();
+    if (!activeWindow)
+        return false;
+
+    ScreenToClient(activeWindow, &cursorPos);
+
+    RECT clientRect;
+    if (!GetClientRect(activeWindow, &clientRect))
+        return false;
+
+    float screenWidth = static_cast<float>(clientRect.right - clientRect.left);
+    float screenHeight = static_cast<float>(clientRect.bottom - clientRect.top);
+
+    if (screenWidth <= 0.0f || screenHeight <= 0.0f)
+        return false;
+
+    float nx = (static_cast<float>(cursorPos.x) / screenWidth) * 2.0f - 1.0f;
+    float ny = 1.0f - (static_cast<float>(cursorPos.y) / screenHeight) * 2.0f;
+
+    float tanHalfFov = tanf(camera->fovInRadians * 0.3f);
+    float aspect = screenWidth / screenHeight;
+    VecXYZ localRay = {
+        nx * aspect * tanHalfFov,
+        ny * tanHalfFov,
+        1.0f
+    };
+
+    const float* cameraMatrix = reinterpret_cast<const float*>(reinterpret_cast<uintptr_t>(camera) + 0x14);
+
+    VecXYZ dir;
+    dir.x = (-cameraMatrix[3]) * localRay.x + cameraMatrix[6] * localRay.y + cameraMatrix[0] * localRay.z;
+    dir.y = (-cameraMatrix[4]) * localRay.x + cameraMatrix[7] * localRay.y + cameraMatrix[1] * localRay.z;
+    dir.z = (-cameraMatrix[5]) * localRay.x + cameraMatrix[8] * localRay.y + cameraMatrix[2] * localRay.z;
+
+    VecXYZ farPoint = {
+        camera->pos.x + dir.x * MAX_TRACE_DISTANCE,
+        camera->pos.y + dir.y * MAX_TRACE_DISTANCE,
+        camera->pos.z + dir.z * MAX_TRACE_DISTANCE
+    };
+
+    C3Vector start = { camera->pos.x, camera->pos.y, camera->pos.z };
+    C3Vector end = { farPoint.x, farPoint.y, farPoint.z };
+    C3Vector hitPoint;
+    float distance;
+
+    bool hit = TraceLine(start, end, TERRAIN_HIT_FLAGS, hitPoint, distance);
+    if (hit) {
+        worldPos.x = hitPoint.X;
+        worldPos.y = hitPoint.Y;
+        worldPos.z = hitPoint.Z;
+        return true;
+    }
+
+    return false;
+}
+
+static int __cdecl SecureCmdOptionParse_hk(lua_State* L) {
+    const char* options = luaL_checkstring(L, 1);
+
+    if (options) {
+        if (strstr(options, "@cursor") || strstr(options, "target=cursor"))
+            g_cursorKeywordActive = true;
+
+        std::string modifiedOptions(options);
+
+        size_t pos = 0;
+        while ((pos = modifiedOptions.find("@cursor", pos)) != std::string::npos) {
+            modifiedOptions.replace(pos, 7, "@player");
+            pos += 8;
+        }
+
+        pos = 0;
+        while ((pos = modifiedOptions.find("target=cursor", pos)) != std::string::npos) {
+            modifiedOptions.replace(pos, 13, "target=player");
+            pos += 13;
+        }
+
+        lua_pop(L, 1);
+        lua_pushstring(L, modifiedOptions.c_str());
+    }
+    return SecureCmdOptionParse_orig(L);
+}
+
+static void onUpdateCallback() {
+    if (!IsInWorld())
+        return;
+
+    if (g_cursorKeywordActive) {
+        const uint32_t spellTargetingFlag = *reinterpret_cast<const uint32_t*>(0x00D3F4E4);
+        const uint32_t spellTargetingState = *reinterpret_cast<const uint32_t*>(0x00D3F4E0);
+
+        if (spellTargetingFlag != 0 && (spellTargetingState & 0x40) != 0) {
+            VecXYZ cursorPos;
+            if (GetCursorWorldPosition(cursorPos)) {
+                TerrainClick(cursorPos.x, cursorPos.y, cursorPos.z);
+            }
+        }
+        g_cursorKeywordActive = false;
+    }
+}
+
 void Hooks::initialize()
 {
+    Hooks::FrameScript::registerOnUpdate(onUpdateCallback);
     DetourAttach(&(LPVOID&)CVars_Initialize_orig, CVars_Initialize_hk);
     DetourAttach(&(LPVOID&)FrameScript_FireOnUpdate_orig, FrameScript_FireOnUpdate_hk);
     DetourAttach(&(LPVOID&)FrameScript_FillEvents_orig, FrameScript_FillEvents_hk);
@@ -218,4 +379,5 @@ void Hooks::initialize()
     DetourAttach(&(LPVOID&)GetKeywordsByGuid_orig, GetKeywordsByGuid_hk);
     DetourAttach(&(LPVOID&)LoadGlueXML_orig, LoadGlueXML_hk);
     DetourAttach(&(LPVOID&)LoadCharacters_orig, LoadCharacters_hk);
+    DetourAttach(&(LPVOID&)SecureCmdOptionParse_orig, SecureCmdOptionParse_hk);
 }
