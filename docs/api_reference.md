@@ -287,6 +287,10 @@ Returns id, type, sub-type, equipment slot, icon, class id, and sub-class id if 
 
 # Misc
 
+## Cursor`macro`
+
+Backported `cursor` macro conditional for quick-casting aoe spells
+
 ## FlashWindow`API`
 Arguments: `none`
 
