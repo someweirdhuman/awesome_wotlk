@@ -334,13 +334,13 @@ static int __cdecl SecureCmdOptionParse_hk(lua_State* L) {
 
         size_t pos = 0;
         while ((pos = modifiedOptions.find("@cursor", pos)) != std::string::npos) {
-            modifiedOptions.replace(pos, 7, "@player");
+            modifiedOptions.replace(pos, 7, "");
             pos += 8;
         }
 
         pos = 0;
         while ((pos = modifiedOptions.find("target=cursor", pos)) != std::string::npos) {
-            modifiedOptions.replace(pos, 13, "target=player");
+            modifiedOptions.replace(pos, 13, "");
             pos += 13;
         }
 
