@@ -89,6 +89,169 @@ static int C_NamePlate_GetNamePlateTokenByGUID(lua_State* L)
     return 1;
 }
 
+static int C_NamePlate_GetNamePlatesDistance(lua_State* L)
+{
+    lua_createtable(L, 0, 0);
+    NamePlateVars& vars = lua_findorcreatevars(L);
+    Player* player = ObjectMgr::GetPlayer();
+    if (player) {
+        VecXYZ posPlayer;
+        player->ToUnit()->vmt->GetPosition(player->ToUnit(), &posPlayer);
+        for (NamePlateEntry& entry : vars.nameplates) {
+            if ((entry.flags & NamePlateFlag_Visible) && entry.guid) {
+                Unit* unit = (Unit*)ObjectMgr::Get(entry.guid, TYPEMASK_UNIT);
+                if (unit) {
+                    VecXYZ unitPos;
+                    unit->vmt->GetPosition(unit, &unitPos);
+                    float distance = posPlayer.distance(unitPos);
+                    lua_pushframe(L, entry.nameplate);
+                    lua_pushnumber(L, distance);
+                    lua_rawset(L, -3);
+                }
+            }
+        }
+    }
+    return 1;
+}
+
+static int C_NamePlate_GetNamePlatesDistanceList(lua_State* L)
+{
+    lua_createtable(L, 0, 0);
+    NamePlateVars& vars = lua_findorcreatevars(L);
+    Player* player = ObjectMgr::GetPlayer();
+    if (player) {
+        VecXYZ posPlayer;
+        player->ToUnit()->vmt->GetPosition(player->ToUnit(), &posPlayer);
+        int id = 1;
+        for (NamePlateEntry& entry : vars.nameplates) {
+            if ((entry.flags & NamePlateFlag_Visible) && entry.guid) {
+                Unit* unit = (Unit*)ObjectMgr::Get(entry.guid, TYPEMASK_UNIT);
+                if (unit) {
+                    VecXYZ unitPos;
+                    unit->vmt->GetPosition(unit, &unitPos);
+                    float distance = posPlayer.distance(unitPos);
+                    lua_createtable(L, 0, 2);
+                    lua_pushframe(L, entry.nameplate);
+                    lua_setfield(L, -2, "nameplate");
+                    lua_pushnumber(L, distance);
+                    lua_setfield(L, -2, "distance");
+                    lua_rawseti(L, -2, id++);
+                }
+            }
+        }
+    }
+    return 1;
+}
+
+static int C_NamePlate_GetDistanceForUnit(lua_State* L)
+{
+    const char* unitName = luaL_checkstring(L, 1);
+    guid_t guid = ObjectMgr::GetGuidByUnitID(unitName);
+    if (!guid) {
+        lua_pushnil(L);
+        return 1;
+    }
+    NamePlateEntry* entry = getEntryByGuid(guid);
+    if (!entry) {
+        lua_pushnil(L);
+        return 1;
+    }
+    Player* player = ObjectMgr::GetPlayer();
+    if (player) {
+        VecXYZ posPlayer;
+        player->ToUnit()->vmt->GetPosition(player->ToUnit(), &posPlayer);
+        Unit* unit = (Unit*)ObjectMgr::Get(guid, TYPEMASK_UNIT);
+        if (unit) {
+            VecXYZ unitPos;
+            unit->vmt->GetPosition(unit, &unitPos);
+            float distance = posPlayer.distance(unitPos);
+            lua_pushnumber(L, distance);
+        }
+        else {
+            lua_pushnil(L);
+        }
+    }
+    else {
+        lua_pushnil(L);
+    }
+    return 1;
+}
+
+static int C_NamePlate_GetDistanceForGUID(lua_State* L)
+{
+    const char* guidStr = luaL_checkstring(L, 1);
+    if (!guidStr || strncmp(guidStr, "0x", 2) != 0) {
+        lua_pushnil(L);
+        return 1;
+    }
+    guid_t guid = 0;
+    int matched = sscanf(guidStr, "0x%llx", &guid);
+    if (matched != 1 || guid == 0) {
+        lua_pushnil(L);
+        return 1;
+    }
+    NamePlateEntry* entry = getEntryByGuid(guid);
+    if (!entry) {
+        lua_pushnil(L);
+        return 1;
+    }
+    Player* player = ObjectMgr::GetPlayer();
+    if (!player) {
+        lua_pushnil(L);
+        return 1;
+    }
+    VecXYZ posPlayer;
+    player->ToUnit()->vmt->GetPosition(player->ToUnit(), &posPlayer);
+
+    Unit* unit = (Unit*)ObjectMgr::Get(guid, TYPEMASK_UNIT);
+    if (!unit) {
+        lua_pushnil(L);
+        return 1;
+    }
+    VecXYZ unitPos;
+    unit->vmt->GetPosition(unit, &unitPos);
+    float distance = posPlayer.distance(unitPos);
+    lua_pushnumber(L, distance);
+    return 1;
+}
+
+static int C_NamePlate_GetDistanceForNamePlate(lua_State* L)
+{
+    NamePlateVars& vars = lua_findorcreatevars(L);
+    Player* player = ObjectMgr::GetPlayer();
+    if (!player) {
+        lua_pushnil(L);
+        return 1;
+    }
+    if (!lua_istable(L, 1)) {
+        lua_pushnil(L);
+        return 1;
+    }
+    lua_rawgeti(L, 1, 0);
+    if (!lua_isuserdata(L, -1)) {
+        lua_pushnil(L);
+        return 1;
+    }
+    void* nameplateUserdata = lua_touserdata(L, -1);
+    lua_pop(L, 1);
+    VecXYZ posPlayer;
+    player->ToUnit()->vmt->GetPosition(player->ToUnit(), &posPlayer);
+    for (NamePlateEntry& entry : vars.nameplates) {
+        if ((entry.flags & NamePlateFlag_Visible) && entry.guid && entry.nameplate == nameplateUserdata) {
+            Unit* unit = (Unit*)ObjectMgr::Get(entry.guid, TYPEMASK_UNIT);
+            if (unit) {
+                VecXYZ unitPos;
+                unit->vmt->GetPosition(unit, &unitPos);
+                float distance = posPlayer.distance(unitPos);
+                lua_pushnumber(L, distance);
+                return 1;
+            }
+        }
+    }
+    lua_pushnil(L);
+    return 1;
+}
+
 static guid_t getTokenGuid(int id)
 {
     NamePlateVars& vars = lua_findorcreatevars(GetLuaState());
@@ -239,6 +402,11 @@ static int lua_openlibnameplates(lua_State* L)
         {"GetNamePlateForUnit", C_NamePlate_GetNamePlateForUnit},
         {"GetNamePlateByGUID", C_NamePlate_GetNamePlateByGUID},
         {"GetNamePlateTokenByGUID", C_NamePlate_GetNamePlateTokenByGUID},
+        {"GetNamePlatesDistance", C_NamePlate_GetNamePlatesDistance},
+        {"GetNamePlatesDistanceList", C_NamePlate_GetNamePlatesDistanceList},
+        {"GetDistanceForUnit", C_NamePlate_GetDistanceForUnit},
+        {"GetDistanceForGUID", C_NamePlate_GetDistanceForGUID},
+        {"GetDistanceForNamePlate", C_NamePlate_GetDistanceForNamePlate},
     };
 
     lua_createtable(L, 0, std::size(methods));
