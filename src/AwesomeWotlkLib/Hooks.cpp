@@ -323,30 +323,41 @@ static bool GetCursorWorldPosition(VecXYZ& worldPos) {
     return false;
 }
 
+inline int __fastcall Spell_C_CancelPlayerSpells() {
+    return ((decltype(&Spell_C_CancelPlayerSpells))0x00809AC0)();
+}
+
+static bool isSpellReadied() {
+    unsigned int spellTargetingFlag = *(unsigned int*)0x00D3F4E4;
+    unsigned int spellTargetingState = *(unsigned int*)0x00D3F4E0;
+    return spellTargetingFlag != 0 && (spellTargetingState & 0x40) != 0;
+}
+
 static int __cdecl SecureCmdOptionParse_hk(lua_State* L) {
-    const char* options = luaL_checkstring(L, 1);
+    std::string_view options = luaL_checkstring(L, 1);
 
-    if (options) {
-        if (strstr(options, "@cursor") || strstr(options, "target=cursor"))
-            g_cursorKeywordActive = true;
-
-        std::string modifiedOptions(options);
-
-        size_t pos = 0;
-        while ((pos = modifiedOptions.find("@cursor", pos)) != std::string::npos) {
-            modifiedOptions.replace(pos, 7, "");
-            pos += 8;
+    if (options.find("@cursor") != std::string_view::npos || options.find("target=cursor") != std::string_view::npos) {
+        if (isSpellReadied()) {
+            Spell_C_CancelPlayerSpells();
         }
-
-        pos = 0;
-        while ((pos = modifiedOptions.find("target=cursor", pos)) != std::string::npos) {
-            modifiedOptions.replace(pos, 13, "");
-            pos += 13;
-        }
-
-        lua_pop(L, 1);
-        lua_pushstring(L, modifiedOptions.c_str());
+        g_cursorKeywordActive = true;
     }
+
+    std::string modified(options);
+
+    auto remove_all = [](std::string& str, std::string_view to_remove) {
+        size_t pos = 0;
+        while ((pos = str.find(to_remove, pos)) != std::string::npos) {
+            str.erase(pos, to_remove.length());
+        }
+    };
+
+    remove_all(modified, "@cursor");
+    remove_all(modified, "target=cursor");
+
+    lua_pop(L, 1);
+    lua_pushstring(L, modified.c_str());
+
     return SecureCmdOptionParse_orig(L);
 }
 
@@ -355,10 +366,7 @@ static void onUpdateCallback() {
         return;
 
     if (g_cursorKeywordActive) {
-        const uint32_t spellTargetingFlag = *reinterpret_cast<const uint32_t*>(0x00D3F4E4);
-        const uint32_t spellTargetingState = *reinterpret_cast<const uint32_t*>(0x00D3F4E0);
-
-        if (spellTargetingFlag != 0 && (spellTargetingState & 0x40) != 0) {
+        if (isSpellReadied()) {
             VecXYZ cursorPos;
             if (GetCursorWorldPosition(cursorPos)) {
                 TerrainClick(cursorPos.x, cursorPos.y, cursorPos.z);
