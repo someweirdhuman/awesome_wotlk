@@ -8,6 +8,7 @@
 static constexpr float MAX_TRACE_DISTANCE = 1000.0f;
 static constexpr uint32_t TERRAIN_HIT_FLAGS = 0x10111;
 static bool g_cursorKeywordActive = false;
+static bool g_playerLocationKeywordActive = false;
 
 typedef int(__cdecl* SecureCmdOptionParse_t)(lua_State* L);
 SecureCmdOptionParse_t SecureCmdOptionParse_orig = (SecureCmdOptionParse_t)0x00564AE0;
@@ -343,6 +344,12 @@ static int __cdecl SecureCmdOptionParse_hk(lua_State* L) {
         }
     }
 
+    if (options.find("@playerlocation") != std::string_view::npos || options.find("target=playerlocation") != std::string_view::npos) {
+        if (!isSpellReadied()) {
+            g_playerLocationKeywordActive = true;
+        }
+    }
+
     std::string modified(options);
 
     auto remove_all = [](std::string& str, std::string_view to_remove) {
@@ -354,6 +361,8 @@ static int __cdecl SecureCmdOptionParse_hk(lua_State* L) {
 
     remove_all(modified, "@cursor");
     remove_all(modified, "target=cursor");
+    remove_all(modified, "@playerlocation");
+    remove_all(modified, "target=playerlocation");
 
     lua_pop(L, 1);
     lua_pushstring(L, modified.c_str());
@@ -373,6 +382,16 @@ static void onUpdateCallback() {
             }
         }
         g_cursorKeywordActive = false;
+    }
+
+    if (g_playerLocationKeywordActive) {
+        CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
+        if (player && isSpellReadied()) {
+            VecXYZ posPlayer;
+            player->GetPosition(*reinterpret_cast<C3Vector*>(&posPlayer));
+            TerrainClick(posPlayer.x, posPlayer.y, posPlayer.z);
+        }
+        g_playerLocationKeywordActive = false;
     }
 }
 
