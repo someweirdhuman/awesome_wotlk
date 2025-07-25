@@ -335,39 +335,38 @@ static bool isSpellReadied() {
 }
 
 static int __cdecl SecureCmdOptionParse_hk(lua_State* L) {
-    std::string_view options = luaL_checkstring(L, 1);
+    int result = SecureCmdOptionParse_orig(L);
 
-    if (options.find("@cursor") != std::string_view::npos || options.find("target=cursor") != std::string_view::npos) {
-        if (!isSpellReadied()) {
-            //Spell_C_CancelPlayerSpells();
-            g_cursorKeywordActive = true;
-        }
+    if (lua_gettop(L) < 3 || !lua_isstring(L, 2) || !lua_isstring(L, 3))
+        return result;
+
+    std::string_view parsed_target_view = lua_tostringnew(L, 3);
+    bool is_cursor = std::equal(parsed_target_view.begin(), parsed_target_view.end(),
+        "cursor", "cursor" + 6,
+        [](char a, char b) { return std::tolower(a) == b; });
+    bool is_playerlocation = std::equal(parsed_target_view.begin(), parsed_target_view.end(),
+        "playerlocation", "playerlocation" + 14,
+        [](char a, char b) { return std::tolower(a) == b; });
+
+    if (!is_cursor && !is_playerlocation)
+        return result;
+
+    if (is_cursor) {
+        g_cursorKeywordActive = true;
+    }
+    else if (is_playerlocation) {
+        g_playerLocationKeywordActive = true;
     }
 
-    if (options.find("@playerlocation") != std::string_view::npos || options.find("target=playerlocation") != std::string_view::npos) {
-        if (!isSpellReadied()) {
-            g_playerLocationKeywordActive = true;
-        }
-    }
+    std::string parsed_result = lua_tostringnew(L, 2);
+    std::string orig_string = lua_tostringnew(L, 1);
 
-    std::string modified(options);
+    lua_pop(L, 3);
+    lua_pushstring(L, orig_string.c_str());
+    lua_pushstring(L, parsed_result.c_str());
+    lua_pushnil(L);
 
-    auto remove_all = [](std::string& str, std::string_view to_remove) {
-        size_t pos = 0;
-        while ((pos = str.find(to_remove, pos)) != std::string::npos) {
-            str.erase(pos, to_remove.length());
-        }
-    };
-
-    remove_all(modified, "@cursor");
-    remove_all(modified, "target=cursor");
-    remove_all(modified, "@playerlocation");
-    remove_all(modified, "target=playerlocation");
-
-    lua_pop(L, 1);
-    lua_pushstring(L, modified.c_str());
-
-    return SecureCmdOptionParse_orig(L);
+    return result;
 }
 
 static void onUpdateCallback() {
