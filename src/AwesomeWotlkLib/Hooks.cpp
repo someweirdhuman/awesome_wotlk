@@ -323,9 +323,9 @@ static bool GetCursorWorldPosition(VecXYZ& worldPos) {
     return false;
 }
 
-inline int __fastcall Spell_C_CancelPlayerSpells() {
+/*inline int __fastcall Spell_C_CancelPlayerSpells() {
     return ((decltype(&Spell_C_CancelPlayerSpells))0x00809AC0)();
-}
+}*/
 
 static bool isSpellReadied() {
     unsigned int spellTargetingFlag = *(unsigned int*)0x00D3F4E4;
@@ -337,10 +337,10 @@ static int __cdecl SecureCmdOptionParse_hk(lua_State* L) {
     std::string_view options = luaL_checkstring(L, 1);
 
     if (options.find("@cursor") != std::string_view::npos || options.find("target=cursor") != std::string_view::npos) {
-        if (isSpellReadied()) {
-            Spell_C_CancelPlayerSpells();
+        if (!isSpellReadied()) {
+            //Spell_C_CancelPlayerSpells();
+            g_cursorKeywordActive = true;
         }
-        g_cursorKeywordActive = true;
     }
 
     std::string modified(options);
