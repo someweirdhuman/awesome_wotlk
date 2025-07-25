@@ -1,7 +1,7 @@
 #include "Spell.h"
 #include "Hooks.h"
 #include "GameClient.h"
-
+#include <Detours/detours.h>
 
 uintptr_t spellTablePtr = GetDbcTable(0x00000194);
 static int lua_GetSpellBaseCooldown(lua_State* L) {
@@ -43,6 +43,30 @@ static int lua_GetSpellBaseCooldown(lua_State* L) {
     return 2;
 }
 
+typedef int(__cdecl* SpellCastFn)(int a1, int a2, int a3, int a4, int a5);
+static SpellCastFn Spell_OnCastOriginal = (SpellCastFn)0x0080DA40;
+int __cdecl Spell_OnCastHook(int spellId, int a2, int a3, int a4, int a5)
+{
+    bool success = Spell_OnCastOriginal(spellId, a2, a3, a4, a5);
+    if (success && Spell::IsForm(spellId))
+    {
+        CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
+        if (player)
+        {
+            auto maybeForm = Spell::GetFormFromSpell(spellId);
+            if (maybeForm.has_value())
+            {
+                Spell::ShapeshiftForm form = maybeForm.value();
+                uint32_t formValue = static_cast<uint32_t>(form);
+
+                player->SetValueBytes(UNIT_FIELD_BYTES_2, OFFSET_SHAPESHIFT_FORM, formValue);
+            }
+        }
+    }
+
+    return success;
+}
+
 static int lua_openmisclib(lua_State* L)
 {
     lua_pushcfunction(L, lua_GetSpellBaseCooldown);
@@ -53,4 +77,6 @@ static int lua_openmisclib(lua_State* L)
 void Spell::initialize()
 {
     Hooks::FrameXML::registerLuaLib(lua_openmisclib);
+
+    DetourAttach(&(LPVOID&)Spell_OnCastOriginal, Spell_OnCastHook);
 }

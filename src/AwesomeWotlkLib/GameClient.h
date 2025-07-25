@@ -866,6 +866,21 @@ class CGObject_C // sizeof(CGObject_C) == 0xD0
 public:
     template <typename T> T& GetValue(uint32_t index) const { return *((T*)&m_data[index]); }
 
+    void SetValueBytes(uint32_t index, uint8_t offset, uint8_t value)
+    {
+        if (!m_data) return;
+        if (offset >= 4) return;
+
+        uint32_t& current = m_data[index];
+
+        uint8_t currentByte = (current >> (offset * 8)) & 0xFF;
+        if (currentByte != value)
+        {
+            current &= ~(0xFFu << (offset * 8));
+            current |= (uint32_t(value) << (offset * 8));
+        }
+    }
+
     virtual ~CGObject_C(); // 0
     virtual void Disable(); // 1
     virtual void Reenable(); // 2
