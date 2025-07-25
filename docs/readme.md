@@ -11,6 +11,7 @@ ___
 > - Changing cameras FOV
 > - Improved nameplates sorting
 > - Backported `cursor` macro conditional
+> - Implemented `playerlocation` macro conditional
 > - Fixed client bug where client couldnt cast second ability after changing form or stance, now `/cast battle stance /cast charge` works in a single click
 > - New API:<br>
     - C_NamePlate.GetNamePlates<br>
