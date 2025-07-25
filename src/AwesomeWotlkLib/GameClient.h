@@ -1315,6 +1315,7 @@ inline void SelectCharacter(int idx)
 
 inline void EnterWorld(int idx)
 {
+    //lasthardware action = current timestamp
     *(int*)0x00B499A4 = *(int*)0x00B1D618;
     *(int*)0x00AC436C = idx;
     ((void(*)())0x004D9BD0)();
