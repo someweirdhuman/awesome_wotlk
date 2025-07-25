@@ -10,7 +10,8 @@ ___
 > - Auto Login (Through cmdline/shortcuts, Usage: `Wow.exe -login "LOGIN" -password "PASSWORD" -realmlist "REALMLIST" -realmname "REALMNAME" `)
 > - Changing cameras FOV
 > - Improved nameplates sorting
-> - Backported `@cursor` macro conditional
+> - Backported `cursor` macro conditional
+> - Fixed client bug where client couldnt cast second ability after changing form or stance, now `/cast battle stance /cast charge` works in a single click
 > - New API:<br>
     - C_NamePlate.GetNamePlates<br>
     - C_NamePlate.GetNamePlateForUnit<br>

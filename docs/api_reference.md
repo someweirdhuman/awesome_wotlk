@@ -289,8 +289,9 @@ Returns id, type, sub-type, equipment slot, icon, class id, and sub-class id if 
 
 ## Cursor`macro`
 
-Backported `@cursor` macro conditional for quick-casting aoe spells<br>
-/cast [@cursor] Blizzard
+Backported `cursor` macro conditional for quick-casting aoe spells<br>
+/cast [@cursor] Blizzard<br>
+/cast [target=cursor] Flare
 
 ## FlashWindow`API`
 Arguments: `none`
