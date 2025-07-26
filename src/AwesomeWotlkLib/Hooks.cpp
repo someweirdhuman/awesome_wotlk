@@ -264,26 +264,16 @@ static bool GetCursorWorldPosition(VecXYZ& worldPos) {
     if (!camera)
         return false;
 
-    POINT cursorPos; // replace with in-game data
-    if (!GetCursorPos(&cursorPos))
+    DWORD basePtr = *(DWORD*)UIBase;
+    if (!basePtr)
         return false;
 
-    HWND activeWindow = GetActiveWindow();
-    if (!activeWindow)
-        return false;
-
-    ScreenToClient(activeWindow, &cursorPos);
-
-    int screenWidth = *reinterpret_cast<int*>(ScreenWidth);
-    int screenHeight = *reinterpret_cast<int*>(ScreenHeight);
-
-    float nx = (static_cast<float>(cursorPos.x) / screenWidth) * 2.0f - 1.0f;
-    float ny = 1.0f - (static_cast<float>(cursorPos.y) / screenHeight) * 2.0f;
+    float nx = *reinterpret_cast<float*>(basePtr + 4644) * 2.0f - 1.0f; // x perc
+    float ny = *reinterpret_cast<float*>(basePtr + 4648) * 2.0f - 1.0f; // y perc
 
     float tanHalfFov = tanf(camera->fovInRadians * 0.3f);
-    float aspect = camera->aspect;
     VecXYZ localRay = {
-        nx * aspect * tanHalfFov,
+        nx * camera->aspect* tanHalfFov,
         ny * tanHalfFov,
         1.0f
     };
@@ -375,8 +365,7 @@ static void onUpdateCallback() {
         }
         g_cursorKeywordActive = false;
     }
-
-    if (g_playerLocationKeywordActive) {
+    else if (g_playerLocationKeywordActive) {
         CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
         if (player && isSpellReadied()) {
             VecXYZ posPlayer;
