@@ -1352,6 +1352,7 @@ struct Camera {
     VecXYZ pos;
     uint32_t gap14[11];
     float fovInRadians;
+    float aspect;
 };
 
 inline Camera* GetActiveCamera() { return ((decltype(&GetActiveCamera))0x004F5960)(); }
