@@ -268,6 +268,26 @@ struct SpellRec {
 };
 static_assert(sizeof(SpellRec) == 0x2A8);
 
+enum UIFrame {
+    CurrentFrame_Ptr = 0x00B499A8,
+    CurrentFrame_Offset = 0x78,
+    UIBase = 0x00B499A8,
+    FirstFrame = 0x0CD4,
+    NextFrame = 0x0CCC,
+    UnkDivWidth = 0x00AC0CB4,
+    UnkDivHeight = 0x00AC0CB8,
+    ScreenWidth = 0x00C7D2C8,
+    ScreenHeight = 0x00C7D2C4,
+    FrameLeft = 0x68,
+    FrameRight = 0x70,
+    FrameTop = 0x6C,
+    FrameBottom = 0x64,
+    ParentPtr = 0x94,
+    EffectiveScale = 0x7C,
+    Name = 0x1C,
+    Visible = 0xE0,
+};
+
 enum UnitFlags : uint32_t {
     UNIT_FLAG_SERVER_CONTROLLED = 0x00000001,           // set only when unit movement is controlled by server - by SPLINE/MONSTER_MOVE packets, together with UNIT_FLAG_STUNNED; only set to units controlled by client; client function CGUnit_C::IsClientControlled returns false when set for owner
     UNIT_FLAG_NON_ATTACKABLE = 0x00000002,           // not attackable, set when creature starts to cast spells with SPELL_EFFECT_SPAWN and cast time, removed when spell hits caster, original name is UNIT_FLAG_SPAWNING. Rename when it will be removed from all scripts
