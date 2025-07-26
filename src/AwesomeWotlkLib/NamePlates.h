@@ -146,6 +146,7 @@ inline bool GetPoint(lua_State* L, int frame_idx, int point_index,
     return true;
 }
 
+//todo: 0x00489FA0 void __thiscall CLayoutFrame::SetHeight(CLayoutFrame *this, float height)
 inline bool SetHeight(lua_State* L, int frame_idx, double height)
 {
     lua_getfield(L, frame_idx, "SetHeight");  // push frame.SetHeight function
@@ -167,6 +168,7 @@ inline bool SetHeight(lua_State* L, int frame_idx, double height)
     return true;
 }
 
+//todo: 00489F80 void __thiscall CLayoutFrame::SetWidth(CLayoutFrame *this, float width)
 inline bool SetWidth(lua_State* L, int frame_idx, double height)
 {
     lua_getfield(L, frame_idx, "SetWidth");  // push frame.SetHeight function
@@ -188,6 +190,7 @@ inline bool SetWidth(lua_State* L, int frame_idx, double height)
     return true;
 }
 
+//todo: 0048A260 void __thiscall CLayoutFrame::SetPoint(CLayoutFrame *this, ANCHORPOINT point, CLayoutFrame *relative, ANCHORPOINT relativePoint, float offsetX, float offsetY, int shouldResize)
 inline bool SetPoint(
     lua_State* L,
     int frame_idx,
@@ -226,7 +229,7 @@ inline bool SetPoint(
     return true;
 }
 
-
+//todo: 0x0048EB00 void CSimpleFrame::SetClampRectInsets(CSimpleFrame *this, float xMin, float xMax, float yMax, float yMin)
 inline bool SetClampRectInsets(lua_State* L, int frame_idx, double left, double right, double top, double bottom)
 {
     lua_getfield(L, frame_idx, "SetClampRectInsets");
@@ -249,6 +252,7 @@ inline bool SetClampRectInsets(lua_State* L, int frame_idx, double left, double 
     return true;
 }
 
+//todo 0048A130 void __thiscall CLayoutFrame::SetClampedToScreen(CLayoutFrame *this, int clamped)
 inline bool SetClampedToScreen(lua_State* L, int frame_idx, bool clamped)
 {
     lua_getfield(L, frame_idx, "SetClampedToScreen");
@@ -268,6 +272,7 @@ inline bool SetClampedToScreen(lua_State* L, int frame_idx, bool clamped)
     return true;
 }
 
+//todo: 0x00489FF0 void __thiscall CLayoutFrame::GetSize(CLayoutFrame *this, float *width, float *height, int ignoreRect)
 inline bool GetSize(lua_State* L, int frame_idx, double& width, double& height)
 {
     lua_getfield(L, frame_idx, "GetSize");
@@ -299,6 +304,7 @@ inline bool GetSize(lua_State* L, int frame_idx, double& width, double& height)
 }
 inline int IsFriendlyByColor(lua_State* L, int frame_idx)
 {
+    //CSimpleFrame+0x278 = TSList https://github.com/blinkysc/thunderbrew/blob/master/src/ui/CSimpleFrame.hpp#L78
     lua_getfield(L, frame_idx, "GetChildren");
     if (!lua_isfunction(L, -1)) {
         lua_pop(L, 1);
