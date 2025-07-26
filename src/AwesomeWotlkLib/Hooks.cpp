@@ -274,21 +274,14 @@ static bool GetCursorWorldPosition(VecXYZ& worldPos) {
 
     ScreenToClient(activeWindow, &cursorPos);
 
-    RECT clientRect;
-    if (!GetClientRect(activeWindow, &clientRect))
-        return false;
-
-    float screenWidth = static_cast<float>(clientRect.right - clientRect.left);
-    float screenHeight = static_cast<float>(clientRect.bottom - clientRect.top);
-
-    if (screenWidth <= 0.0f || screenHeight <= 0.0f)
-        return false;
+    int screenWidth = *reinterpret_cast<int*>(ScreenWidth);
+    int screenHeight = *reinterpret_cast<int*>(ScreenHeight);
 
     float nx = (static_cast<float>(cursorPos.x) / screenWidth) * 2.0f - 1.0f;
     float ny = 1.0f - (static_cast<float>(cursorPos.y) / screenHeight) * 2.0f;
 
     float tanHalfFov = tanf(camera->fovInRadians * 0.3f);
-    float aspect = screenWidth / screenHeight;
+    float aspect = camera->aspect;
     VecXYZ localRay = {
         nx * aspect * tanHalfFov,
         ny * tanHalfFov,
