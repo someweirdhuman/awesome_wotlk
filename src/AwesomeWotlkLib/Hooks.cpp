@@ -264,7 +264,7 @@ static bool GetCursorWorldPosition(VecXYZ& worldPos) {
     if (!camera)
         return false;
 
-    POINT cursorPos;
+    POINT cursorPos; // replace with in-game data
     if (!GetCursorPos(&cursorPos))
         return false;
 
