@@ -2,7 +2,7 @@
 -- Contains all functions for creating and managing UI elements.
 
 local addonName, ACVar = ...
-local L = ACVar.L
+local L = ACVar.L or {}
 local CONSTANTS = ACVar.CONSTANTS
 local CVARS = ACVar.CVARS
 
