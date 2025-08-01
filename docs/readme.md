@@ -73,7 +73,7 @@ See [Docs](https://github.com/someweirdhuman/awesome_wotlk/blob/main/docs/api_re
 **Recommended to use AwesomeCvar addon and use ingame command /awesome to configure all cvars**
 
 **AwesomeCvar Addon**<br>
-![AwesomeCvar Preview](https://github.com/someweirdhuman/awesome_wotlk/raw/d63ac6d7a8dab1b42887c644dfa578000980bbe5/docs/assets/preview.png)
+![AwesomeCvar Preview](https://raw.githubusercontent.com/someweirdhuman/awesome_wotlk/refs/heads/main/docs/assets/preview.png)
 
 ## Installation
 1) Download latest [release](https://github.com/someweirdhuman/awesome_wotlk/releases)
