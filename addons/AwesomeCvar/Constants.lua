@@ -1,11 +1,11 @@
 -- File: Constants.lua
 -- Holds all static definitions for the addon.
 
-local addonName, AwesomeCVar = ...
-local L = AwesomeCVar.L or {} -- Get the locale table loaded previously
+local addonName, ACVar = ...
+local L = ACVar.L or {} -- Get the locale table loaded previously
 
 -- This table holds constants used throughout the addon.
-AwesomeCVar.CONSTANTS = {
+ACVar.CONSTANTS = {
     ADDON_NAME = L.ADDON_NAME,
     COLORS = {
         SUCCESS = "|cff00ff00",
@@ -29,7 +29,7 @@ AwesomeCVar.CONSTANTS = {
 }
 
 -- This table defines every CVar control that will appear in the UI.
-AwesomeCVar.CVARS = {
+ACVar.CVARS = {
     [L.CATEGORY_CAMERA] = {
         { name = "cameraFov", label = L.CVAR_LABEL_CAMERA_FOV, type = "slider", min = 30, max = 150, default = 90 },
     },

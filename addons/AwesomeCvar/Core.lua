@@ -2,8 +2,8 @@
 -- Main addon logic, event handling, and slash command processing.
 
 local addonName, ACVar = ...
-ACVar = ACVar or {}
-local L = ACVar.L
+local L = ACVar.L or {}
+local CONSTANTS = ACVar.CONSTANTS
 
 local _G = _G
 local tonumber = tonumber
@@ -20,7 +20,7 @@ local SlashCmdList = SlashCmdList
 ACVar.reloadIsPending = false
 
 local function formatMessage(template, ...)
-    return ACVar.CONSTANTS.COLORS.SUCCESS..L.ADDON_NAME..":"..ACVar.CONSTANTS.COLORS.RESET.." "..string.format(template, ...)
+    return CONSTANTS.COLORS.SUCCESS..L.ADDON_NAME..":"..CONSTANTS.COLORS.RESET.." "..string.format(template, ...)
 end
 
 function ACVar:PrintMessage(message, ...)
@@ -28,10 +28,10 @@ function ACVar:PrintMessage(message, ...)
 end
 
 function ACVar:PrintCVarChange(cvarName, value)
-    self:PrintMessage(
+    ACVar:PrintMessage(
         L.MSG_SET_VALUE,
-        self.CONSTANTS.COLORS.HIGHLIGHT..cvarName..self.CONSTANTS.COLORS.RESET,
-        self.CONSTANTS.COLORS.VALUE..tostring(value)..self.CONSTANTS.COLORS.RESET
+        CONSTANTS.COLORS.HIGHLIGHT..cvarName..CONSTANTS.COLORS.RESET,
+        CONSTANTS.COLORS.VALUE..tostring(value)..CONSTANTS.COLORS.RESET
     )
 end
 
@@ -72,7 +72,7 @@ local function processSlashCommand(msg)
         ACVar:PrintMessage(L.MSG_HELP_RESET)
         ACVar:PrintMessage(L.MSG_HELP_HELP)
     else
-        _G.DEFAULT_CHAT_FRAME:AddMessage(ACVar.CONSTANTS.COLORS.ERROR..L.MSG_UNKNOWN_COMMAND)
+        _G.DEFAULT_CHAT_FRAME:AddMessage(CONSTANTS.COLORS.ERROR..L.MSG_UNKNOWN_COMMAND)
     end
 end
 
