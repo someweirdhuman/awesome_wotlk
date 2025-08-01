@@ -1,8 +1,24 @@
 ## Interface: 30300
-## Title: Awesome Cvar Manager
+## Title: Awesome CVar Manager
 ## Notes: Manage CVars via UI
-## Author: Widget
-## Version: 1.0
+## Author: Widget, Crum
+## Version: 2.0
 
-AwesomeCvar.xml
-AwesomeCvar.lua
+# Load Localization files from the Locales sub-folder
+Locales\enUS.lua
+Locales\deDE.lua
+Locales\esMX.lua
+Locales\frFR.lua
+Locales\koKR.lua
+Locales\ptBR.lua
+Locales\ruRU.lua
+Locales\zhCN.lua
+Locales\zhTW.lua
+
+# Load XML frame definitions
+AwesomeCVar.xml
+
+# Load Lua logic files
+Constants.lua
+UI.lua
+Core.lua

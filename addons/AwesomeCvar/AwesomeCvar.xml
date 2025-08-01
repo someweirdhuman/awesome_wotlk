@@ -3,7 +3,7 @@
     xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\..\FrameXML\UI.xsd">
 
     <!-- Dialog Template -->
-    <Frame name="AwesomeCvarFrameTemplate" virtual="true" frameStrata="DIALOG" enableMouse="true" movable="true">
+    <Frame name="AwesomeCVarFrameTemplate" virtual="true" frameStrata="DIALOG" enableMouse="true" movable="true">
         <Size>
             <AbsDimension x="600" y="500"/>
         </Size>
