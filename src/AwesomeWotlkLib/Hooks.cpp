@@ -4,11 +4,18 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include "Spell.h"
+
+static Console::CVar* s_cvar_spellProjectionMode;
+static int CVarHandler_spellProjectionMode(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 
 static constexpr float MAX_TRACE_DISTANCE = 1000.0f;
 static constexpr uint32_t TERRAIN_HIT_FLAGS = 0x10111;
 static bool g_cursorKeywordActive = false;
+static int g_cursorSpellID = 0;
 static bool g_playerLocationKeywordActive = false;
+static bool collisionFound = false;
+static C3Vector newTargetPos;
 
 typedef int(__cdecl* SecureCmdOptionParse_t)(lua_State* L);
 SecureCmdOptionParse_t SecureCmdOptionParse_orig = (SecureCmdOptionParse_t)0x00564AE0;
@@ -238,7 +245,7 @@ static bool TerrainClick(float x, float y, float z) {
     return true;
 }
 
-static bool TraceLine(const C3Vector& start, const C3Vector& end, uint32_t hitFlags,
+bool TraceLine(const C3Vector& start, const C3Vector& end, uint32_t hitFlags,
     C3Vector& intersectionPoint, float& completedBeforeIntersection) {
     completedBeforeIntersection = 1.0f;
     intersectionPoint = { 0.0f, 0.0f, 0.0f };
@@ -273,7 +280,7 @@ static bool GetCursorWorldPosition(VecXYZ& worldPos) {
 
     float tanHalfFov = tanf(camera->fovInRadians * 0.3f);
     VecXYZ localRay = {
-        nx * camera->aspect* tanHalfFov,
+        nx * camera->aspect * tanHalfFov,
         ny * tanHalfFov,
         1.0f
     };
@@ -310,6 +317,37 @@ static bool GetCursorWorldPosition(VecXYZ& worldPos) {
 /*inline int __fastcall Spell_C_CancelPlayerSpells() {
     return ((decltype(&Spell_C_CancelPlayerSpells))0x00809AC0)();
 }*/
+
+bool GetAdjustedTargetPositionIfBlocked(const C3Vector& playerPos, const C3Vector& targetPos, float maxRange, C3Vector& outAdjustedPos) {
+    const int arcPoints = 30;
+    std::vector<C3Vector> arc;
+
+    float dX = targetPos.X - playerPos.X;
+    float dY = targetPos.Y - playerPos.Y;
+    float theta = std::atan2(dY, dX);
+
+    for (int i = 0; i <= arcPoints; ++i) {
+        float angle = static_cast<float>(i) / arcPoints * 3.14f - (3.14f / 2.0f);
+
+        C3Vector point = {
+            playerPos.X + maxRange * std::cos(angle) * std::cos(theta),
+            playerPos.Y + maxRange * std::cos(angle) * std::sin(theta),
+            playerPos.Z + maxRange * std::sin(angle)
+        };
+        arc.push_back(point);
+    }
+
+    C3Vector intersectionPoint;
+    float completedBeforeIntersection;
+    for (size_t i = 0; i < arc.size() - 1; ++i) {
+        if (TraceLine(arc[i], arc[i + 1], 0x10111, intersectionPoint, completedBeforeIntersection)) {
+            outAdjustedPos = intersectionPoint;
+            return true;
+        }
+    }
+
+    return false;
+}
 
 static bool isSpellReadied() {
     unsigned int spellTargetingFlag = *(unsigned int*)0x00D3F4E4;
@@ -360,10 +398,39 @@ static void onUpdateCallback() {
         if (isSpellReadied()) {
             VecXYZ cursorPos;
             if (GetCursorWorldPosition(cursorPos)) {
-                TerrainClick(cursorPos.x, cursorPos.y, cursorPos.z);
+                if (std::atoi(s_cvar_spellProjectionMode->vStr) == 1) {
+                    CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
+                    C3Vector playerPos;
+                    player->GetPosition(playerPos);
+
+                    float minRange = 0.0f;
+                    float maxRange = 0.0f;
+
+                    GetSpellRange_t GetSpellRange = reinterpret_cast<GetSpellRange_t>(0x00802C30);
+                    GetSpellRange(player, g_cursorSpellID, &minRange, &maxRange, 0);
+
+                    if (maxRange - 0.5f > 0.f) {
+                        maxRange = maxRange - 0.5f;
+                    }
+
+                    C3Vector newOverrideTargetPos;
+                    bool collisionFound = GetAdjustedTargetPositionIfBlocked(playerPos, reinterpret_cast<C3Vector&>(cursorPos), maxRange, newOverrideTargetPos);
+                    if (collisionFound) {
+                        TerrainClick(newOverrideTargetPos.X, newOverrideTargetPos.Y, newOverrideTargetPos.Z);
+                    }
+                    else {
+                        TerrainClick(cursorPos.x, cursorPos.y, cursorPos.z);
+                    }
+                }
+                else {
+                    TerrainClick(cursorPos.x, cursorPos.y, cursorPos.z);
+                }
+
+                printf("%d \n", g_cursorSpellID);
             }
         }
         g_cursorKeywordActive = false;
+        g_cursorSpellID = 0;
     }
     else if (g_playerLocationKeywordActive) {
         CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
@@ -374,11 +441,131 @@ static void onUpdateCallback() {
         }
         g_playerLocationKeywordActive = false;
     }
+
+    if (collisionFound) {
+        collisionFound = false;
+        newTargetPos.X = 0;
+        newTargetPos.Y = 0;
+        newTargetPos.Z = 0;
+    }
+}
+
+double getGreenThingSize() {
+    double v10 = ((double (*)())0x8019C0)();
+    double v13;
+
+    if (v10 >= 20.0)
+        v13 = 20.0;
+    else
+        v13 = ((double (*)())0x8019C0)();
+
+    return v13;
+}
+
+static int(__cdecl* original_project_texture)(int, int, int) = (int(__cdecl*)(int, int, int))0x004F8A40;
+static int __cdecl hooked_project_texture(int a1, int a2, int a3) {
+    if (std::atoi(s_cvar_spellProjectionMode->vStr) == 0) {
+        return original_project_texture(a1, a2, a3);
+    }
+    auto* spellCast = *reinterpret_cast<SpellCast**>(0x00D3F4E4);
+    if (!spellCast) {
+        return original_project_texture(a1, a2, a3);
+    }
+
+    CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
+    if (!player) {
+        return original_project_texture(a1, a2, a3);
+    }
+
+    float minRange = 0.0f;
+    float maxRange = 0.0f;
+
+    GetSpellRange(player, spellCast->data.spellId, &minRange, &maxRange, 0);
+
+    if (maxRange - 0.5f > 0.f) {
+        maxRange = maxRange - 0.5f;
+    }
+
+    C3Vector playerPos;
+    player->GetPosition(playerPos);
+
+    C3Vector targetPos;
+    targetPos.X = *(float*)0x00B74380;
+    targetPos.Y = *(float*)0x00B74384;
+    targetPos.Z = *(float*)0x00B74388;
+
+    float dX = targetPos.X - playerPos.X;
+    float dY = targetPos.Y - playerPos.Y;
+    float dZ = targetPos.Z - playerPos.Z;
+    float totalDist = std::sqrt(dX * dX + dY * dY + dZ * dZ);
+    float dist = std::sqrt(dX * dX + dY * dY);
+    if (totalDist < 0.0001f) {
+        dX = 1.0f;
+        dY = 0.0f;
+        dist = 1.0f;
+    }
+
+    if (totalDist > maxRange && totalDist > 0.0001f) {
+        collisionFound = GetAdjustedTargetPositionIfBlocked(playerPos, targetPos, maxRange, newTargetPos);
+        if (collisionFound) {
+            *(float*)0x00B74380 = newTargetPos.X;
+            *(float*)0x00B74384 = newTargetPos.Y;
+            *(float*)0x00B74388 = newTargetPos.Z;
+
+            // revert projection texture/color to green again
+            *(int*)0x00AC79A4 = 0;
+
+            // revert projection size back to original
+            *(float*)0xB74370 = static_cast<float>(getGreenThingSize());
+        }
+    }
+
+    return original_project_texture(a1, a2, a3);
+}
+
+void __cdecl HandleTerrainClick_hook(TerrainClickEvent* event)
+{
+    if (collisionFound && std::atoi(s_cvar_spellProjectionMode->vStr) == 1) {
+        event->x = newTargetPos.X;
+        event->y = newTargetPos.Y;
+        event->z = newTargetPos.Z;
+    }
+
+    HandleTerrainClick_orig(event);
+}
+
+typedef int(__cdecl* SpellCastFn)(int a1, int a2, int a3, int a4, int a5);
+static SpellCastFn Spell_OnCastOriginal = (SpellCastFn)0x0080DA40;
+int __cdecl Spell_OnCastHook(int spellId, int a2, int a3, int a4, int a5)
+{
+    int success = Spell_OnCastOriginal(spellId, a2, a3, a4, a5);
+    if (success && Spell::IsForm(spellId))
+    {
+        CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
+        if (player)
+        {
+            auto maybeForm = Spell::GetFormFromSpell(spellId);
+            if (maybeForm.has_value())
+            {
+                Spell::ShapeshiftForm form = maybeForm.value();
+                uint32_t formValue = static_cast<uint32_t>(form);
+
+                player->SetValueBytes(UNIT_FIELD_BYTES_2, OFFSET_SHAPESHIFT_FORM, formValue);
+            }
+        }
+    }
+
+    if (g_cursorKeywordActive) {
+        g_cursorSpellID = spellId;
+    }
+
+    return success;
 }
 
 void Hooks::initialize()
 {
     Hooks::FrameScript::registerOnUpdate(onUpdateCallback);
+    Hooks::FrameXML::registerCVar(&s_cvar_spellProjectionMode, "spellProjectionMode", NULL, (Console::CVarFlags)1, "0", CVarHandler_spellProjectionMode);
     DetourAttach(&(LPVOID&)CVars_Initialize_orig, CVars_Initialize_hk);
     DetourAttach(&(LPVOID&)FrameScript_FireOnUpdate_orig, FrameScript_FireOnUpdate_hk);
     DetourAttach(&(LPVOID&)FrameScript_FillEvents_orig, FrameScript_FillEvents_hk);
@@ -388,4 +575,7 @@ void Hooks::initialize()
     DetourAttach(&(LPVOID&)LoadGlueXML_orig, LoadGlueXML_hk);
     DetourAttach(&(LPVOID&)LoadCharacters_orig, LoadCharacters_hk);
     DetourAttach(&(LPVOID&)SecureCmdOptionParse_orig, SecureCmdOptionParse_hk);
+    DetourAttach(&(LPVOID&)Spell_OnCastOriginal, Spell_OnCastHook);
+    DetourAttach((PVOID*)&original_project_texture, hooked_project_texture);
+    DetourAttach(&(LPVOID&)HandleTerrainClick_orig, HandleTerrainClick_hook);
 }
