@@ -38,6 +38,7 @@ if GetLocale() == "zhTW" then
     L.CATEGORY_CAMERA = "鏡頭"
     L.CATEGORY_NAMEPLATES = "姓名板"
     L.CATEGORY_INTERACTION = "互動"
+    L.CATEGORY_OTHER = "其他"
 
     -- CVar Labels & Descriptions
     L.CVAR_LABEL_CAMERA_FOV = "鏡頭視野（FoV）"
@@ -60,6 +61,7 @@ if GetLocale() == "zhTW" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "友方姓名板點擊框寬度"
     L.CVAR_LABEL_INTERACTION_MODE = "互動模式"
     L.CVAR_LABEL_INTERACTION_ANGLE = "互動錐形角度"
+    L.CVAR_LABEL_SPELL_PRJECTION_MODE = "法術投射模式"
 
     L.DESC_HITBOX_DISABLED = "0 = 停用，若無姓名板插件請勿使用"
     L.DESC_SMOOTH_FUNCTION_ONLY = "（僅適用於平滑功能）"
@@ -71,4 +73,6 @@ if GetLocale() == "zhTW" then
     L.MODE_LABEL_SMOOTH = "平滑功能"
     L.MODE_LABEL_PLAYER_RADIUS = "玩家半徑 20 碼"
     L.MODE_LABEL_CONE_ANGLE = "20 碼內錐形角度（度）"
+    L.MODE_LABEL_PROJECTION_DEFAULT = "預設法術投射（3.3.5）"
+    L.MODE_LABEL_PROJECTION_CUSTOM = "自訂法術投射（Classic）"
 end

@@ -38,6 +38,7 @@ if GetLocale() == "koKR" then
     L.CATEGORY_CAMERA = "카메라"
     L.CATEGORY_NAMEPLATES = "이름표"
     L.CATEGORY_INTERACTION = "상호작용"
+    L.CATEGORY_OTHER = "기타"
 
     -- CVar Labels & Descriptions
     L.CVAR_LABEL_CAMERA_FOV = "카메라 시야각 (FoV)"
@@ -60,6 +61,7 @@ if GetLocale() == "koKR" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "우호적 이름표 히트박스 너비"
     L.CVAR_LABEL_INTERACTION_MODE = "상호작용 모드"
     L.CVAR_LABEL_INTERACTION_ANGLE = "상호작용 원뿔 각도"
+    L.CVAR_LABEL_SPELL_PRJECTION_MODE = "주문 투사 모드"
 
     L.DESC_HITBOX_DISABLED = "0 = 비활성화됨, 이름표 애드온 없이 사용하지 마세요"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(부드러운 기능에서만 작동)"
@@ -71,4 +73,6 @@ if GetLocale() == "koKR" then
     L.MODE_LABEL_SMOOTH = "부드러운 기능"
     L.MODE_LABEL_PLAYER_RADIUS = "플레이어 반경 20미터"
     L.MODE_LABEL_CONE_ANGLE = "20미터 내 원뿔 각도 (도)"
+    L.MODE_LABEL_PROJECTION_DEFAULT = "기본 주문 투사 (3.3.5)"
+    L.MODE_LABEL_PROJECTION_CUSTOM = "사용자 설정 주문 투사 (Classic)"
 end

@@ -38,6 +38,7 @@ if GetLocale() == "ptBR" then
     L.CATEGORY_CAMERA = "Câmera"
     L.CATEGORY_NAMEPLATES = "Placas de Nome"
     L.CATEGORY_INTERACTION = "Interação"
+    L.CATEGORY_OTHER = "Outro"
 
     -- CVar Labels & Descriptions
     L.CVAR_LABEL_CAMERA_FOV = "Campo de Visão (FoV) da Câmera"
@@ -60,6 +61,7 @@ if GetLocale() == "ptBR" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "Largura da Hitbox ALIADA"
     L.CVAR_LABEL_INTERACTION_MODE = "Modo de Interação"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Ângulo do Cone de Interação"
+    L.CVAR_LABEL_SPELL_PRJECTION_MODE = "Modo de projeção de feitiço"
 
     L.DESC_HITBOX_DISABLED = "0 = DESATIVADO, não use sem um addon de placas de nome"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(só funciona com a Função Suave)"
@@ -71,4 +73,6 @@ if GetLocale() == "ptBR" then
     L.MODE_LABEL_SMOOTH = "Função Suave"
     L.MODE_LABEL_PLAYER_RADIUS = "Raio do Jogador 20m"
     L.MODE_LABEL_CONE_ANGLE = "Ângulo do cone (graus) dentro de 20m"
+    L.MODE_LABEL_PROJECTION_DEFAULT = "Projeção padrão de feitiço (3.3.5)"
+    L.MODE_LABEL_PROJECTION_CUSTOM = "Projeção personalizada de feitiço (Classic)"
 end

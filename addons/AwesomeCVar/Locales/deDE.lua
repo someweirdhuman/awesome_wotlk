@@ -38,6 +38,7 @@ if GetLocale() == "deDE" then
     L.CATEGORY_CAMERA = "Kamera"
     L.CATEGORY_NAMEPLATES = "Namensplaketten"
     L.CATEGORY_INTERACTION = "Interaktion"
+    L.CATEGORY_OTHER = "Sonstiges"
 
     -- CVar Labels & Descriptions
     L.CVAR_LABEL_CAMERA_FOV = "Kamera-Sichtfeld (FoV)"
@@ -60,6 +61,7 @@ if GetLocale() == "deDE" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "FREUNDLICHE Namensplaketten Hitbox-Breite"
     L.CVAR_LABEL_INTERACTION_MODE = "Interaktionsmodus"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Interaktionskegelwinkel"
+    L.CVAR_LABEL_SPELL_PRJECTION_MODE = "Zauberprojektion-Modus"
 
     L.DESC_HITBOX_DISABLED = "0 = DEAKTIVIERT, nicht ohne ein Namensplaketten-Addon verwenden"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(funktioniert nur mit der 'Smooth'-Funktion)"
@@ -71,4 +73,6 @@ if GetLocale() == "deDE" then
     L.MODE_LABEL_SMOOTH = "Smooth-Funktion"
     L.MODE_LABEL_PLAYER_RADIUS = "Spielerradius 20yd"
     L.MODE_LABEL_CONE_ANGLE = "Kegelwinkel (Grad) innerhalb von 20yd"
+    L.MODE_LABEL_PROJECTION_DEFAULT = "Standard-Zauberprojektion (3.3.5)"
+    L.MODE_LABEL_PROJECTION_CUSTOM = "Benutzerdefinierte Zauberprojektion (Classic)"
 end

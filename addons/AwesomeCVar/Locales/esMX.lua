@@ -38,6 +38,7 @@ if GetLocale() == "esMX" then
     L.CATEGORY_CAMERA = "Cámara"
     L.CATEGORY_NAMEPLATES = "Placas de nombre"
     L.CATEGORY_INTERACTION = "Interacción"
+    L.CATEGORY_OTHER = "Otro"
 
     -- CVar Labels & Descriptions
     L.CVAR_LABEL_CAMERA_FOV = "Campo de visión (FoV) de la cámara"
@@ -60,6 +61,7 @@ if GetLocale() == "esMX" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "Ancho del hitbox ALIADO"
     L.CVAR_LABEL_INTERACTION_MODE = "Modo de interacción"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Ángulo del cono de interacción"
+    L.CVAR_LABEL_SPELL_PRJECTION_MODE = "Modo de proyección de hechizos"
 
     L.DESC_HITBOX_DISABLED = "0 = DESACTIVADO, no usar sin un addon de placas de nombre"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(solo funciona con la Función Suave)"
@@ -71,4 +73,6 @@ if GetLocale() == "esMX" then
     L.MODE_LABEL_SMOOTH = "Función Suave"
     L.MODE_LABEL_PLAYER_RADIUS = "Radio del jugador 20yd"
     L.MODE_LABEL_CONE_ANGLE = "Ángulo de cono (grados) dentro de 20yd"
+    L.MODE_LABEL_PROJECTION_DEFAULT = "Proyección de hechizos predeterminada (3.3.5)"
+    L.MODE_LABEL_PROJECTION_CUSTOM = "Proyección de hechizos personalizada (Classic)"
 end

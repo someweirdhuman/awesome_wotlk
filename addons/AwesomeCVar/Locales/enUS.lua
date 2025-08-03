@@ -38,6 +38,7 @@ if GetLocale() == "enUS" then
     L.CATEGORY_CAMERA = "Camera"
     L.CATEGORY_NAMEPLATES = "Nameplates"
     L.CATEGORY_INTERACTION = "Interaction"
+    L.CATEGORY_OTHER = "Other"
 
     -- CVar Labels & Descriptions
     L.CVAR_LABEL_CAMERA_FOV = "Camera FoV"
@@ -60,6 +61,7 @@ if GetLocale() == "enUS" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "FRIENDLY Nameplate Hitbox Width"
     L.CVAR_LABEL_INTERACTION_MODE = "Interaction Mode"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Interaction Cone Angle"
+    L.CVAR_LABEL_SPELL_PRJECTION_MODE = "Spell Projection Mode"
 
     L.DESC_HITBOX_DISABLED = "0 = DISABLED, don't use without a nameplate addon"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(only works with the Smooth Function)"
@@ -71,4 +73,6 @@ if GetLocale() == "enUS" then
     L.MODE_LABEL_SMOOTH = "Smooth Function"
     L.MODE_LABEL_PLAYER_RADIUS = "Player Radius 20yd"
     L.MODE_LABEL_CONE_ANGLE = "Cone Angle (dg) within 20yd"
+    L.MODE_LABEL_PROJECTION_DEFAULT = "Default spell projection (3.3.5)"
+    L.MODE_LABEL_PROJECTION_CUSTOM = "Custom spell projection (Classic)"
 end

@@ -56,4 +56,7 @@ ACVar.CVARS = {
         { name = "interactionMode", label = L.CVAR_LABEL_INTERACTION_MODE, type = "mode", modes = { {value = 0, label = L.MODE_LABEL_PLAYER_RADIUS}, {value = 1, label = L.MODE_LABEL_CONE_ANGLE} } },
         { name = "interactionAngle", label = L.CVAR_LABEL_INTERACTION_ANGLE, type = "slider", min = 1, max = 360, step = 1, default = 90 },
     },
+    [L.CATEGORY_OTHER] = {
+        { name = "spellProjectionMode", label = L.CVAR_LABEL_SPELL_PRJECTION_MODE, type = "mode", modes = { {value = 0, label = L.MODE_LABEL_PROJECTION_DEFAULT}, {value = 1, label = L.MODE_LABEL_PROJECTION_CUSTOM} } },
+    },
 }
