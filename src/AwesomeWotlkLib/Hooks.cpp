@@ -321,7 +321,7 @@ static bool GetCursorWorldPosition(VecXYZ& worldPos) {
 bool GetAdjustedTargetPositionIfBlocked(const C3Vector& playerPos, const C3Vector& targetPos, float maxRange, C3Vector& outAdjustedPos) {
     C3Vector cameraPos = GetCameraPosC3();
 
-    // direction from target to camera
+    // direction from targetPos to cameraPos
     float dirX = cameraPos.X - targetPos.X;
     float dirY = cameraPos.Y - targetPos.Y;
     float dirZ = cameraPos.Z - targetPos.Z;
@@ -335,87 +335,69 @@ bool GetAdjustedTargetPositionIfBlocked(const C3Vector& playerPos, const C3Vecto
     dirY /= dirLength;
     dirZ /= dirLength;
 
-    // ray-cylinder intersection (vertical cylinder centered on playerPos, infinite in Z)
-    float dx = dirX;
-    float dy = dirY;
+    // sphere intersection (sphere centered at playerPos)
+    float ocX = targetPos.X - playerPos.X;
+    float ocY = targetPos.Y - playerPos.Y;
+    float ocZ = targetPos.Z - playerPos.Z;
 
-    float px = targetPos.X - playerPos.X;
-    float py = targetPos.Y - playerPos.Y;
+    float b = 2.0f * (ocX * dirX + ocY * dirY + ocZ * dirZ);
+    float c = ocX * ocX + ocY * ocY + ocZ * ocZ - maxRange * maxRange;
 
-    float a = dx * dx + dy * dy;
-    float b = 2.0f * (px * dx + py * dy);
-    float c = px * px + py * py - maxRange * maxRange;
-
-    float discriminant = b * b - 4.0f * a * c;
-    if (discriminant < 0.0f || a == 0.0f)
+    float discriminant = b * b - 4.0f * c;
+    if (discriminant < 0.0f)
         return false;
 
     float sqrtDisc = std::sqrt(discriminant);
-    float t1 = (-b - sqrtDisc) / (2.0f * a);
-    float t2 = (-b + sqrtDisc) / (2.0f * a);
-
-    // cam direction (flat 2D vector from player to camera)
-    float camDirX = cameraPos.X - playerPos.X;
-    float camDirY = cameraPos.Y - playerPos.Y;
-    float camLen = std::sqrt(camDirX * camDirX + camDirY * camDirY);
-    if (camLen == 0.0f)
+    float t1 = (-b - sqrtDisc) * 0.5f;
+    float t2 = (-b + sqrtDisc) * 0.5f;
+    float t = (t1 >= 0.0f) ? t1 : ((t2 >= 0.0f) ? t2 : -1.0f);
+    if (t < 0.0f)
         return false;
-    camDirX /= camLen;
-    camDirY /= camLen;
 
-    // pick the first one that lies in the "backward" half-space
-    for (int i = 0; i < 2; ++i) {
-        float t = (i == 0) ? t1 : t2;
-        if (t < 0.0f)
-            continue;
+    // Compute intersection point on the sphere
+    float hitX = targetPos.X + dirX * t;
+    float hitY = targetPos.Y + dirY * t;
+    float hitZ = targetPos.Z + dirZ * t;
+    C3Vector hitPos = { hitX, hitY, hitZ };
 
-        float ix = targetPos.X + dirX * t;
-        float iy = targetPos.Y + dirY * t;
-        float iz = targetPos.Z + dirZ * t;
-
-        // from player to intersection
-        float vecX = ix - playerPos.X;
-        float vecY = iy - playerPos.Y;
-        float dot = vecX * camDirX + vecY * camDirY;
-
-        if (dot < 0.0f) {
-            //intersection is behind the player, relative to camera
-            C3Vector hitPos = { ix, iy, iz };
-
-            C3Vector upPos = { ix, iy, iz + maxRange };
-            C3Vector downPos = { ix, iy, iz - maxRange };
-
-            C3Vector upHit, downHit;
-            float upFrac = 1.0f, downFrac = 1.0f;
-            bool upHitFound = TraceLine(hitPos, upPos, 0x10111, upHit, upFrac);
-            bool downHitFound = TraceLine(hitPos, downPos, 0x10111, downHit, downFrac);
-
-            if (upHitFound && downHitFound) {
-                float dUp = (upHit.X - ix) * (upHit.X - ix) +
-                    (upHit.Y - iy) * (upHit.Y - iy) +
-                    (upHit.Z - iz) * (upHit.Z - iz);
-                float dDown = (downHit.X - ix) * (downHit.X - ix) +
-                    (downHit.Y - iy) * (downHit.Y - iy) +
-                    (downHit.Z - iz) * (downHit.Z - iz);
-                outAdjustedPos = (dUp < dDown) ? upHit : downHit;
-                return true;
-            }
-            else if (upHitFound) {
-                outAdjustedPos = upHit;
-                return true;
-            }
-            else if (downHitFound) {
-                outAdjustedPos = downHit;
-                return true;
-            }
-
-            outAdjustedPos = hitPos;
-            return true;
-        }
+    // First ground check
+    C3Vector up = { hitX, hitY, hitZ + maxRange };
+    C3Vector down = { hitX, hitY, hitZ - maxRange };
+    C3Vector firstGround;
+    float fraction;
+    if (!TraceLine(up, down, 0x10111, firstGround, fraction)) {
+        return false; // no terrain
     }
 
-    // no valid intersection
-    return false;
+    // Check distance from player to ground point
+    float vecX = firstGround.X - playerPos.X;
+    float vecY = firstGround.Y - playerPos.Y;
+    float vecZ = firstGround.Z - playerPos.Z;
+    float distSq = vecX * vecX + vecY * vecY + vecZ * vecZ;
+
+    if (distSq <= maxRange * maxRange) {
+        outAdjustedPos = firstGround;
+        return true;
+    }
+
+    // Pull ground point back to maxRange from player
+    float dist = std::sqrt(distSq);
+    float scale = maxRange / dist;
+    float adjustedX = playerPos.X + vecX * scale;
+    float adjustedY = playerPos.Y + vecY * scale;
+    float adjustedZ = playerPos.Z + vecZ * scale;
+
+    // Re-ground this adjusted point
+    C3Vector secondUp = { adjustedX, adjustedY, adjustedZ + maxRange };
+    C3Vector secondDown = { adjustedX, adjustedY, adjustedZ - maxRange };
+    C3Vector finalGround;
+    if (!TraceLine(secondUp, secondDown, 0x10111, finalGround, fraction)) {
+        return false; // no terrain around adjusted point
+    }
+
+    // Success
+    outAdjustedPos = finalGround;
+    return true;
 }
 
 static bool isSpellReadied() {
