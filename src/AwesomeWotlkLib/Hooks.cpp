@@ -319,33 +319,102 @@ static bool GetCursorWorldPosition(VecXYZ& worldPos) {
 }*/
 
 bool GetAdjustedTargetPositionIfBlocked(const C3Vector& playerPos, const C3Vector& targetPos, float maxRange, C3Vector& outAdjustedPos) {
-    const int arcPoints = 30;
-    std::vector<C3Vector> arc;
+    C3Vector cameraPos = GetCameraPosC3();
 
-    float dX = targetPos.X - playerPos.X;
-    float dY = targetPos.Y - playerPos.Y;
-    float theta = std::atan2(dY, dX);
+    // direction from target to camera
+    float dirX = cameraPos.X - targetPos.X;
+    float dirY = cameraPos.Y - targetPos.Y;
+    float dirZ = cameraPos.Z - targetPos.Z;
 
-    for (int i = 0; i <= arcPoints; ++i) {
-        float angle = static_cast<float>(i) / arcPoints * 3.14f - (3.14f / 2.0f);
+    float dirLength = std::sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
+    if (dirLength == 0.0f)
+        return false;
 
-        C3Vector point = {
-            playerPos.X + maxRange * std::cos(angle) * std::cos(theta),
-            playerPos.Y + maxRange * std::cos(angle) * std::sin(theta),
-            playerPos.Z + maxRange * std::sin(angle)
-        };
-        arc.push_back(point);
-    }
+    // normalize direction
+    dirX /= dirLength;
+    dirY /= dirLength;
+    dirZ /= dirLength;
 
-    C3Vector intersectionPoint;
-    float completedBeforeIntersection;
-    for (size_t i = 0; i < arc.size() - 1; ++i) {
-        if (TraceLine(arc[i], arc[i + 1], 0x10111, intersectionPoint, completedBeforeIntersection)) {
-            outAdjustedPos = intersectionPoint;
+    // ray-cylinder intersection (vertical cylinder centered on playerPos, infinite in Z)
+    float dx = dirX;
+    float dy = dirY;
+
+    float px = targetPos.X - playerPos.X;
+    float py = targetPos.Y - playerPos.Y;
+
+    float a = dx * dx + dy * dy;
+    float b = 2.0f * (px * dx + py * dy);
+    float c = px * px + py * py - maxRange * maxRange;
+
+    float discriminant = b * b - 4.0f * a * c;
+    if (discriminant < 0.0f || a == 0.0f)
+        return false;
+
+    float sqrtDisc = std::sqrt(discriminant);
+    float t1 = (-b - sqrtDisc) / (2.0f * a);
+    float t2 = (-b + sqrtDisc) / (2.0f * a);
+
+    // cam direction (flat 2D vector from player to camera)
+    float camDirX = cameraPos.X - playerPos.X;
+    float camDirY = cameraPos.Y - playerPos.Y;
+    float camLen = std::sqrt(camDirX * camDirX + camDirY * camDirY);
+    if (camLen == 0.0f)
+        return false;
+    camDirX /= camLen;
+    camDirY /= camLen;
+
+    // pick the first one that lies in the "backward" half-space
+    for (int i = 0; i < 2; ++i) {
+        float t = (i == 0) ? t1 : t2;
+        if (t < 0.0f)
+            continue;
+
+        float ix = targetPos.X + dirX * t;
+        float iy = targetPos.Y + dirY * t;
+        float iz = targetPos.Z + dirZ * t;
+
+        // from player to intersection
+        float vecX = ix - playerPos.X;
+        float vecY = iy - playerPos.Y;
+        float dot = vecX * camDirX + vecY * camDirY;
+
+        if (dot < 0.0f) {
+            //intersection is behind the player, relative to camera
+            C3Vector hitPos = { ix, iy, iz };
+
+            C3Vector upPos = { ix, iy, iz + maxRange };
+            C3Vector downPos = { ix, iy, iz - maxRange };
+
+            C3Vector upHit, downHit;
+            float upFrac = 1.0f, downFrac = 1.0f;
+            bool upHitFound = TraceLine(hitPos, upPos, 0x10111, upHit, upFrac);
+            bool downHitFound = TraceLine(hitPos, downPos, 0x10111, downHit, downFrac);
+
+            if (upHitFound && downHitFound) {
+                float dUp = (upHit.X - ix) * (upHit.X - ix) +
+                    (upHit.Y - iy) * (upHit.Y - iy) +
+                    (upHit.Z - iz) * (upHit.Z - iz);
+                float dDown = (downHit.X - ix) * (downHit.X - ix) +
+                    (downHit.Y - iy) * (downHit.Y - iy) +
+                    (downHit.Z - iz) * (downHit.Z - iz);
+                outAdjustedPos = (dUp < dDown) ? upHit : downHit;
+                return true;
+            }
+            else if (upHitFound) {
+                outAdjustedPos = upHit;
+                return true;
+            }
+            else if (downHitFound) {
+                outAdjustedPos = downHit;
+                return true;
+            }
+
+            outAdjustedPos = hitPos;
             return true;
         }
     }
 
+    // no valid intersection
     return false;
 }
 

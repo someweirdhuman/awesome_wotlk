@@ -1366,6 +1366,18 @@ inline void WorldFrame_PercToScreenPos(float x, float y, float* resX, float* res
     *resY = (y * (screenHeightAptitude * 1024.f)) / someVal;
 }
 
+inline VecXYZ GetCameraPos() {
+    Camera* camera = GetActiveCamera();
+    if (!camera) return { 0.0f, 0.0f, 0.0f };
+    return camera->pos;
+}
+
+inline C3Vector GetCameraPosC3() {
+    Camera* camera = GetActiveCamera();
+    if (!camera) return { 0.0f, 0.0f, 0.0f };
+    return C3Vector{ camera->pos.x, camera->pos.y, camera->pos.z };
+}
+
 // XML
 struct __declspec(novtable) XMLObject {
     uint32_t gap0[0x38 / 4];
