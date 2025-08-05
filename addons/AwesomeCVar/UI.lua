@@ -157,7 +157,7 @@ end
 
 function ACVar:UpdateUIForCVar(cvarDef)
     local cvarName = cvarDef.name
-    local currentValue = self:GetCVarValue(cvarName)
+    local currentValue = self:GetCVarValue(cvarName) or 0
     if cvarDef.type == "toggle" then
         _G[getFrameName(cvarName, "Checkbox")]:SetChecked(currentValue == cvarDef.max)
     elseif cvarDef.type == "slider" then

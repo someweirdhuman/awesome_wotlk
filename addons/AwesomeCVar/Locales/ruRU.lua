@@ -38,6 +38,7 @@ if GetLocale() == "ruRU" then
     L.CATEGORY_CAMERA = "Камера"
     L.CATEGORY_NAMEPLATES = "Индикаторы здоровья"
     L.CATEGORY_INTERACTION = "Взаимодействие"
+    L.CATEGORY_OTHER = "Другое"
 
     -- CVar Labels & Descriptions
     L.CVAR_LABEL_CAMERA_FOV = "Поле зрения камеры (FoV)"
@@ -60,9 +61,13 @@ if GetLocale() == "ruRU" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "Ширина хитбокса СОЮЗНИКОВ"
     L.CVAR_LABEL_INTERACTION_MODE = "Режим взаимодействия"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Угол конуса взаимодействия"
+	L.CVAR_LABEL_SPELL_PROJECTION_MAX_RANGE = "Макс. дальность проекции заклинания"
+	L.CVAR_LABEL_SPELL_PROJECTION_HORIZONTAL_BIAS = "Горизонтальное смещение проекции заклинания"
 
+	L.DESC_ZERO_TO_DISABLE = "0 = ОТКЛЮЧЕНО"
     L.DESC_HITBOX_DISABLED = "0 = ОТКЛЮЧЕНО, не используйте без аддона для индикаторов здоровья"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(работает только с Плавноq функцией)"
+    L.CVAR_LABEL_SPELL_PROJECTION_MODE = "Режим проекции заклинаний"
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API реакции"
@@ -71,4 +76,6 @@ if GetLocale() == "ruRU" then
     L.MODE_LABEL_SMOOTH = "Плавная функция"
     L.MODE_LABEL_PLAYER_RADIUS = "Радиус игрока 20м"
     L.MODE_LABEL_CONE_ANGLE = "Угол конуса (в градусах) в пределах 20м"
+    L.MODE_LABEL_PROJECTION_DEFAULT = "Проекция заклинаний по умолчанию (3.3.5)"
+    L.MODE_LABEL_PROJECTION_CUSTOM = "Пользовательская проекция заклинаний (Classic)"
 end

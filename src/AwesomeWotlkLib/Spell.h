@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <optional>
+#include <Windows.h>
 
 inline constexpr uint8_t OFFSET_SHAPESHIFT_FORM = 3;
 
