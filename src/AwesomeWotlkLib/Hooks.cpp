@@ -318,86 +318,170 @@ static bool GetCursorWorldPosition(VecXYZ& worldPos) {
     return ((decltype(&Spell_C_CancelPlayerSpells))0x00809AC0)();
 }*/
 
-bool GetAdjustedTargetPositionIfBlocked(const C3Vector& playerPos, const C3Vector& targetPos, float maxRange, C3Vector& outAdjustedPos) {
-    C3Vector cameraPos = GetCameraPosC3();
+bool GetAdjustedTargetPositionIfBlocked(
+    const C3Vector& playerPos,
+    const C3Vector& targetPos,
+    float maxRange,
+    C3Vector& outAdjustedPos)
+{
+    constexpr int arcPoints = 30;
+    constexpr float degreeOffsets[] = { -40, -30, -20, -10, 0, 10, 20, 30, 40 };
+    std::vector<C3Vector> terrainHits;
 
-    // direction from targetPos to cameraPos
-    float dirX = cameraPos.X - targetPos.X;
-    float dirY = cameraPos.Y - targetPos.Y;
-    float dirZ = cameraPos.Z - targetPos.Z;
+    float dX = targetPos.X - playerPos.X;
+    float dY = targetPos.Y - playerPos.Y;
+    float baseTheta = std::atan2(dY, dX);
 
-    float dirLength = std::sqrt(dirX * dirX + dirY * dirY + dirZ * dirZ);
-    if (dirLength == 0.0f)
-        return false;
+    // Sample arcs and collect terrain hits
+    for (float offsetDeg : degreeOffsets) {
+        float offsetRad = offsetDeg * (3.14159265f / 180.0f);
+        float theta = baseTheta + offsetRad;
 
-    // normalize direction
-    dirX /= dirLength;
-    dirY /= dirLength;
-    dirZ /= dirLength;
+        std::vector<C3Vector> arc;
+        for (int i = 0; i <= arcPoints; ++i) {
+            float angle = (float)i / arcPoints * 3.14159265f - (3.14159265f / 2.0f);
 
-    // sphere intersection (sphere centered at playerPos)
-    float ocX = targetPos.X - playerPos.X;
-    float ocY = targetPos.Y - playerPos.Y;
-    float ocZ = targetPos.Z - playerPos.Z;
+            C3Vector point;
+            point.X = playerPos.X + maxRange * std::cos(angle) * std::cos(theta);
+            point.Y = playerPos.Y + maxRange * std::cos(angle) * std::sin(theta);
+            point.Z = playerPos.Z + maxRange * std::sin(angle);
 
-    float b = 2.0f * (ocX * dirX + ocY * dirY + ocZ * dirZ);
-    float c = ocX * ocX + ocY * ocY + ocZ * ocZ - maxRange * maxRange;
+            arc.push_back(point);
+        }
 
-    float discriminant = b * b - 4.0f * c;
-    if (discriminant < 0.0f)
-        return false;
-
-    float sqrtDisc = std::sqrt(discriminant);
-    float t1 = (-b - sqrtDisc) * 0.5f;
-    float t2 = (-b + sqrtDisc) * 0.5f;
-    float t = (t1 >= 0.0f) ? t1 : ((t2 >= 0.0f) ? t2 : -1.0f);
-    if (t < 0.0f)
-        return false;
-
-    // Compute intersection point on the sphere
-    float hitX = targetPos.X + dirX * t;
-    float hitY = targetPos.Y + dirY * t;
-    float hitZ = targetPos.Z + dirZ * t;
-    C3Vector hitPos = { hitX, hitY, hitZ };
-
-    // First ground check
-    C3Vector up = { hitX, hitY, hitZ + maxRange };
-    C3Vector down = { hitX, hitY, hitZ - maxRange };
-    C3Vector firstGround;
-    float fraction;
-    if (!TraceLine(up, down, 0x10111, firstGround, fraction)) {
-        return false; // no terrain
+        C3Vector hit;
+        float completed;
+        for (size_t i = 0; i < arc.size() - 1; ++i) {
+            if (TraceLine(arc[i], arc[i + 1], 0x10111, hit, completed)) {
+                terrainHits.push_back(hit);
+                break;
+            }
+        }
     }
 
-    // Check distance from player to ground point
-    float vecX = firstGround.X - playerPos.X;
-    float vecY = firstGround.Y - playerPos.Y;
-    float vecZ = firstGround.Z - playerPos.Z;
-    float distSq = vecX * vecX + vecY * vecY + vecZ * vecZ;
+    if (terrainHits.size() < 4)
+        return false; // need at least 4 points for smoothing
 
-    if (distSq <= maxRange * maxRange) {
-        outAdjustedPos = firstGround;
+    // Generate smooth curve points using Catmull-Rom spline (inlined)
+    std::vector<C3Vector> smoothCurvePoints;
+    const int samplesPerSegment = 10;
+
+    for (size_t i = 1; i < terrainHits.size() - 2; ++i) {
+        const C3Vector& p0 = terrainHits[i - 1];
+        const C3Vector& p1 = terrainHits[i];
+        const C3Vector& p2 = terrainHits[i + 1];
+        const C3Vector& p3 = terrainHits[i + 2];
+
+        for (int s = 0; s < samplesPerSegment; ++s) {
+            float t = s / float(samplesPerSegment);
+            float t2 = t * t;
+            float t3 = t2 * t;
+
+            // Catmull-Rom spline formula
+            C3Vector pt;
+            pt.X = p1.X * (2.f * t3 - 3.f * t2 + 1.f)
+                + p2.X * (-2.f * t3 + 3.f * t2)
+                + (p2.X - p0.X) * (t3 - 2.f * t2 + t)
+                + (p3.X - p1.X) * (t3 - t2);
+
+            pt.Y = p1.Y * (2.f * t3 - 3.f * t2 + 1.f)
+                + p2.Y * (-2.f * t3 + 3.f * t2)
+                + (p2.Y - p0.Y) * (t3 - 2.f * t2 + t)
+                + (p3.Y - p1.Y) * (t3 - t2);
+
+            pt.Z = p1.Z * (2.f * t3 - 3.f * t2 + 1.f)
+                + p2.Z * (-2.f * t3 + 3.f * t2)
+                + (p2.Z - p0.Z) * (t3 - 2.f * t2 + t)
+                + (p3.Z - p1.Z) * (t3 - t2);
+
+            smoothCurvePoints.push_back(pt);
+        }
+    }
+
+    // Prepare ray from camera to target
+    C3Vector cameraPos = GetCameraPosC3();
+    float rayDX = targetPos.X - cameraPos.X;
+    float rayDY = targetPos.Y - cameraPos.Y;
+    float rayDZ = targetPos.Z - cameraPos.Z;
+
+    float rayLenSq = rayDX * rayDX + rayDY * rayDY + rayDZ * rayDZ;
+    if (rayLenSq < 0.00001f)
+        return false;
+
+    float bestDistSq = 9999999.0f;
+    C3Vector bestPoint;
+
+    // Find closest point on smooth curve to the ray
+    for (size_t i = 0; i < smoothCurvePoints.size() - 1; ++i) {
+        C3Vector p1 = smoothCurvePoints[i];
+        C3Vector p2 = smoothCurvePoints[i + 1];
+
+        float segDX = p2.X - p1.X;
+        float segDY = p2.Y - p1.Y;
+        float segDZ = p2.Z - p1.Z;
+
+        float segLenSq = segDX * segDX + segDY * segDY + segDZ * segDZ;
+        if (segLenSq < 0.00001f)
+            continue;
+
+        // Cross product of segment and ray
+        float nX = segDY * rayDZ - segDZ * rayDY;
+        float nY = segDZ * rayDX - segDX * rayDZ;
+        float nZ = segDX * rayDY - segDY * rayDX;
+        float nLenSq = nX * nX + nY * nY + nZ * nZ;
+
+        if (nLenSq < 0.000001f)
+            continue;
+
+        // Vector from camera to segment start
+        float diffX = p1.X - cameraPos.X;
+        float diffY = p1.Y - cameraPos.Y;
+        float diffZ = p1.Z - cameraPos.Z;
+
+        // Cross product of diff and ray
+        float cX = diffY * rayDZ - diffZ * rayDY;
+        float cY = diffZ * rayDX - diffX * rayDZ;
+        float cZ = diffX * rayDY - diffY * rayDX;
+
+        // t is projection factor along segment
+        float t = (cX * nX + cY * nY + cZ * nZ) / nLenSq;
+
+        // Clamp to segment
+        if (t < 0.0f) t = 0.0f;
+        if (t > 1.0f) t = 1.0f;
+
+        C3Vector point;
+        point.X = p1.X + segDX * t;
+        point.Y = p1.Y + segDY * t;
+        point.Z = p1.Z + segDZ * t;
+
+        // Distance to ray
+        float px = point.X - cameraPos.X;
+        float py = point.Y - cameraPos.Y;
+        float pz = point.Z - cameraPos.Z;
+
+        float dot = px * rayDX + py * rayDY + pz * rayDZ;
+        float projX = rayDX * (dot / rayLenSq);
+        float projY = rayDY * (dot / rayLenSq);
+        float projZ = rayDZ * (dot / rayLenSq);
+
+        float dx = px - projX;
+        float dy = py - projY;
+        float dz = pz - projZ;
+        float distSq = dx * dx + dy * dy + dz * dz;
+
+        if (distSq < bestDistSq) {
+            bestDistSq = distSq;
+            bestPoint = point;
+        }
+    }
+
+    if (bestDistSq < 9999999.0f) {
+        outAdjustedPos = bestPoint;
         return true;
     }
 
-    // Pull ground point back to maxRange from player
-    float dist = std::sqrt(distSq);
-    float scale = maxRange / dist;
-    float adjustedX = playerPos.X + vecX * scale;
-    float adjustedY = playerPos.Y + vecY * scale;
-    float adjustedZ = playerPos.Z + vecZ * scale;
-
-    // Re-ground this adjusted point
-    C3Vector secondUp = { adjustedX, adjustedY, adjustedZ + maxRange };
-    C3Vector secondDown = { adjustedX, adjustedY, adjustedZ - maxRange };
-    C3Vector finalGround;
-    if (!TraceLine(secondUp, secondDown, 0x10111, finalGround, fraction)) {
-        return false; // no terrain around adjusted point
-    }
-
-    // Success
-    outAdjustedPos = finalGround;
-    return true;
+    return false;
 }
 
 static bool isSpellReadied() {
