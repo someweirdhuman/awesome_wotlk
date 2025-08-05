@@ -223,6 +223,24 @@ Controls how the green/red ground targeting visual is handled when casting spell
 If set to **0** it uses the original 3.3.5 behavior (no projection limits). <br>
 If set to **1** Enables the backported modern/classic-style projection. This restricts projection to within the spell’s maximum range and automatically snaps the effect/texture to the max range if you try to cast beyond it.
 
+## spellProjectionMaxRange`CVar` 
+Arguments: **range**`number`
+
+Default: **20**
+
+Sets how far beyond the spell’s actual range the ground targeting cursor is allowed to project. <br>
+Set to 0 to uncap.
+Any positive value allows projection up to that distance beyond the max range; beyond this, the projection disappears.
+
+## spellProjectionHorizontalBias`CVar` 
+Arguments: **bias**`number`
+
+Default: **1.5**
+
+Controls how much the ground targeting visual is offset horizontally toward the cursor when it's outside the spell’s max range.
+Set to 0 to disable.
+Higher values increase the amount of horizontal shift.
+
 # Unit
 
 ## UnitIsControlled`API`
