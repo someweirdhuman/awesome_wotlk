@@ -237,7 +237,7 @@ Arguments: **bias**`number`
 
 Default: **1.5**
 
-Controls how much the ground targeting visual is offset horizontally toward the cursor when it's outside the spell’s max range.
+Controls how much the ground targeting visual is offset horizontally toward the cursor when it's outside the spell’s max range. <br>
 Set to 0 to disable.
 Higher values increase the amount of horizontal shift.
 
