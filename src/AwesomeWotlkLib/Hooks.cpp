@@ -18,6 +18,9 @@ static bool g_playerLocationKeywordActive = false;
 static bool g_hasAdjustedPos = false;
 static C3Vector g_adjustedSpellPos = { 0, 0, 0 };
 
+static C3Vector g_lastValidPos = { 0, 0, 0 };
+static bool g_hasLastPos = false;
+
 typedef int(__stdcall* ProcessAoETargeting)(uint32_t* a1);
 static ProcessAoETargeting ProcessAoETargeting_orig = (ProcessAoETargeting)0x004F66C0;
 
@@ -365,18 +368,19 @@ static bool GetScreenSpaceSpellPosition(const C3Vector& playerPos, const C3Vecto
         sx * right.Z + sy * up.Z + sz * fwd.Z
     };
 
-    float dirLen = sqrtf(dir.X * dir.X + dir.Y * dir.Y + dir.Z * dir.Z);
-    if (dirLen == 0.0f)
+    float dirLenSq = dir.X * dir.X + dir.Y * dir.Y + dir.Z * dir.Z;
+    if (dirLenSq < 1e-6f)
         return false;
-    float invDirLen = 1.0f / dirLen;
+
+    float invDirLen = 1.0f / sqrtf(dirLenSq);
     dir.X *= invDirLen; dir.Y *= invDirLen; dir.Z *= invDirLen;
 
     C3Vector perpA = (fabs(dir.Z) < 0.9f) ?
         C3Vector{ -dir.Y, dir.X, 0.0f } :
         C3Vector{ 0.0f, -dir.Z, dir.Y };
 
-    float perpLen = sqrtf(perpA.X * perpA.X + perpA.Y * perpA.Y + perpA.Z * perpA.Z);
-    float invPerpLen = 1.0f / (perpLen + 1e-6f);
+    float perpLenSq = perpA.X * perpA.X + perpA.Y * perpA.Y + perpA.Z * perpA.Z;
+    float invPerpLen = 1.0f / sqrtf(perpLenSq + 1e-6f);
     perpA.X *= invPerpLen; perpA.Y *= invPerpLen; perpA.Z *= invPerpLen;
 
     C3Vector perpB = {
@@ -386,97 +390,117 @@ static bool GetScreenSpaceSpellPosition(const C3Vector& playerPos, const C3Vecto
     };
 
     const float coneRadius = 0.25f;
-    C3Vector coneOffsets[4] = {
-        { perpA.X * coneRadius, perpA.Y * coneRadius, perpA.Z * coneRadius },
-        { perpB.X * coneRadius, perpB.Y * coneRadius, perpB.Z * coneRadius },
-        { -perpA.X * coneRadius, -perpA.Y * coneRadius, -perpA.Z * coneRadius },
-        { -perpB.X * coneRadius, -perpB.Y * coneRadius, -perpB.Z * coneRadius }
+    C3Vector coneDirs[3] = {
+        dir,
+        { dir.X + perpA.X * coneRadius, dir.Y + perpA.Y * coneRadius, dir.Z + perpA.Z * coneRadius },
+        { dir.X + perpB.X * coneRadius, dir.Y + perpB.Y * coneRadius, dir.Z + perpB.Z * coneRadius }
     };
 
-    C3Vector coneDirs[5];
-    coneDirs[0] = dir;
-    for (int i = 1; i < 5; ++i) {
-        coneDirs[i] = {
-            dir.X + coneOffsets[i - 1].X,
-            dir.Y + coneOffsets[i - 1].Y,
-            dir.Z + coneOffsets[i - 1].Z
-        };
-        float len = sqrtf(coneDirs[i].X * coneDirs[i].X + coneDirs[i].Y * coneDirs[i].Y + coneDirs[i].Z * coneDirs[i].Z);
-        float invLen = 1.0f / (len + 1e-6f);
+    for (int i = 1; i < 3; ++i) {
+        float lenSq = coneDirs[i].X * coneDirs[i].X + coneDirs[i].Y * coneDirs[i].Y + coneDirs[i].Z * coneDirs[i].Z;
+        float invLen = 1.0f / sqrtf(lenSq);
         coneDirs[i].X *= invLen;
         coneDirs[i].Y *= invLen;
         coneDirs[i].Z *= invLen;
     }
 
-    C3Vector castDirs[6] = {
+    const C3Vector castDirs[3] = {
         { 0.0f, 0.0f, -1.0f },
-        { 0.0f, 0.0f,  1.0f },
         { dir.X * 0.5f, dir.Y * 0.5f, -0.7071f },
-        { -dir.X * 0.5f, -dir.Y * 0.5f, -0.7071f },
-        { perpA.X * 0.5f, perpA.Y * 0.5f, -0.7071f },
-        { -perpA.X * 0.5f, -perpA.Y * 0.5f, -0.7071f }
+        { 0.0f, 0.0f, 1.0f }
     };
 
     const float maxRangeSq = maxRange * maxRange;
-    const float distStep = maxRange / 10.0f;
+    const float distStep = maxRange * 0.16666667f;
 
     C3Vector bestHit = playerPos;
-    float bestDistSq = 0.0f;
+    float bestScore = FLT_MAX;
+    bool foundHit = false;
 
-    for (int distStepIdx = 10; distStepIdx >= 1; --distStepIdx) {
+    C3Vector testPoint = {
+        playerPos.X + dir.X * maxRange,
+        playerPos.Y + dir.Y * maxRange,
+        playerPos.Z + dir.Z * maxRange
+    };
+
+    C3Vector rayStart = { testPoint.X, testPoint.Y, testPoint.Z + 50.0f };
+    C3Vector rayEnd = { testPoint.X, testPoint.Y, testPoint.Z - 100.0f };
+
+    C3Vector hitPoint;
+    float hitDist;
+    if (TraceLine(rayStart, rayEnd, TERRAIN_HIT_FLAGS, hitPoint, hitDist)) {
+        float dx = hitPoint.X - playerPos.X;
+        float dy = hitPoint.Y - playerPos.Y;
+        float dz = hitPoint.Z - playerPos.Z;
+        float distSq = dx * dx + dy * dy + dz * dz;
+
+        if (distSq <= maxRangeSq) {
+            outPos = hitPoint;
+            g_lastValidPos = hitPoint;
+            g_hasLastPos = true;
+            return true;
+        }
+    }
+
+    for (int distStepIdx = 6; distStepIdx >= 1; --distStepIdx) {
         float testDist = distStep * distStepIdx;
 
-        for (int coneStep = 0; coneStep < 5; ++coneStep) {
-            C3Vector testDir = coneDirs[coneStep];
+        for (int coneStep = 0; coneStep < 3; ++coneStep) {
+            const C3Vector& testDir = coneDirs[coneStep];
 
-            C3Vector testPoint = {
-                playerPos.X + testDir.X * testDist,
-                playerPos.Y + testDir.Y * testDist,
-                playerPos.Z + testDir.Z * testDist
-            };
+            testPoint.X = playerPos.X + testDir.X * testDist;
+            testPoint.Y = playerPos.Y + testDir.Y * testDist;
+            testPoint.Z = playerPos.Z + testDir.Z * testDist;
 
-            for (int castIdx = 0; castIdx < 6; ++castIdx) {
-                C3Vector rayStart = {
-                    testPoint.X - castDirs[castIdx].X * 50.0f,
-                    testPoint.Y - castDirs[castIdx].Y * 50.0f,
-                    testPoint.Z - castDirs[castIdx].Z * 50.0f
-                };
-                C3Vector rayEnd = {
-                    testPoint.X + castDirs[castIdx].X * 100.0f,
-                    testPoint.Y + castDirs[castIdx].Y * 100.0f,
-                    testPoint.Z + castDirs[castIdx].Z * 100.0f
-                };
+            for (int castIdx = 0; castIdx < 3; ++castIdx) {
+                const C3Vector& castDir = castDirs[castIdx];
 
-                C3Vector hitPoint;
-                float hitDist;
+                rayStart.X = testPoint.X - castDir.X * 50.0f;
+                rayStart.Y = testPoint.Y - castDir.Y * 50.0f;
+                rayStart.Z = testPoint.Z - castDir.Z * 50.0f;
+
+                rayEnd.X = testPoint.X + castDir.X * 100.0f;
+                rayEnd.Y = testPoint.Y + castDir.Y * 100.0f;
+                rayEnd.Z = testPoint.Z + castDir.Z * 100.0f;
+
                 if (TraceLine(rayStart, rayEnd, TERRAIN_HIT_FLAGS, hitPoint, hitDist)) {
                     float dx = hitPoint.X - playerPos.X;
                     float dy = hitPoint.Y - playerPos.Y;
                     float dz = hitPoint.Z - playerPos.Z;
                     float distSq = dx * dx + dy * dy + dz * dz;
 
-                    if (distSq <= maxRangeSq && distSq > bestDistSq) {
-                        if (distStepIdx == 10) {
-                            outPos = hitPoint;
-                            return true;
+                    if (distSq <= maxRangeSq) {
+                        float score;
+                        if (g_hasLastPos) {
+                            float ldx = hitPoint.X - g_lastValidPos.X;
+                            float ldy = hitPoint.Y - g_lastValidPos.Y;
+                            float ldz = hitPoint.Z - g_lastValidPos.Z;
+                            score = ldx * ldx + ldy * ldy + ldz * ldz;
                         }
-                        bestHit = hitPoint;
-                        bestDistSq = distSq;
+                        else {
+                            score = fabs(distSq - maxRangeSq);
+                        }
+
+                        if (score < bestScore) {
+                            bestScore = score;
+                            bestHit = hitPoint;
+                            foundHit = true;
+                        }
                     }
                 }
             }
         }
     }
 
-    if (bestDistSq) {
+    if (foundHit) {
         outPos = bestHit;
+        g_lastValidPos = bestHit;
+        g_hasLastPos = true;
     }
     else {
-        outPos = {
-            playerPos.X + dir.X * maxRange,
-            playerPos.Y + dir.Y * maxRange,
-            playerPos.Z + dir.Z * maxRange
-        };
+        outPos.X = playerPos.X + dir.X * maxRange;
+        outPos.Y = playerPos.Y + dir.Y * maxRange;
+        outPos.Z = playerPos.Z + dir.Z * maxRange;
     }
     return true;
 }
