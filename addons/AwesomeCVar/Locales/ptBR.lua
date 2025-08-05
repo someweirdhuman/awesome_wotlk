@@ -61,8 +61,11 @@ if GetLocale() == "ptBR" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "Largura da Hitbox ALIADA"
     L.CVAR_LABEL_INTERACTION_MODE = "Modo de Interação"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Ângulo do Cone de Interação"
-    L.CVAR_LABEL_SPELL_PRJECTION_MODE = "Modo de projeção de feitiço"
+    L.CVAR_LABEL_SPELL_PROJECTION_MODE = "Modo de projeção de feitiço"
+	L.CVAR_LABEL_SPELL_PROJECTION_MAX_RANGE = "Alcance máximo da projeção de feitiço"
+	L.CVAR_LABEL_SPELL_PROJECTION_HORIZONTAL_BIAS = "Viés horizontal da projeção de feitiço"
 
+	L.DESC_ZERO_TO_DISABLE = "0 = DESATIVADO"
     L.DESC_HITBOX_DISABLED = "0 = DESATIVADO, não use sem um addon de placas de nome"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(só funciona com a Função Suave)"
 

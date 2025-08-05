@@ -61,8 +61,11 @@ if GetLocale() == "enUS" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "FRIENDLY Nameplate Hitbox Width"
     L.CVAR_LABEL_INTERACTION_MODE = "Interaction Mode"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Interaction Cone Angle"
-    L.CVAR_LABEL_SPELL_PRJECTION_MODE = "Spell Projection Mode"
+    L.CVAR_LABEL_SPELL_PROJECTION_MODE = "Spell Projection Mode"
+	L.CVAR_LABEL_SPELL_PROJECTION_MAX_RANGE = "Spell Projection Max Range"
+	L.CVAR_LABEL_SPELL_PROJECTION_HORIZONTAL_BIAS = "Spell Projection Horizontal Bias"
 
+	L.DESC_ZERO_TO_DISABLE = "0 = DISABLED"
     L.DESC_HITBOX_DISABLED = "0 = DISABLED, don't use without a nameplate addon"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(only works with the Smooth Function)"
 

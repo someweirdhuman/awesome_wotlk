@@ -61,8 +61,11 @@ if GetLocale() == "deDE" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "FREUNDLICHE Namensplaketten Hitbox-Breite"
     L.CVAR_LABEL_INTERACTION_MODE = "Interaktionsmodus"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Interaktionskegelwinkel"
-    L.CVAR_LABEL_SPELL_PRJECTION_MODE = "Zauberprojektion-Modus"
+    L.CVAR_LABEL_SPELL_PROJECTION_MODE = "Zauberprojektion-Modus"
+	L.CVAR_LABEL_SPELL_PROJECTION_MAX_RANGE = "Maximale Zauberprojektion-Reichweite"
+	L.CVAR_LABEL_SPELL_PROJECTION_HORIZONTAL_BIAS = "Horizontale Verzerrung der Zauberprojektion"
 
+	L.DESC_ZERO_TO_DISABLE = "0 = DEAKTIVIERT"
     L.DESC_HITBOX_DISABLED = "0 = DEAKTIVIERT, nicht ohne ein Namensplaketten-Addon verwenden"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(funktioniert nur mit der 'Smooth'-Funktion)"
 

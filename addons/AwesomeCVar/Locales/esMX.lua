@@ -61,8 +61,11 @@ if GetLocale() == "esMX" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "Ancho del hitbox ALIADO"
     L.CVAR_LABEL_INTERACTION_MODE = "Modo de interacción"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Ángulo del cono de interacción"
-    L.CVAR_LABEL_SPELL_PRJECTION_MODE = "Modo de proyección de hechizos"
+    L.CVAR_LABEL_SPELL_PROJECTION_MODE = "Modo de proyección de hechizos"
+	L.CVAR_LABEL_SPELL_PROJECTION_MAX_RANGE = "Alcance máximo de proyección de hechizo"
+	L.CVAR_LABEL_SPELL_PROJECTION_HORIZONTAL_BIAS = "Desviación horizontal de la proyección de hechizo"
 
+	L.DESC_ZERO_TO_DISABLE = "0 = DESACTIVADO"
     L.DESC_HITBOX_DISABLED = "0 = DESACTIVADO, no usar sin un addon de placas de nombre"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(solo funciona con la Función Suave)"
 

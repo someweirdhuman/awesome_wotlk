@@ -61,8 +61,11 @@ if GetLocale() == "frFR" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "Largeur de la hitbox AMICALE"
     L.CVAR_LABEL_INTERACTION_MODE = "Mode d'interaction"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Angle du cône d'interaction"
-    L.CVAR_LABEL_SPELL_PRJECTION_MODE = "Mode de projection des sorts"
+    L.CVAR_LABEL_SPELL_PROJECTION_MODE = "Mode de projection des sorts"
+	L.CVAR_LABEL_SPELL_PROJECTION_MAX_RANGE = "Portée maximale de projection de sort"
+	L.CVAR_LABEL_SPELL_PROJECTION_HORIZONTAL_BIAS = "Biais horizontal de la projection de sort"
 
+	L.DESC_ZERO_TO_DISABLE = "0 = DÉSACTIVÉ"
     L.DESC_HITBOX_DISABLED = "0 = DÉSACTIVÉ, ne pas utiliser sans un addon de barres de noms"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(fonctionne uniquement avec la Fonction Douce)"
 

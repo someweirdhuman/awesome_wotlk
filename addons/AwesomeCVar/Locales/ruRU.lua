@@ -61,10 +61,13 @@ if GetLocale() == "ruRU" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "Ширина хитбокса СОЮЗНИКОВ"
     L.CVAR_LABEL_INTERACTION_MODE = "Режим взаимодействия"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Угол конуса взаимодействия"
+	L.CVAR_LABEL_SPELL_PROJECTION_MAX_RANGE = "Макс. дальность проекции заклинания"
+	L.CVAR_LABEL_SPELL_PROJECTION_HORIZONTAL_BIAS = "Горизонтальное смещение проекции заклинания"
 
+	L.DESC_ZERO_TO_DISABLE = "0 = ОТКЛЮЧЕНО"
     L.DESC_HITBOX_DISABLED = "0 = ОТКЛЮЧЕНО, не используйте без аддона для индикаторов здоровья"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(работает только с Плавноq функцией)"
-    L.CVAR_LABEL_SPELL_PRJECTION_MODE = "Режим проекции заклинаний"
+    L.CVAR_LABEL_SPELL_PROJECTION_MODE = "Режим проекции заклинаний"
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API реакции"

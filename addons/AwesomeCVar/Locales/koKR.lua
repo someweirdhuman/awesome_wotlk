@@ -61,8 +61,11 @@ if GetLocale() == "koKR" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "우호적 이름표 히트박스 너비"
     L.CVAR_LABEL_INTERACTION_MODE = "상호작용 모드"
     L.CVAR_LABEL_INTERACTION_ANGLE = "상호작용 원뿔 각도"
-    L.CVAR_LABEL_SPELL_PRJECTION_MODE = "주문 투사 모드"
+    L.CVAR_LABEL_SPELL_PROJECTION_MODE = "주문 투사 모드"
+	L.CVAR_LABEL_SPELL_PROJECTION_MAX_RANGE = "주문 투사 최대 사거리"
+	L.CVAR_LABEL_SPELL_PROJECTION_HORIZONTAL_BIAS = "주문 투사 수평 보정"
 
+	L.DESC_ZERO_TO_DISABLE = "0 = 비활성화"
     L.DESC_HITBOX_DISABLED = "0 = 비활성화됨, 이름표 애드온 없이 사용하지 마세요"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(부드러운 기능에서만 작동)"
 
