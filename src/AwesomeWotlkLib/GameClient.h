@@ -1501,3 +1501,68 @@ inline void lua_pushframe(lua_State* L, Frame* frame)
 {
     lua_rawgeti(L, LUA_REGISTRYINDEX, CFrame::GetRefTable(frame));
 }
+
+static float GetEffectiveScale(lua_State* L)
+{
+    // Push global UIParent onto the stack
+    lua_getglobal(L, "UIParent");          // stack: UIParent
+
+    if (lua_type(L, -1) != LUA_TTABLE) {
+        lua_pop(L, 1);
+        return 1.0f; // default scale fallback
+    }
+
+    // Get the GetEffectiveScale method from UIParent
+    lua_getfield(L, -1, "GetEffectiveScale");  // stack: UIParent, GetEffectiveScale function
+
+    if (lua_type(L, -1) != LUA_TFUNCTION) {
+        lua_pop(L, 2); // pop function and UIParent
+        return 1.0f;
+    }
+
+    lua_pushvalue(L, -2);  // push UIParent as self   stack: UIParent, func, UIParent(self)
+
+    // Call the function with 1 argument (self), expecting 1 result
+    if (lua_pcall(L, 1, 1, 0) != 0) {
+        // error, print or handle
+        const char* err = lua_tostringnew(L, -1);
+        lua_pop(L, 2); // pop error + UIParent
+        return 1.0f;
+    }
+
+    // Get the return value
+    float scale = 1.0f;
+    if (lua_isnumber(L, -1)) {
+        scale = (float)lua_tonumber(L, -1);
+    }
+
+    lua_pop(L, 2); // pop return value and UIParent
+
+    return scale;
+}
+
+static float GetScreenWidth(lua_State* L)
+{
+    lua_getglobal(L, "GetScreenWidth"); // stack: GetWidth
+
+    if (!lua_isfunction(L, -1)) {
+        lua_pop(L, 1);
+        return 0.0f;
+    }
+
+    // Call GetWidth() with 0 arguments, expecting 1 result
+    if (lua_pcall(L, 0, 1, 0) != 0) {
+        // error calling GetWidth
+        lua_pop(L, 1);
+        return 0.0f;
+    }
+
+    float width = 0.0f;
+    if (lua_isnumber(L, -1)) {
+        width = (float)lua_tonumber(L, -1);
+    }
+
+    lua_pop(L, 1); // pop return value
+
+    return width;
+}

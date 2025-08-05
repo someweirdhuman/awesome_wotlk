@@ -12,7 +12,7 @@ static int CVarHandler_spellProjectionMode(Console::CVar*, const char*, const ch
 static constexpr float MAX_TRACE_DISTANCE = 1000.0f;
 static constexpr uint32_t TERRAIN_HIT_FLAGS = 0x10111;
 static bool g_cursorKeywordActive = false;
-static int g_cursorSpellID = 0;
+//static int g_cursorSpellID = 0;
 static bool g_playerLocationKeywordActive = false;
 static bool collisionFound = false;
 static C3Vector newTargetPos;
@@ -318,34 +318,71 @@ static bool GetCursorWorldPosition(VecXYZ& worldPos) {
     return ((decltype(&Spell_C_CancelPlayerSpells))0x00809AC0)();
 }*/
 
+struct C2Vector {
+    float X;
+    float Y;
+};
+static void Convert3Dto2D(C3Vector pos3d, float* x, float* y, lua_State* L, WorldFrame* worldFrame) {
+    VecXYZ pos2d = {};
+    uint32_t flags = 0;
+    int result = WorldFrame_3Dto2D(worldFrame, nullptr, (VecXYZ*)&pos3d, &pos2d, &flags);
+
+    float scale = GetEffectiveScale(L);
+    WorldFrame_PercToScreenPos(pos2d.x, pos2d.y, x, y);
+}
+
 bool GetAdjustedTargetPositionIfBlocked(
     const C3Vector& playerPos,
     const C3Vector& targetPos,
     float maxRange,
-    C3Vector& outAdjustedPos)
-{
+    C3Vector& outAdjustedPos) {
+
+    WorldFrame* worldFrame = GetWorldFrame();
+    lua_State* L = GetLuaState();
+
     constexpr int arcPoints = 30;
-    constexpr float degreeOffsets[] = { -40, -30, -20, -10, 0, 10, 20, 30, 40 };
+
+    // Pre-calculate sin and cos values for each point on the arc to avoid repeated calculations in the inner loop
+    float arcSin[arcPoints + 1];
+    float arcCos[arcPoints + 1];
+    for (int i = 0; i <= arcPoints; ++i) {
+        float angle = (float)i / arcPoints * 3.14159265f - (3.14159265f / 2.0f);
+        arcSin[i] = std::sin(angle);
+        arcCos[i] = std::cos(angle);
+    }
+
     std::vector<C3Vector> terrainHits;
 
     float dX = targetPos.X - playerPos.X;
     float dY = targetPos.Y - playerPos.Y;
     float baseTheta = std::atan2(dY, dX);
 
-    // Sample arcs and collect terrain hits
-    for (float offsetDeg : degreeOffsets) {
+    float ScreenWidth = GetScreenWidth(L);
+
+    // Optimized approach to sample a wide range of angles without a hardcoded array.
+    // Iterates from -40 to 40 degrees in 10 degree steps.
+    for (float offsetDeg = -40.0f; offsetDeg <= 40.0f; offsetDeg += 10.0f) {
         float offsetRad = offsetDeg * (3.14159265f / 180.0f);
         float theta = baseTheta + offsetRad;
+        float cosTheta = std::cos(theta);
+        float sinTheta = std::sin(theta);
 
         std::vector<C3Vector> arc;
-        for (int i = 0; i <= arcPoints; ++i) {
-            float angle = (float)i / arcPoints * 3.14159265f - (3.14159265f / 2.0f);
-
+        // Points 17 down to 0
+        for (int i = 19; i >= 0; --i) {
             C3Vector point;
-            point.X = playerPos.X + maxRange * std::cos(angle) * std::cos(theta);
-            point.Y = playerPos.Y + maxRange * std::cos(angle) * std::sin(theta);
-            point.Z = playerPos.Z + maxRange * std::sin(angle);
+            point.X = playerPos.X + maxRange * arcCos[i] * cosTheta;
+            point.Y = playerPos.Y + maxRange * arcCos[i] * sinTheta;
+            point.Z = playerPos.Z + maxRange * arcSin[i];
+            arc.push_back(point);
+        }
 
+        // Points 17 up to 30
+        for (int i = 19; i <= arcPoints; ++i) {
+            C3Vector point;
+            point.X = playerPos.X + maxRange * arcCos[i] * cosTheta;
+            point.Y = playerPos.Y + maxRange * arcCos[i] * sinTheta;
+            point.Z = playerPos.Z + maxRange * arcSin[i];
             arc.push_back(point);
         }
 
@@ -359,120 +396,89 @@ bool GetAdjustedTargetPositionIfBlocked(
         }
     }
 
-    if (terrainHits.size() < 4)
-        return false; // need at least 4 points for smoothing
+    if (terrainHits.size() < 2)
+        return false;
 
-    // Generate smooth curve points using Catmull-Rom spline (inlined)
-    std::vector<C3Vector> smoothCurvePoints;
-    const int samplesPerSegment = 10;
-
-    for (size_t i = 1; i < terrainHits.size() - 2; ++i) {
-        const C3Vector& p0 = terrainHits[i - 1];
-        const C3Vector& p1 = terrainHits[i];
-        const C3Vector& p2 = terrainHits[i + 1];
-        const C3Vector& p3 = terrainHits[i + 2];
-
-        for (int s = 0; s < samplesPerSegment; ++s) {
-            float t = s / float(samplesPerSegment);
-            float t2 = t * t;
-            float t3 = t2 * t;
-
-            // Catmull-Rom spline formula
-            C3Vector pt;
-            pt.X = p1.X * (2.f * t3 - 3.f * t2 + 1.f)
-                + p2.X * (-2.f * t3 + 3.f * t2)
-                + (p2.X - p0.X) * (t3 - 2.f * t2 + t)
-                + (p3.X - p1.X) * (t3 - t2);
-
-            pt.Y = p1.Y * (2.f * t3 - 3.f * t2 + 1.f)
-                + p2.Y * (-2.f * t3 + 3.f * t2)
-                + (p2.Y - p0.Y) * (t3 - 2.f * t2 + t)
-                + (p3.Y - p1.Y) * (t3 - t2);
-
-            pt.Z = p1.Z * (2.f * t3 - 3.f * t2 + 1.f)
-                + p2.Z * (-2.f * t3 + 3.f * t2)
-                + (p2.Z - p0.Z) * (t3 - 2.f * t2 + t)
-                + (p3.Z - p1.Z) * (t3 - t2);
-
-            smoothCurvePoints.push_back(pt);
-        }
+    // The terrain hits themselves form the polygonal path, no smoothing
+    std::vector<C3Vector> polygonalCurvePoints;
+    for (const auto& hit : terrainHits) {
+        polygonalCurvePoints.push_back(hit);
     }
 
-    // Prepare ray from camera to target
-    C3Vector cameraPos = GetCameraPosC3();
-    float rayDX = targetPos.X - cameraPos.X;
-    float rayDY = targetPos.Y - cameraPos.Y;
-    float rayDZ = targetPos.Z - cameraPos.Z;
-
-    float rayLenSq = rayDX * rayDX + rayDY * rayDY + rayDZ * rayDZ;
-    if (rayLenSq < 0.00001f)
+    if (polygonalCurvePoints.size() < 2)
         return false;
+
+    // Optimization: Convert all 3D points to 2D once, before the main loop
+    std::vector<C2Vector> polygonalCurvePoints2D;
+    for (const auto& p : polygonalCurvePoints) {
+        float x, y;
+        Convert3Dto2D(p, &x, &y, L, worldFrame);
+        C2Vector temp2D = { x, y };
+        polygonalCurvePoints2D.push_back(temp2D);
+    }
 
     float bestDistSq = 9999999.0f;
     C3Vector bestPoint;
 
-    // Find closest point on smooth curve to the ray
-    for (size_t i = 0; i < smoothCurvePoints.size() - 1; ++i) {
-        C3Vector p1 = smoothCurvePoints[i];
-        C3Vector p2 = smoothCurvePoints[i + 1];
+    // Convert target position to 2D screen space
+    float targetX2D, targetY2D;
+    Convert3Dto2D(targetPos, &targetX2D, &targetY2D, L, worldFrame);
 
-        float segDX = p2.X - p1.X;
-        float segDY = p2.Y - p1.Y;
-        float segDZ = p2.Z - p1.Z;
+    // Find closest point on polygonal curve to the target only in the left/right axis (X)
+    for (size_t i = 0; i < polygonalCurvePoints.size() - 1; ++i) {
+        C3Vector p1 = polygonalCurvePoints[i];
+        C3Vector p2 = polygonalCurvePoints[i + 1];
 
-        float segLenSq = segDX * segDX + segDY * segDY + segDZ * segDZ;
-        if (segLenSq < 0.00001f)
+        // Use the pre-converted 2D points
+        C2Vector p1_2d = polygonalCurvePoints2D[i];
+        C2Vector p2_2d = polygonalCurvePoints2D[i + 1];
+
+        // Calculate segment vector in 2D
+        float segDX = p2_2d.X - p1_2d.X;
+        float segDY = p2_2d.Y - p1_2d.Y;
+
+        // Handle horizontal segments to avoid division by zero
+        if (std::abs(segDX) < 0.00001f) {
+            // If the segment is vertical, the closest point is the one
+            // with the minimum horizontal distance to the target.
+            float distSq = (p1_2d.X - targetX2D) * (p1_2d.X - targetX2D);
+            if (distSq < bestDistSq) {
+                bestDistSq = distSq;
+
+                // Find the point on the segment with the smallest vertical distance
+                // to the target, given that the horizontal distance is constant.
+                float t;
+                if (targetY2D < p1_2d.Y) t = 0.0f;
+                else if (targetY2D > p2_2d.Y) t = 1.0f;
+                else t = (targetY2D - p1_2d.Y) / segDY;
+
+                bestPoint.X = p1.X + (p2.X - p1.X) * t;
+                bestPoint.Y = p1.Y + (p2.Y - p1.Y) * t;
+                bestPoint.Z = p1.Z + (p2.Z - p1.Z) * t;
+            }
             continue;
+        }
 
-        // Cross product of segment and ray
-        float nX = segDY * rayDZ - segDZ * rayDY;
-        float nY = segDZ * rayDX - segDX * rayDZ;
-        float nZ = segDX * rayDY - segDY * rayDX;
-        float nLenSq = nX * nX + nY * nY + nZ * nZ;
+        // Calculate projection factor 't' for the closest point on the line
+        // based on the horizontal axis (X) only.
+        float t = (targetX2D - p1_2d.X) / segDX;
 
-        if (nLenSq < 0.000001f)
-            continue;
-
-        // Vector from camera to segment start
-        float diffX = p1.X - cameraPos.X;
-        float diffY = p1.Y - cameraPos.Y;
-        float diffZ = p1.Z - cameraPos.Z;
-
-        // Cross product of diff and ray
-        float cX = diffY * rayDZ - diffZ * rayDY;
-        float cY = diffZ * rayDX - diffX * rayDZ;
-        float cZ = diffX * rayDY - diffY * rayDX;
-
-        // t is projection factor along segment
-        float t = (cX * nX + cY * nY + cZ * nZ) / nLenSq;
-
-        // Clamp to segment
+        // Clamp 't' to the 2D segment [0, 1]
         if (t < 0.0f) t = 0.0f;
         if (t > 1.0f) t = 1.0f;
 
-        C3Vector point;
-        point.X = p1.X + segDX * t;
-        point.Y = p1.Y + segDY * t;
-        point.Z = p1.Z + segDZ * t;
+        // Calculate the closest 2D point's X coordinate on the segment
+        float closestX2D = p1_2d.X + segDX * t;
 
-        // Distance to ray
-        float px = point.X - cameraPos.X;
-        float py = point.Y - cameraPos.Y;
-        float pz = point.Z - cameraPos.Z;
-
-        float dot = px * rayDX + py * rayDY + pz * rayDZ;
-        float projX = rayDX * (dot / rayLenSq);
-        float projY = rayDY * (dot / rayLenSq);
-        float projZ = rayDZ * (dot / rayLenSq);
-
-        float dx = px - projX;
-        float dy = py - projY;
-        float dz = pz - projZ;
-        float distSq = dx * dx + dy * dy + dz * dz;
+        // Calculate the squared horizontal screen-space distance
+        float distSq = (closestX2D - targetX2D) * (closestX2D - targetX2D);
 
         if (distSq < bestDistSq) {
             bestDistSq = distSq;
-            bestPoint = point;
+            // Interpolate the corresponding 3D point using the clamped 't'
+            bestPoint.X = p1.X + (p2.X - p1.X) * t;
+            bestPoint.Y = p1.Y + (p2.Y - p1.Y) * t;
+            bestPoint.Z = p1.Z + (p2.Z - p1.Z) * t;
         }
     }
 
@@ -525,66 +531,6 @@ static int __cdecl SecureCmdOptionParse_hk(lua_State* L) {
     return result;
 }
 
-static void onUpdateCallback() {
-    if (!IsInWorld())
-        return;
-
-    if (g_cursorKeywordActive) {
-        if (isSpellReadied()) {
-            VecXYZ cursorPos;
-            if (GetCursorWorldPosition(cursorPos)) {
-                if (std::atoi(s_cvar_spellProjectionMode->vStr) == 1) {
-                    CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
-                    C3Vector playerPos;
-                    player->GetPosition(playerPos);
-
-                    float minRange = 0.0f;
-                    float maxRange = 0.0f;
-
-                    GetSpellRange_t GetSpellRange = reinterpret_cast<GetSpellRange_t>(0x00802C30);
-                    GetSpellRange(player, g_cursorSpellID, &minRange, &maxRange, 0);
-
-                    if (maxRange - 0.5f > 0.f) {
-                        maxRange = maxRange - 0.5f;
-                    }
-
-                    C3Vector newOverrideTargetPos;
-                    bool collisionFound = GetAdjustedTargetPositionIfBlocked(playerPos, reinterpret_cast<C3Vector&>(cursorPos), maxRange, newOverrideTargetPos);
-                    if (collisionFound) {
-                        TerrainClick(newOverrideTargetPos.X, newOverrideTargetPos.Y, newOverrideTargetPos.Z);
-                    }
-                    else {
-                        TerrainClick(cursorPos.x, cursorPos.y, cursorPos.z);
-                    }
-                }
-                else {
-                    TerrainClick(cursorPos.x, cursorPos.y, cursorPos.z);
-                }
-
-                printf("%d \n", g_cursorSpellID);
-            }
-        }
-        g_cursorKeywordActive = false;
-        g_cursorSpellID = 0;
-    }
-    else if (g_playerLocationKeywordActive) {
-        CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
-        if (player && isSpellReadied()) {
-            VecXYZ posPlayer;
-            player->GetPosition(*reinterpret_cast<C3Vector*>(&posPlayer));
-            TerrainClick(posPlayer.x, posPlayer.y, posPlayer.z);
-        }
-        g_playerLocationKeywordActive = false;
-    }
-
-    if (collisionFound) {
-        collisionFound = false;
-        newTargetPos.X = 0;
-        newTargetPos.Y = 0;
-        newTargetPos.Z = 0;
-    }
-}
-
 double getGreenThingSize() {
     double v10 = ((double (*)())0x8019C0)();
     double v13;
@@ -597,19 +543,28 @@ double getGreenThingSize() {
     return v13;
 }
 
-static int(__cdecl* original_project_texture)(int, int, int) = (int(__cdecl*)(int, int, int))0x004F8A40;
-static int __cdecl hooked_project_texture(int a1, int a2, int a3) {
+static int(__stdcall* original_project_texture)(uint32_t* a1) = (int(__stdcall*)(uint32_t * a1))0x004F66C0;
+static int __stdcall hooked_project_texture(uint32_t* a1) {
     if (std::atoi(s_cvar_spellProjectionMode->vStr) == 0) {
-        return original_project_texture(a1, a2, a3);
+        return original_project_texture(a1);
     }
+
     auto* spellCast = *reinterpret_cast<SpellCast**>(0x00D3F4E4);
     if (!spellCast) {
-        return original_project_texture(a1, a2, a3);
+        return original_project_texture(a1);
     }
 
     CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
     if (!player) {
-        return original_project_texture(a1, a2, a3);
+        return original_project_texture(a1);
+    }
+
+    if (g_playerLocationKeywordActive) {
+        C3Vector playerPos;
+        player->GetPosition(playerPos);
+        TerrainClick(playerPos.X, playerPos.Y, playerPos.Z);
+        g_playerLocationKeywordActive = false;
+        return 0;
     }
 
     float minRange = 0.0f;
@@ -624,10 +579,11 @@ static int __cdecl hooked_project_texture(int a1, int a2, int a3) {
     C3Vector playerPos;
     player->GetPosition(playerPos);
 
-    C3Vector targetPos;
-    targetPos.X = *(float*)0x00B74380;
-    targetPos.Y = *(float*)0x00B74384;
-    targetPos.Z = *(float*)0x00B74388;
+    C3Vector targetPos = {
+        *(float*)&a1[2],
+        *(float*)&a1[3],
+        *(float*)&a1[4]
+    };
 
     float dX = targetPos.X - playerPos.X;
     float dY = targetPos.Y - playerPos.Y;
@@ -641,21 +597,22 @@ static int __cdecl hooked_project_texture(int a1, int a2, int a3) {
     }
 
     if (totalDist > maxRange && totalDist > 0.0001f) {
-        collisionFound = GetAdjustedTargetPositionIfBlocked(playerPos, targetPos, maxRange, newTargetPos);
-        if (collisionFound) {
-            *(float*)0x00B74380 = newTargetPos.X;
-            *(float*)0x00B74384 = newTargetPos.Y;
-            *(float*)0x00B74388 = newTargetPos.Z;
-
-            // revert projection texture/color to green again
-            *(int*)0x00AC79A4 = 0;
-
-            // revert projection size back to original
-            *(float*)0xB74370 = static_cast<float>(getGreenThingSize());
+        if (collisionFound = GetAdjustedTargetPositionIfBlocked(playerPos, targetPos, maxRange, newTargetPos)) {
+            *(float*)&a1[2] = newTargetPos.X;
+            *(float*)&a1[3] = newTargetPos.Y;
+            *(float*)&a1[4] = newTargetPos.Z;
         }
     }
 
-    return original_project_texture(a1, a2, a3);
+    if (g_cursorKeywordActive) {
+        TerrainClick(*(float*)&a1[2], *(float*)&a1[3], *(float*)&a1[4]);
+        g_cursorKeywordActive = false;
+        return 0;
+    }
+
+    g_cursorKeywordActive = false;
+    g_playerLocationKeywordActive = false;
+    return original_project_texture(a1);
 }
 
 void __cdecl HandleTerrainClick_hook(TerrainClickEvent* event)
@@ -689,17 +646,11 @@ int __cdecl Spell_OnCastHook(int spellId, int a2, int a3, int a4, int a5)
             }
         }
     }
-
-    if (g_cursorKeywordActive) {
-        g_cursorSpellID = spellId;
-    }
-
     return success;
 }
 
 void Hooks::initialize()
 {
-    Hooks::FrameScript::registerOnUpdate(onUpdateCallback);
     Hooks::FrameXML::registerCVar(&s_cvar_spellProjectionMode, "spellProjectionMode", NULL, (Console::CVarFlags)1, "0", CVarHandler_spellProjectionMode);
     DetourAttach(&(LPVOID&)CVars_Initialize_orig, CVars_Initialize_hk);
     DetourAttach(&(LPVOID&)FrameScript_FireOnUpdate_orig, FrameScript_FireOnUpdate_hk);
