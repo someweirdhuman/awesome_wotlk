@@ -77,27 +77,3 @@ namespace Spell {
     }
     void initialize();
 }
-
-typedef void(__cdecl* GetSpellRange_t)(void* target, int spellId, float* minRange, float* maxRange, int isFriend);
-GetSpellRange_t GetSpellRange = reinterpret_cast<GetSpellRange_t>(0x00802C30);
-
-struct PendingSpellCastData
-{
-    uint64_t caster;
-    uint64_t target;
-    DWORD dword10;
-    DWORD dword14;
-    int spellId;
-    DWORD pendingCast;
-};
-
-struct SpellCast
-{
-    DWORD dword0;
-    DWORD dword4;
-    PendingSpellCastData data;
-    DWORD dword8;
-    DWORD dwordC;
-    DWORD dword10;
-    DWORD dword14;
-};

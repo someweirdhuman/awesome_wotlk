@@ -2,23 +2,33 @@
 #include <Windows.h>
 #include <Detours/detours.h>
 #include <string>
-#include <vector>
-#include <unordered_map>
-#include "Spell.h"
 
+static Console::CVar* s_cvar_spellProjectionHorizontalBias;
+static Console::CVar* s_cvar_spellProjectionMaxRange;
 static Console::CVar* s_cvar_spellProjectionMode;
+static int CVarHandler_spellProjectionHorizontalBias(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_spellProjectionMaxRange(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_spellProjectionMode(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 
 static constexpr float MAX_TRACE_DISTANCE = 1000.0f;
 static constexpr uint32_t TERRAIN_HIT_FLAGS = 0x10111;
+
 static bool g_cursorKeywordActive = false;
-static int g_cursorSpellID = 0;
 static bool g_playerLocationKeywordActive = false;
-static bool collisionFound = false;
-static C3Vector newTargetPos;
+static bool g_hasAdjustedPos = false;
+static C3Vector g_adjustedSpellPos = { 0, 0, 0 };
+
+typedef int(__stdcall* ProcessAoETargeting)(uint32_t* a1);
+static ProcessAoETargeting ProcessAoETargeting_orig = (ProcessAoETargeting)0x004F66C0;
+
+typedef int(__cdecl* GetSpellRange)(int, int, float*, float*, int);
+static GetSpellRange GetSpellRange_orig = (GetSpellRange)0x00802C30;
+
+static float clampf(float val, float minVal, float maxVal) { return (val < minVal) ? minVal : (val > maxVal) ? maxVal : val; }
+static float dot(const C3Vector& a, const C3Vector& b) { return a.X * b.X + a.Y * b.Y + a.Z * b.Z; }
 
 typedef int(__cdecl* SecureCmdOptionParse_t)(lua_State* L);
-SecureCmdOptionParse_t SecureCmdOptionParse_orig = (SecureCmdOptionParse_t)0x00564AE0;
+static SecureCmdOptionParse_t SecureCmdOptionParse_orig = (SecureCmdOptionParse_t)0x00564AE0;
 
 typedef void(__cdecl* HandleTerrainClick_t)(TerrainClickEvent*);
 static HandleTerrainClick_t HandleTerrainClick_orig = (HandleTerrainClick_t)0x00527830;
@@ -233,6 +243,8 @@ static void __declspec(naked) LoadCharacters_hk()
     }
 }
 
+static bool isSpellReadied() { return ((DWORD)0x00D3F4E0 & 0x60) != 0 && (DWORD)0x00D3F4E4 != 0; }
+
 static bool TerrainClick(float x, float y, float z) {
     TerrainClickEvent tc = {};
     tc.GUID = 0;
@@ -245,8 +257,7 @@ static bool TerrainClick(float x, float y, float z) {
     return true;
 }
 
-bool TraceLine(const C3Vector& start, const C3Vector& end, uint32_t hitFlags,
-    C3Vector& intersectionPoint, float& completedBeforeIntersection) {
+static bool TraceLine(const C3Vector& start, const C3Vector& end, uint32_t hitFlags, C3Vector& intersectionPoint, float& completedBeforeIntersection) {
     completedBeforeIntersection = 1.0f;
     intersectionPoint = { 0.0f, 0.0f, 0.0f };
 
@@ -314,181 +325,162 @@ static bool GetCursorWorldPosition(VecXYZ& worldPos) {
     return false;
 }
 
-/*inline int __fastcall Spell_C_CancelPlayerSpells() {
-    return ((decltype(&Spell_C_CancelPlayerSpells))0x00809AC0)();
-}*/
+static bool GetScreenSpaceSpellPosition(const C3Vector& playerPos, const C3Vector& cursorPos, float maxRange, C3Vector& outPos) {
+    Camera* camera = GetActiveCamera();
+    if (!camera)
+        return false;
 
-bool GetAdjustedTargetPositionIfBlocked(
-    const C3Vector& playerPos,
-    const C3Vector& targetPos,
-    float maxRange,
-    C3Vector& outAdjustedPos)
-{
-    constexpr int arcPoints = 30;
-    constexpr float degreeOffsets[] = { -40, -30, -20, -10, 0, 10, 20, 30, 40 };
-    std::vector<C3Vector> terrainHits;
+    const float* m = (float*)((uintptr_t)camera + 0x14);
+    C3Vector right = { m[3], m[4], m[5] };
+    C3Vector up = { m[6], m[7], m[8] };
+    C3Vector fwd = { m[0], m[1], m[2] };
 
-    float dX = targetPos.X - playerPos.X;
-    float dY = targetPos.Y - playerPos.Y;
-    float baseTheta = std::atan2(dY, dX);
+    C3Vector toCursor = {
+        cursorPos.X - playerPos.X,
+        cursorPos.Y - playerPos.Y,
+        cursorPos.Z - playerPos.Z
+    };
 
-    // Sample arcs and collect terrain hits
-    for (float offsetDeg : degreeOffsets) {
-        float offsetRad = offsetDeg * (3.14159265f / 180.0f);
-        float theta = baseTheta + offsetRad;
+    float sx = dot(toCursor, right);
+    float sy = dot(toCursor, up);
+    float sz = dot(toCursor, fwd);
 
-        std::vector<C3Vector> arc;
-        for (int i = 0; i <= arcPoints; ++i) {
-            float angle = (float)i / arcPoints * 3.14159265f - (3.14159265f / 2.0f);
+    double clampDistance = std::atoi(s_cvar_spellProjectionMaxRange->vStr);
+    if (clampDistance > 0 && sqrtf(toCursor.X * toCursor.X + toCursor.Y * toCursor.Y + toCursor.Z * toCursor.Z) > maxRange + clampDistance)
+        return false;
 
-            C3Vector point;
-            point.X = playerPos.X + maxRange * std::cos(angle) * std::cos(theta);
-            point.Y = playerPos.Y + maxRange * std::cos(angle) * std::sin(theta);
-            point.Z = playerPos.Z + maxRange * std::sin(angle);
+    float dx = cursorPos.X - playerPos.X;
+    float dy = cursorPos.Y - playerPos.Y;
+    float biasT = (sqrtf(dx * dx + dy * dy) - maxRange) / 25.0f;
 
-            arc.push_back(point);
-        }
+    if (biasT < 0.0f)
+        biasT = 0.0f;
+    else if (biasT > 1.0f)
+        biasT = 1.0f;
+    sx *= (1.0f + std::atoi(s_cvar_spellProjectionHorizontalBias->vStr) * (biasT * biasT * (3.0f - 2.0f * biasT)));
 
-        C3Vector hit;
-        float completed;
-        for (size_t i = 0; i < arc.size() - 1; ++i) {
-            if (TraceLine(arc[i], arc[i + 1], 0x10111, hit, completed)) {
-                terrainHits.push_back(hit);
-                break;
+    C3Vector dir = {
+        sx * right.X + sy * up.X + sz * fwd.X,
+        sx * right.Y + sy * up.Y + sz * fwd.Y,
+        sx * right.Z + sy * up.Z + sz * fwd.Z
+    };
+
+    float dirLen = sqrtf(dir.X * dir.X + dir.Y * dir.Y + dir.Z * dir.Z);
+    if (dirLen == 0.0f)
+        return false;
+    float invDirLen = 1.0f / dirLen;
+    dir.X *= invDirLen; dir.Y *= invDirLen; dir.Z *= invDirLen;
+
+    C3Vector perpA = (fabs(dir.Z) < 0.9f) ?
+        C3Vector{ -dir.Y, dir.X, 0.0f } :
+        C3Vector{ 0.0f, -dir.Z, dir.Y };
+
+    float perpLen = sqrtf(perpA.X * perpA.X + perpA.Y * perpA.Y + perpA.Z * perpA.Z);
+    float invPerpLen = 1.0f / (perpLen + 1e-6f);
+    perpA.X *= invPerpLen; perpA.Y *= invPerpLen; perpA.Z *= invPerpLen;
+
+    C3Vector perpB = {
+        dir.Y * perpA.Z - dir.Z * perpA.Y,
+        dir.Z * perpA.X - dir.X * perpA.Z,
+        dir.X * perpA.Y - dir.Y * perpA.X
+    };
+
+    const float coneRadius = 0.25f;
+    C3Vector coneOffsets[4] = {
+        { perpA.X * coneRadius, perpA.Y * coneRadius, perpA.Z * coneRadius },
+        { perpB.X * coneRadius, perpB.Y * coneRadius, perpB.Z * coneRadius },
+        { -perpA.X * coneRadius, -perpA.Y * coneRadius, -perpA.Z * coneRadius },
+        { -perpB.X * coneRadius, -perpB.Y * coneRadius, -perpB.Z * coneRadius }
+    };
+
+    C3Vector coneDirs[5];
+    coneDirs[0] = dir;
+    for (int i = 1; i < 5; ++i) {
+        coneDirs[i] = {
+            dir.X + coneOffsets[i - 1].X,
+            dir.Y + coneOffsets[i - 1].Y,
+            dir.Z + coneOffsets[i - 1].Z
+        };
+        float len = sqrtf(coneDirs[i].X * coneDirs[i].X + coneDirs[i].Y * coneDirs[i].Y + coneDirs[i].Z * coneDirs[i].Z);
+        float invLen = 1.0f / (len + 1e-6f);
+        coneDirs[i].X *= invLen;
+        coneDirs[i].Y *= invLen;
+        coneDirs[i].Z *= invLen;
+    }
+
+    C3Vector castDirs[6] = {
+        { 0.0f, 0.0f, -1.0f },
+        { 0.0f, 0.0f,  1.0f },
+        { dir.X * 0.5f, dir.Y * 0.5f, -0.7071f },
+        { -dir.X * 0.5f, -dir.Y * 0.5f, -0.7071f },
+        { perpA.X * 0.5f, perpA.Y * 0.5f, -0.7071f },
+        { -perpA.X * 0.5f, -perpA.Y * 0.5f, -0.7071f }
+    };
+
+    const float maxRangeSq = maxRange * maxRange;
+    const float distStep = maxRange / 10.0f;
+
+    C3Vector bestHit = playerPos;
+    float bestDistSq = 0.0f;
+
+    for (int distStepIdx = 10; distStepIdx >= 1; --distStepIdx) {
+        float testDist = distStep * distStepIdx;
+
+        for (int coneStep = 0; coneStep < 5; ++coneStep) {
+            C3Vector testDir = coneDirs[coneStep];
+
+            C3Vector testPoint = {
+                playerPos.X + testDir.X * testDist,
+                playerPos.Y + testDir.Y * testDist,
+                playerPos.Z + testDir.Z * testDist
+            };
+
+            for (int castIdx = 0; castIdx < 6; ++castIdx) {
+                C3Vector rayStart = {
+                    testPoint.X - castDirs[castIdx].X * 50.0f,
+                    testPoint.Y - castDirs[castIdx].Y * 50.0f,
+                    testPoint.Z - castDirs[castIdx].Z * 50.0f
+                };
+                C3Vector rayEnd = {
+                    testPoint.X + castDirs[castIdx].X * 100.0f,
+                    testPoint.Y + castDirs[castIdx].Y * 100.0f,
+                    testPoint.Z + castDirs[castIdx].Z * 100.0f
+                };
+
+                C3Vector hitPoint;
+                float hitDist;
+                if (TraceLine(rayStart, rayEnd, TERRAIN_HIT_FLAGS, hitPoint, hitDist)) {
+                    float dx = hitPoint.X - playerPos.X;
+                    float dy = hitPoint.Y - playerPos.Y;
+                    float dz = hitPoint.Z - playerPos.Z;
+                    float distSq = dx * dx + dy * dy + dz * dz;
+
+                    if (distSq <= maxRangeSq && distSq > bestDistSq) {
+                        if (distStepIdx == 10) {
+                            outPos = hitPoint;
+                            return true;
+                        }
+                        bestHit = hitPoint;
+                        bestDistSq = distSq;
+                    }
+                }
             }
         }
     }
 
-    if (terrainHits.size() < 4)
-        return false; // need at least 4 points for smoothing
-
-    // Generate smooth curve points using Catmull-Rom spline (inlined)
-    std::vector<C3Vector> smoothCurvePoints;
-    const int samplesPerSegment = 10;
-
-    for (size_t i = 1; i < terrainHits.size() - 2; ++i) {
-        const C3Vector& p0 = terrainHits[i - 1];
-        const C3Vector& p1 = terrainHits[i];
-        const C3Vector& p2 = terrainHits[i + 1];
-        const C3Vector& p3 = terrainHits[i + 2];
-
-        for (int s = 0; s < samplesPerSegment; ++s) {
-            float t = s / float(samplesPerSegment);
-            float t2 = t * t;
-            float t3 = t2 * t;
-
-            // Catmull-Rom spline formula
-            C3Vector pt;
-            pt.X = p1.X * (2.f * t3 - 3.f * t2 + 1.f)
-                + p2.X * (-2.f * t3 + 3.f * t2)
-                + (p2.X - p0.X) * (t3 - 2.f * t2 + t)
-                + (p3.X - p1.X) * (t3 - t2);
-
-            pt.Y = p1.Y * (2.f * t3 - 3.f * t2 + 1.f)
-                + p2.Y * (-2.f * t3 + 3.f * t2)
-                + (p2.Y - p0.Y) * (t3 - 2.f * t2 + t)
-                + (p3.Y - p1.Y) * (t3 - t2);
-
-            pt.Z = p1.Z * (2.f * t3 - 3.f * t2 + 1.f)
-                + p2.Z * (-2.f * t3 + 3.f * t2)
-                + (p2.Z - p0.Z) * (t3 - 2.f * t2 + t)
-                + (p3.Z - p1.Z) * (t3 - t2);
-
-            smoothCurvePoints.push_back(pt);
-        }
+    if (bestDistSq) {
+        outPos = bestHit;
     }
-
-    // Prepare ray from camera to target
-    C3Vector cameraPos = GetCameraPosC3();
-    float rayDX = targetPos.X - cameraPos.X;
-    float rayDY = targetPos.Y - cameraPos.Y;
-    float rayDZ = targetPos.Z - cameraPos.Z;
-
-    float rayLenSq = rayDX * rayDX + rayDY * rayDY + rayDZ * rayDZ;
-    if (rayLenSq < 0.00001f)
-        return false;
-
-    float bestDistSq = 9999999.0f;
-    C3Vector bestPoint;
-
-    // Find closest point on smooth curve to the ray
-    for (size_t i = 0; i < smoothCurvePoints.size() - 1; ++i) {
-        C3Vector p1 = smoothCurvePoints[i];
-        C3Vector p2 = smoothCurvePoints[i + 1];
-
-        float segDX = p2.X - p1.X;
-        float segDY = p2.Y - p1.Y;
-        float segDZ = p2.Z - p1.Z;
-
-        float segLenSq = segDX * segDX + segDY * segDY + segDZ * segDZ;
-        if (segLenSq < 0.00001f)
-            continue;
-
-        // Cross product of segment and ray
-        float nX = segDY * rayDZ - segDZ * rayDY;
-        float nY = segDZ * rayDX - segDX * rayDZ;
-        float nZ = segDX * rayDY - segDY * rayDX;
-        float nLenSq = nX * nX + nY * nY + nZ * nZ;
-
-        if (nLenSq < 0.000001f)
-            continue;
-
-        // Vector from camera to segment start
-        float diffX = p1.X - cameraPos.X;
-        float diffY = p1.Y - cameraPos.Y;
-        float diffZ = p1.Z - cameraPos.Z;
-
-        // Cross product of diff and ray
-        float cX = diffY * rayDZ - diffZ * rayDY;
-        float cY = diffZ * rayDX - diffX * rayDZ;
-        float cZ = diffX * rayDY - diffY * rayDX;
-
-        // t is projection factor along segment
-        float t = (cX * nX + cY * nY + cZ * nZ) / nLenSq;
-
-        // Clamp to segment
-        if (t < 0.0f) t = 0.0f;
-        if (t > 1.0f) t = 1.0f;
-
-        C3Vector point;
-        point.X = p1.X + segDX * t;
-        point.Y = p1.Y + segDY * t;
-        point.Z = p1.Z + segDZ * t;
-
-        // Distance to ray
-        float px = point.X - cameraPos.X;
-        float py = point.Y - cameraPos.Y;
-        float pz = point.Z - cameraPos.Z;
-
-        float dot = px * rayDX + py * rayDY + pz * rayDZ;
-        float projX = rayDX * (dot / rayLenSq);
-        float projY = rayDY * (dot / rayLenSq);
-        float projZ = rayDZ * (dot / rayLenSq);
-
-        float dx = px - projX;
-        float dy = py - projY;
-        float dz = pz - projZ;
-        float distSq = dx * dx + dy * dy + dz * dz;
-
-        if (distSq < bestDistSq) {
-            bestDistSq = distSq;
-            bestPoint = point;
-        }
+    else {
+        outPos = {
+            playerPos.X + dir.X * maxRange,
+            playerPos.Y + dir.Y * maxRange,
+            playerPos.Z + dir.Z * maxRange
+        };
     }
-
-    if (bestDistSq < 9999999.0f) {
-        outAdjustedPos = bestPoint;
-        return true;
-    }
-
-    return false;
+    return true;
 }
 
-static bool isSpellReadied() {
-    unsigned int spellTargetingFlag = *(unsigned int*)0x00D3F4E4;
-    unsigned int spellTargetingState = *(unsigned int*)0x00D3F4E0;
-    return spellTargetingFlag != 0 && (spellTargetingState & 0x40) != 0;
-}
 
 static int __cdecl SecureCmdOptionParse_hk(lua_State* L) {
     int result = SecureCmdOptionParse_orig(L);
@@ -525,182 +517,100 @@ static int __cdecl SecureCmdOptionParse_hk(lua_State* L) {
     return result;
 }
 
-static void onUpdateCallback() {
-    if (!IsInWorld())
-        return;
-
-    if (g_cursorKeywordActive) {
-        if (isSpellReadied()) {
-            VecXYZ cursorPos;
-            if (GetCursorWorldPosition(cursorPos)) {
-                if (std::atoi(s_cvar_spellProjectionMode->vStr) == 1) {
-                    CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
-                    C3Vector playerPos;
-                    player->GetPosition(playerPos);
-
-                    float minRange = 0.0f;
-                    float maxRange = 0.0f;
-
-                    GetSpellRange_t GetSpellRange = reinterpret_cast<GetSpellRange_t>(0x00802C30);
-                    GetSpellRange(player, g_cursorSpellID, &minRange, &maxRange, 0);
-
-                    if (maxRange - 0.5f > 0.f) {
-                        maxRange = maxRange - 0.5f;
-                    }
-
-                    C3Vector newOverrideTargetPos;
-                    bool collisionFound = GetAdjustedTargetPositionIfBlocked(playerPos, reinterpret_cast<C3Vector&>(cursorPos), maxRange, newOverrideTargetPos);
-                    if (collisionFound) {
-                        TerrainClick(newOverrideTargetPos.X, newOverrideTargetPos.Y, newOverrideTargetPos.Z);
-                    }
-                    else {
-                        TerrainClick(cursorPos.x, cursorPos.y, cursorPos.z);
-                    }
-                }
-                else {
-                    TerrainClick(cursorPos.x, cursorPos.y, cursorPos.z);
-                }
-
-                printf("%d \n", g_cursorSpellID);
-            }
-        }
-        g_cursorKeywordActive = false;
-        g_cursorSpellID = 0;
-    }
-    else if (g_playerLocationKeywordActive) {
-        CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
-        if (player && isSpellReadied()) {
-            VecXYZ posPlayer;
-            player->GetPosition(*reinterpret_cast<C3Vector*>(&posPlayer));
-            TerrainClick(posPlayer.x, posPlayer.y, posPlayer.z);
-        }
-        g_playerLocationKeywordActive = false;
-    }
-
-    if (collisionFound) {
-        collisionFound = false;
-        newTargetPos.X = 0;
-        newTargetPos.Y = 0;
-        newTargetPos.Z = 0;
-    }
-}
-
-double getGreenThingSize() {
-    double v10 = ((double (*)())0x8019C0)();
-    double v13;
-
-    if (v10 >= 20.0)
-        v13 = 20.0;
-    else
-        v13 = ((double (*)())0x8019C0)();
-
-    return v13;
-}
-
-static int(__cdecl* original_project_texture)(int, int, int) = (int(__cdecl*)(int, int, int))0x004F8A40;
-static int __cdecl hooked_project_texture(int a1, int a2, int a3) {
-    if (std::atoi(s_cvar_spellProjectionMode->vStr) == 0) {
-        return original_project_texture(a1, a2, a3);
-    }
-    auto* spellCast = *reinterpret_cast<SpellCast**>(0x00D3F4E4);
-    if (!spellCast) {
-        return original_project_texture(a1, a2, a3);
-    }
-
-    CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
-    if (!player) {
-        return original_project_texture(a1, a2, a3);
-    }
-
-    float minRange = 0.0f;
-    float maxRange = 0.0f;
-
-    GetSpellRange(player, spellCast->data.spellId, &minRange, &maxRange, 0);
-
-    if (maxRange - 0.5f > 0.f) {
-        maxRange = maxRange - 0.5f;
-    }
-
-    C3Vector playerPos;
-    player->GetPosition(playerPos);
-
-    C3Vector targetPos;
-    targetPos.X = *(float*)0x00B74380;
-    targetPos.Y = *(float*)0x00B74384;
-    targetPos.Z = *(float*)0x00B74388;
-
-    float dX = targetPos.X - playerPos.X;
-    float dY = targetPos.Y - playerPos.Y;
-    float dZ = targetPos.Z - playerPos.Z;
-    float totalDist = std::sqrt(dX * dX + dY * dY + dZ * dZ);
-    float dist = std::sqrt(dX * dX + dY * dY);
-    if (totalDist < 0.0001f) {
-        dX = 1.0f;
-        dY = 0.0f;
-        dist = 1.0f;
-    }
-
-    if (totalDist > maxRange && totalDist > 0.0001f) {
-        collisionFound = GetAdjustedTargetPositionIfBlocked(playerPos, targetPos, maxRange, newTargetPos);
-        if (collisionFound) {
-            *(float*)0x00B74380 = newTargetPos.X;
-            *(float*)0x00B74384 = newTargetPos.Y;
-            *(float*)0x00B74388 = newTargetPos.Z;
-
-            // revert projection texture/color to green again
-            *(int*)0x00AC79A4 = 0;
-
-            // revert projection size back to original
-            *(float*)0xB74370 = static_cast<float>(getGreenThingSize());
-        }
-    }
-
-    return original_project_texture(a1, a2, a3);
-}
-
-void __cdecl HandleTerrainClick_hook(TerrainClickEvent* event)
+static void __cdecl HandleTerrainClick_hk(TerrainClickEvent* event)
 {
-    if (collisionFound && std::atoi(s_cvar_spellProjectionMode->vStr) == 1) {
-        event->x = newTargetPos.X;
-        event->y = newTargetPos.Y;
-        event->z = newTargetPos.Z;
+    if (g_hasAdjustedPos) {
+        if (isSpellReadied()) {
+            event->x = g_adjustedSpellPos.X;
+            event->y = g_adjustedSpellPos.Y;
+            event->z = g_adjustedSpellPos.Z;
+        }
+        g_hasAdjustedPos = false;
     }
-
     HandleTerrainClick_orig(event);
 }
 
-typedef int(__cdecl* SpellCastFn)(int a1, int a2, int a3, int a4, int a5);
-static SpellCastFn Spell_OnCastOriginal = (SpellCastFn)0x0080DA40;
-int __cdecl Spell_OnCastHook(int spellId, int a2, int a3, int a4, int a5)
+static int __stdcall ProcessAoETargeting_hk(uint32_t* a1)
 {
-    int success = Spell_OnCastOriginal(spellId, a2, a3, a4, a5);
-    if (success && Spell::IsForm(spellId))
-    {
-        CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
-        if (player)
-        {
-            auto maybeForm = Spell::GetFormFromSpell(spellId);
-            if (maybeForm.has_value())
-            {
-                Spell::ShapeshiftForm form = maybeForm.value();
-                uint32_t formValue = static_cast<uint32_t>(form);
+    g_hasAdjustedPos = false;
 
-                player->SetValueBytes(UNIT_FIELD_BYTES_2, OFFSET_SHAPESHIFT_FORM, formValue);
+    CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
+    if (!player)
+        return ProcessAoETargeting_orig(a1);
+
+    if (g_playerLocationKeywordActive) {
+        C3Vector playerPos;
+        player->GetPosition(playerPos);
+        TerrainClick(playerPos.X, playerPos.Y, playerPos.Z);
+        g_playerLocationKeywordActive = false;
+        return 0;
+    }
+
+    C3Vector originalCursor = {
+        *(float*)&a1[2],
+        *(float*)&a1[3],
+        *(float*)&a1[4]
+    };
+
+    if (!std::atoi(s_cvar_spellProjectionMode->vStr) == 1) {
+        if (g_cursorKeywordActive) {
+            TerrainClick(originalCursor.X, originalCursor.Y, originalCursor.Z);
+            g_cursorKeywordActive = false;
+            return 0;
+        }
+        return ProcessAoETargeting_orig(a1);
+    }
+
+    int spellContext = *(DWORD*)0x00D3F4E4 + 8;
+    int spellObject = static_cast<int>(reinterpret_cast<intptr_t>(ObjectMgr::GetObjectPtr(*reinterpret_cast<uint64_t*>(spellContext + 8), 8)));
+    if (spellObject) {
+        float minRange = 0.0f;
+        float maxRange = 0.0f;
+        GetSpellRange_orig(spellObject, *(DWORD*)(spellContext + 24), &minRange, &maxRange, 0);
+        if (maxRange > 0.0f) {
+            C3Vector playerPos;
+            player->GetPosition(playerPos);
+            float dx = originalCursor.X - playerPos.X;
+            float dy = originalCursor.Y - playerPos.Y;
+            float dz = originalCursor.Z - playerPos.Z;
+
+            if ((dx * dx + dy * dy + dz * dz) > ((maxRange * 0.98f) * (maxRange * 0.98f))) {
+                C3Vector adjustedPos;
+                if (GetScreenSpaceSpellPosition(playerPos, originalCursor, maxRange * 0.98f, adjustedPos)) {
+                    if (g_cursorKeywordActive) {
+                        TerrainClick(adjustedPos.X, adjustedPos.Y, adjustedPos.Z);
+                        g_cursorKeywordActive = false;
+                        return 0;
+                    }
+                    *(float*)&a1[2] = adjustedPos.X;
+                    *(float*)&a1[3] = adjustedPos.Y;
+                    *(float*)&a1[4] = adjustedPos.Z;
+
+                    g_adjustedSpellPos = adjustedPos;
+                    g_hasAdjustedPos = true;
+                }
+                else if (g_cursorKeywordActive) {
+                    TerrainClick(originalCursor.X, originalCursor.Y, originalCursor.Z);
+                    g_cursorKeywordActive = false;
+                    return 0;
+                }
+            }
+            else if (g_cursorKeywordActive) {
+                TerrainClick(originalCursor.X, originalCursor.Y, originalCursor.Z);
+                g_cursorKeywordActive = false;
+                return 0;
             }
         }
     }
-
-    if (g_cursorKeywordActive) {
-        g_cursorSpellID = spellId;
-    }
-
-    return success;
+    return ProcessAoETargeting_orig(a1);
 }
+
 
 void Hooks::initialize()
 {
-    Hooks::FrameScript::registerOnUpdate(onUpdateCallback);
-    Hooks::FrameXML::registerCVar(&s_cvar_spellProjectionMode, "spellProjectionMode", NULL, (Console::CVarFlags)1, "0", CVarHandler_spellProjectionMode);
+    Hooks::FrameXML::registerCVar(&s_cvar_spellProjectionMode, "spellProjectionMode", NULL, (Console::CVarFlags)1, "1", CVarHandler_spellProjectionMode);
+    Hooks::FrameXML::registerCVar(&s_cvar_spellProjectionMaxRange, "spellProjectionMaxRange", NULL, (Console::CVarFlags)1, "20", CVarHandler_spellProjectionMaxRange);
+    Hooks::FrameXML::registerCVar(&s_cvar_spellProjectionHorizontalBias, "spellProjectionHorizontalBias", NULL, (Console::CVarFlags)1, "1.5", CVarHandler_spellProjectionHorizontalBias);
     DetourAttach(&(LPVOID&)CVars_Initialize_orig, CVars_Initialize_hk);
     DetourAttach(&(LPVOID&)FrameScript_FireOnUpdate_orig, FrameScript_FireOnUpdate_hk);
     DetourAttach(&(LPVOID&)FrameScript_FillEvents_orig, FrameScript_FillEvents_hk);
@@ -710,7 +620,6 @@ void Hooks::initialize()
     DetourAttach(&(LPVOID&)LoadGlueXML_orig, LoadGlueXML_hk);
     DetourAttach(&(LPVOID&)LoadCharacters_orig, LoadCharacters_hk);
     DetourAttach(&(LPVOID&)SecureCmdOptionParse_orig, SecureCmdOptionParse_hk);
-    DetourAttach(&(LPVOID&)Spell_OnCastOriginal, Spell_OnCastHook);
-    DetourAttach((PVOID*)&original_project_texture, hooked_project_texture);
-    DetourAttach(&(LPVOID&)HandleTerrainClick_orig, HandleTerrainClick_hook);
+    DetourAttach(&(LPVOID&)HandleTerrainClick_orig, HandleTerrainClick_hk);
+    DetourAttach(&(LPVOID&)ProcessAoETargeting_orig, ProcessAoETargeting_hk);
 }
