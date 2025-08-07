@@ -190,6 +190,72 @@ inline bool SetWidth(lua_State* L, int frame_idx, double height)
     return true;
 }
 
+inline bool ConfigureWorldFrame(lua_State* L, bool enabledVariable)
+{
+    // Get UIParent
+    lua_getglobal(L, "UIParent");
+
+    // Get scale: UIParent:GetEffectiveScale()
+    lua_getfield(L, -1, "GetEffectiveScale");
+    lua_pushvalue(L, -2); // push UIParent as self
+    if (lua_pcall(L, 1, 1, 0) != 0) {
+        lua_pop(L, 1); // pop UIParent
+        return false;
+    }
+    double scale = lua_tonumber(L, -1);
+    lua_pop(L, 2); // pop scale and UIParent
+
+    // Get ScreenHeight
+    lua_getglobal(L, "GetScreenHeight");
+    if (lua_pcall(L, 0, 1, 0) != 0) {
+        return false;
+    }
+    double rawHeight = lua_tonumber(L, -1);
+    lua_pop(L, 1);
+
+    // Get ScreenWidth
+    lua_getglobal(L, "GetScreenWidth");
+    if (lua_pcall(L, 0, 1, 0) != 0) {
+        return false;
+    }
+    double rawWidth = lua_tonumber(L, -1);
+    lua_pop(L, 1);
+
+    // Apply effective scale
+    double ScreenHeight = rawHeight * scale;
+    double ScreenWidth = rawWidth * scale;
+
+    // Get WorldFrame
+    lua_getglobal(L, "WorldFrame");
+
+    // WorldFrame:ClearAllPoints()
+    lua_getfield(L, -1, "ClearAllPoints");
+    lua_pushvalue(L, -2); // self
+    lua_pcall(L, 1, 0, 0);
+
+    // WorldFrame:SetWidth(ScreenWidth)
+    lua_getfield(L, -1, "SetWidth");
+    lua_pushvalue(L, -2);
+    lua_pushnumber(L, ScreenWidth);
+    lua_pcall(L, 2, 0, 0);
+
+    // WorldFrame:SetHeight(ScreenHeight * 5) or ScreenHeight
+    lua_getfield(L, -1, "SetHeight");
+    lua_pushvalue(L, -2);
+    lua_pushnumber(L, enabledVariable ? ScreenHeight * 5.0 : ScreenHeight);
+    lua_pcall(L, 2, 0, 0);
+
+    // WorldFrame:SetPoint("BOTTOM")
+    lua_getfield(L, -1, "SetPoint");
+    lua_pushvalue(L, -2);
+    lua_pushstring(L, "BOTTOM");
+    lua_pcall(L, 2, 0, 0);
+
+    lua_pop(L, 1); // Pop WorldFrame
+
+    return true;
+}
+
 //todo: 0048A260 void __thiscall CLayoutFrame::SetPoint(CLayoutFrame *this, ANCHORPOINT point, CLayoutFrame *relative, ANCHORPOINT relativePoint, float offsetX, float offsetY, int shouldResize)
 inline bool SetPoint(
     lua_State* L,

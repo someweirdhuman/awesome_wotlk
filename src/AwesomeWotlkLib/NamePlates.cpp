@@ -31,6 +31,7 @@ static Console::CVar* s_cvar_nameplateStackFriendly;
 static Console::CVar* s_cvar_nameplateStackFriendlyMode;
 static Console::CVar* s_cvar_nameplateMaxRaiseDistance;
 static Console::CVar* s_cvar_nameplateStackFunction;
+static Console::CVar* s_cvar_nameplateExtendWorldFrameHeight;
 
 guid_t parseGuidFromString(const char* str)
 {
@@ -130,6 +131,13 @@ static int CVarHandler_NameplateFriendlyHitboxHeight(Console::CVar*, const char*
 static int CVarHandler_NameplateFriendlyHitboxWidth(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateMaxRaiseDistance(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateStackFunction(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_NameplateExtendWorldFrameHeight(Console::CVar*, const char*, const char* value, LPVOID) {
+    if (!IsInWorld()) return 1;
+
+    bool enabled = atoi(value) == 1 ? true : false;
+    ConfigureWorldFrame(GetLuaState(), enabled);
+    return 1;
+}
 static void UpdateNameplateFriendliness(const char* name, const char* value)
 {
     if (!IsInWorld()) return;
@@ -695,6 +703,7 @@ void NamePlates::initialize()
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateStackFriendlyMode, "nameplateStackFriendlyMode", NULL, (Console::CVarFlags)1, "1", CVarHandler_NameplateStackFriendlyMode);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateStackFunction, "nameplateStackFunction", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateStackFunction);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateMaxRaiseDistance, "nameplateMaxRaiseDistance", NULL, (Console::CVarFlags)1, "200", CVarHandler_NameplateMaxRaiseDistance);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateExtendWorldFrameHeight, "nameplateExtendWorldFrameHeight", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateExtendWorldFrameHeight);
     Hooks::FrameScript::registerToken("nameplate", getTokenGuid, getTokenId);
     Hooks::FrameScript::registerOnUpdate(onUpdateCallback);
 
