@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <cstdarg>
 #include <functional>
+#include <string>
+#include <algorithm>
 
 /*
     Game client types/functions/bindings and other import
@@ -1496,4 +1498,54 @@ inline Frame* lua_toframe_silent(lua_State* L, int idx)
 inline void lua_pushframe(lua_State* L, Frame* frame)
 {
     lua_rawgeti(L, LUA_REGISTRYINDEX, CFrame::GetRefTable(frame));
+}
+
+
+struct MockCStatus {
+    void** vtable;
+};
+
+//credits: https://github.com/leoaviana/ConsoleXP/blob/38cb2a1ece253b017b3e554a2146033e95054ae2/src/ConsoleXP/Game.cpp#L727
+static void RegisterLuaBinding(const char* bindingName, const char* bindingText, const char* bindingHeaderName, const char* bindingHeaderText, const char* luaScript)
+{
+    lua_State* L = GetLuaState();
+    if (!L) return;
+
+    std::string upperName;
+
+    if (bindingHeaderName && bindingHeaderName[0]) {
+        std::string upperHeader(bindingHeaderName);
+        std::transform(upperHeader.begin(), upperHeader.end(), upperHeader.begin(), ::toupper);
+
+        lua_pushstring(L, bindingHeaderText);
+        lua_setfield(L, LUA_GLOBALSINDEX, ("BINDING_HEADER_" + upperHeader).c_str());
+    }
+
+    if (bindingName && bindingName[0]) {
+        upperName = bindingName;
+        std::transform(upperName.begin(), upperName.end(), upperName.begin(), ::toupper);
+
+        lua_pushstring(L, bindingText);
+        lua_setfield(L, LUA_GLOBALSINDEX, ("BINDING_NAME_" + upperName).c_str());
+    }
+
+    // Build XML node
+    XMLObject node(0, "Bindings");
+    node.setValue("name", upperName.c_str());
+    node.setValue("header", bindingHeaderName ? bindingHeaderName : "");
+
+    // Inject script text
+    *reinterpret_cast<char**>(reinterpret_cast<uint8_t*>(&node) + 0x18) = const_cast<char*>(luaScript);
+
+    // Call native loader
+    void* thispointer = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(0x00BEADD8));
+    using LoadBindFn = void(__thiscall*)(void*, void*, XMLObject*, MockCStatus*);
+    auto LdBinding = reinterpret_cast<LoadBindFn>(0x00564470);
+
+    static void* dummyVtable[4] = {};
+    MockCStatus status;
+    status.vtable = dummyVtable;
+
+    char bindsName[] = "AWESOME_KEYBIND";
+    LdBinding(thispointer, bindsName, &node, &status);
 }

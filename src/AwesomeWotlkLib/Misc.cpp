@@ -324,7 +324,12 @@ static void __fastcall Camera_Initialize_hk(Camera* self, void* edx, float a2, f
 }
 static void OnEnterWorld()
 {
-    RegisterInteractCommand(GetLuaState());
+    static bool triggered = false;
+    if (!triggered) {
+        RegisterInteractCommand(GetLuaState());
+        RegisterLuaBinding("INTERACTIONKEYBIND", "Interaction Button", "AWESOME_WOTLK_KEYBINDS", "Awesome Wotlk Keybinds", "QueueInteract()");
+        triggered = true;
+    }
 }
 
 void Misc::initialize()
