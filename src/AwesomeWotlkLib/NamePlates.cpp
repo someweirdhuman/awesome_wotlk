@@ -32,6 +32,7 @@ static Console::CVar* s_cvar_nameplateStackFriendlyMode;
 static Console::CVar* s_cvar_nameplateMaxRaiseDistance;
 static Console::CVar* s_cvar_nameplateStackFunction;
 static Console::CVar* s_cvar_nameplateExtendWorldFrameHeight;
+static Console::CVar* s_cvar_nameplateUpperBorderOnlyBoss;
 
 guid_t parseGuidFromString(const char* str)
 {
@@ -131,6 +132,7 @@ static int CVarHandler_NameplateFriendlyHitboxHeight(Console::CVar*, const char*
 static int CVarHandler_NameplateFriendlyHitboxWidth(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateMaxRaiseDistance(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateStackFunction(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_NameplateUpperBorderOnlyBoss(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateExtendWorldFrameHeight(Console::CVar*, const char*, const char* value, LPVOID) {
     if (!IsInWorld()) return 1;
 
@@ -403,7 +405,12 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
             }
 
             SetClampedToScreen(L, frame_idx, true);
-            SetClampRectInsets(L, frame_idx, -10, 10, upperBorder, -nameplate.ypos - nameplate.currentStackOffset - originPos + height / 2);
+            if (std::atoi(s_cvar_nameplateUpperBorderOnlyBoss->vStr) == 1) {
+                SetClampRectInsets(L, frame_idx, -10, 10, nameplate.rank == 3 ? upperBorder : -upperBorder, -nameplate.ypos - nameplate.currentStackOffset - originPos + height / 2);
+            }
+            else {
+                SetClampRectInsets(L, frame_idx, -10, 10, upperBorder, -nameplate.ypos - nameplate.currentStackOffset - originPos + height / 2);
+            }
         }
         else {
             nameplate.currentStackOffset = 0.f;
@@ -570,27 +577,31 @@ static void onUpdateCallback()
             entry.guid = guid;
             entry.nameplate = unit->nameplate;
             entry.updateId = vars.updateId;
+            entry.rank = ((CGUnit_C*)unit)->GetCreatureRank();
         }
         else {
             if (it->guid != guid) {
                 it->guid = guid;
-                if (it->flags & NamePlateFlag_Visible) {
-                    char token[16];
-                    snprintf(token, std::size(token), "nameplate%lu", std::distance(vars.nameplates.begin(), it) + 1);
-                    CGUnit_C* unit = (CGUnit_C*)ObjectMgr::Get(token, TYPEMASK_UNIT);
-                    if (unit) {
-                        lua_pushframe(L, it->nameplate);
 
-                        int frame_idx = lua_gettop(L);
-                        if (nameplateStackFriendlyMode == 0) {
-                            it->isFriendly = ObjectMgr::GetCGUnitPlayer()->UnitReaction(unit) > 4 ? true : false;
-                        }
-                        else {
-                            it->isFriendly = IsFriendlyByColor(L, frame_idx) == 5;
-                        }
-                        lua_pop(L, 1);
+                std::string token = std::format("nameplate{}", std::distance(vars.nameplates.begin(), it) + 1);
+                CGUnit_C* unitDeep = (CGUnit_C*)ObjectMgr::Get(token.c_str(), TYPEMASK_UNIT);
+                it->rank = unitDeep->GetCreatureRank();
+
+                if (unitDeep) {
+                    lua_pushframe(L, it->nameplate);
+
+                    int frame_idx = lua_gettop(L);
+                    if (nameplateStackFriendlyMode == 0) {
+                        it->isFriendly = ObjectMgr::GetCGUnitPlayer()->UnitReaction(unitDeep) > 4 ? true : false;
                     }
-                    FrameScript::FireEvent(NAME_PLATE_OWNER_CHANGED, "%s", token);
+                    else {
+                        it->isFriendly = IsFriendlyByColor(L, frame_idx) == 5;
+                    }
+                    lua_pop(L, 1);
+
+                    if (it->flags & NamePlateFlag_Visible) {
+                        FrameScript::FireEvent(NAME_PLATE_OWNER_CHANGED, "%s", token);
+                    }
                 }
             }
             it->updateId = vars.updateId;
@@ -679,6 +690,12 @@ void __declspec(naked) PatchNamePlateLevelUpdate_hk()
     }
 }
 
+static void OnEnterWorld()
+{
+    bool enabled = std::atoi(s_cvar_nameplateExtendWorldFrameHeight->vStr) == 1;
+    ConfigureWorldFrame(GetLuaState(), enabled);
+}
+
 void NamePlates::initialize()
 {
     Hooks::FrameXML::registerLuaLib(lua_openlibnameplates);
@@ -704,8 +721,9 @@ void NamePlates::initialize()
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateStackFunction, "nameplateStackFunction", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateStackFunction);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateMaxRaiseDistance, "nameplateMaxRaiseDistance", NULL, (Console::CVarFlags)1, "200", CVarHandler_NameplateMaxRaiseDistance);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateExtendWorldFrameHeight, "nameplateExtendWorldFrameHeight", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateExtendWorldFrameHeight);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateUpperBorderOnlyBoss, "nameplateUpperBorderOnlyBoss", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateUpperBorderOnlyBoss);
     Hooks::FrameScript::registerToken("nameplate", getTokenGuid, getTokenId);
     Hooks::FrameScript::registerOnUpdate(onUpdateCallback);
-
+    Hooks::FrameScript::registerOnEnter(OnEnterWorld);
     DetourAttach(&(LPVOID&)PatchNamePlateLevelUpdate_orig, PatchNamePlateLevelUpdate_hk);
 }

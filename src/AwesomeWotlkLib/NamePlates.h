@@ -37,6 +37,7 @@ struct NamePlateEntry {
     NamePlateFlags flags;
     uint32_t updateId;
     bool isFriendly = false;
+    uint8_t rank = 0;
 
     double position;
     double ypos;

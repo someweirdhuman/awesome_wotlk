@@ -997,6 +997,14 @@ private:
 class CGUnit_C : public CGObject_C
 {
 public:
+    int GetCreatureRank() const
+    {
+        typedef int(__thiscall* GetCreatureRank_t)(const CGObject_C* thisPtr);
+        static const GetCreatureRank_t GetCreatureRankFn = reinterpret_cast<GetCreatureRank_t>(0x00718A00);
+
+        return GetCreatureRankFn(this);
+    }
+
     bool CanAssist(const CGUnit_C* unit, bool ignoreFlags) const
     {
         using CanAssist_t = bool(__thiscall*)(const CGUnit_C* thisPtr, const CGUnit_C* unit, bool ignoreFlags);
