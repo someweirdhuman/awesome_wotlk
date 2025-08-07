@@ -559,13 +559,11 @@ static void onUpdateCallback()
         }
     }
 
-    Player* player = ObjectMgr::GetPlayer();
-    VecXYZ posPlayer;
-    if (player) player->ToUnit()->vmt->GetPosition(player->ToUnit(), &posPlayer);
+    Camera* camera = GetActiveCamera();
 
     uint8_t nameplateStackFriendlyMode = static_cast<uint8_t>(std::atoi(s_cvar_nameplateStackFriendlyMode->vStr));
 
-    ObjectMgr::EnumObjects([&vars, player, &posPlayer, &nameplateStackFriendlyMode, &L](guid_t guid) -> bool {
+    ObjectMgr::EnumObjects([&vars, camera, &nameplateStackFriendlyMode, &L](guid_t guid) -> bool {
         Unit* unit = (Unit*)ObjectMgr::Get(guid, TYPEMASK_UNIT);
         if (!unit || !unit->nameplate) return true;
 
@@ -607,10 +605,10 @@ static void onUpdateCallback()
             it->updateId = vars.updateId;
         }
 
-        if (player) {
+        if (camera) {
             VecXYZ unitPos;
             unit->vmt->GetPosition(unit, &unitPos);
-            s_plateSort.push_back({ unit->nameplate, guid, posPlayer.distance(unitPos) });
+            s_plateSort.push_back({ unit->nameplate, guid, camera->pos.distance(unitPos) });
         }
 
         return true;
@@ -625,9 +623,9 @@ static void onUpdateCallback()
             return distance1 > distance2;
             });
 
-        int level = 10;
+        int level = 0;
         for (auto& entry : s_plateSort)
-            CFrame::SetFrameLevel(std::get<0>(entry), level++, 1);
+            CFrame::SetFrameLevel(std::get<0>(entry), level += 10, 1);
 
         s_plateSort.clear();
     }
