@@ -50,6 +50,7 @@ if GetLocale() == "ruRU" then
     L.CVAR_LABEL_X_SPACE = "Пробел X для индикаторов"
     L.CVAR_LABEL_Y_SPACE = "Пробел Y для индикаторов"
     L.CVAR_LABEL_UPPER_BORDER = "Смещение верхней границы"
+    L.CVAR_LABEL_UPPER_BORDER_ONLY_BOSS = "Только боссы могут прилипать к верхней границе экрана"
     L.CVAR_LABEL_ORIGIN_POS = "Смещение начальной позиции"
     L.CVAR_LABEL_SPEED_RAISE = "Скорость подъема"
     L.CVAR_LABEL_SPEED_RESET = "Скорость сброса"

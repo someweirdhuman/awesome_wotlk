@@ -50,6 +50,7 @@ if GetLocale() == "zhTW" then
     L.CVAR_LABEL_X_SPACE = "姓名板 X 軸間距"
     L.CVAR_LABEL_Y_SPACE = "姓名板 Y 軸間距"
     L.CVAR_LABEL_UPPER_BORDER = "姓名板上邊界偏移"
+    L.CVAR_LABEL_UPPER_BORDER_ONLY_BOSS = "僅允許首領貼齊螢幕上邊界"
     L.CVAR_LABEL_ORIGIN_POS = "姓名板原點偏移"
     L.CVAR_LABEL_SPEED_RAISE = "姓名板抬升速度"
     L.CVAR_LABEL_SPEED_RESET = "姓名板重置速度"

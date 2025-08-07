@@ -50,6 +50,7 @@ if GetLocale() == "frFR" then
     L.CVAR_LABEL_X_SPACE = "Espace X des barres de noms"
     L.CVAR_LABEL_Y_SPACE = "Espace Y des barres de noms"
     L.CVAR_LABEL_UPPER_BORDER = "Décalage bordure supérieure"
+    L.CVAR_LABEL_UPPER_BORDER_ONLY_BOSS = "Autoriser UNIQUEMENT les boss à coller à la bordure supérieure de l'écran"
     L.CVAR_LABEL_ORIGIN_POS = "Décalage d'origine"
     L.CVAR_LABEL_SPEED_RAISE = "Vitesse d'élévation"
     L.CVAR_LABEL_SPEED_RESET = "Vitesse de réinitialisation"

@@ -61,6 +61,7 @@ if GetLocale() == "enUS" then
     L.CVAR_LABEL_INTERACTION_MODE = "Interaction Mode"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Interaction Cone Angle"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Extend World Frame Height"
+    L.CVAR_LABEL_UPPER_BORDER_ONLY_BOSS = "Allow ONLY bosses to stick to upper border of the screen"
 
     L.DESC_HITBOX_DISABLED = "0 = DISABLED, don't use without a nameplate addon"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(only works with the Smooth Function)"

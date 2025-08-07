@@ -50,6 +50,7 @@ if GetLocale() == "koKR" then
     L.CVAR_LABEL_X_SPACE = "이름표 X축 간격"
     L.CVAR_LABEL_Y_SPACE = "이름표 Y축 간격"
     L.CVAR_LABEL_UPPER_BORDER = "이름표 상단 테두리 오프셋"
+    L.CVAR_LABEL_UPPER_BORDER_ONLY_BOSS = "보스만 화면 상단 테두리에 고정 허용"
     L.CVAR_LABEL_ORIGIN_POS = "이름표 기준점 오프셋"
     L.CVAR_LABEL_SPEED_RAISE = "이름표 상승 속도"
     L.CVAR_LABEL_SPEED_RESET = "이름표 초기화 속도"

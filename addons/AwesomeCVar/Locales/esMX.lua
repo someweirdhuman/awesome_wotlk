@@ -50,6 +50,7 @@ if GetLocale() == "esMX" then
     L.CVAR_LABEL_X_SPACE = "Espacio X de placas de nombre"
     L.CVAR_LABEL_Y_SPACE = "Espacio Y de placas de nombre"
     L.CVAR_LABEL_UPPER_BORDER = "Desplazamiento del borde superior"
+    L.CVAR_LABEL_UPPER_BORDER_ONLY_BOSS = "Permitir SOLO a los jefes pegarse al borde superior de la pantalla"
     L.CVAR_LABEL_ORIGIN_POS = "Desplazamiento de origen"
     L.CVAR_LABEL_SPEED_RAISE = "Velocidad de elevación"
     L.CVAR_LABEL_SPEED_RESET = "Velocidad de reinicio"

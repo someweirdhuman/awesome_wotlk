@@ -50,6 +50,7 @@ if GetLocale() == "deDE" then
     L.CVAR_LABEL_X_SPACE = "X-Abstand der Namensplaketten"
     L.CVAR_LABEL_Y_SPACE = "Y-Abstand der Namensplaketten"
     L.CVAR_LABEL_UPPER_BORDER = "Oberer Rand-Offset der Namensplaketten"
+    L.CVAR_LABEL_UPPER_BORDER_ONLY_BOSS = "Nur BOSSE dürfen am oberen Bildschirmrand haften"
     L.CVAR_LABEL_ORIGIN_POS = "Ursprungs-Offset der Namensplaketten"
     L.CVAR_LABEL_SPEED_RAISE = "Anhebegeschwindigkeit der Namensplaketten"
     L.CVAR_LABEL_SPEED_RESET = "Rücksetzgeschwindigkeit der Namensplaketten"

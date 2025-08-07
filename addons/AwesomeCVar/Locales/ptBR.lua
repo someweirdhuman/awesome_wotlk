@@ -50,6 +50,7 @@ if GetLocale() == "ptBR" then
     L.CVAR_LABEL_X_SPACE = "Espaço X das Placas de Nome"
     L.CVAR_LABEL_Y_SPACE = "Espaço Y das Placas de Nome"
     L.CVAR_LABEL_UPPER_BORDER = "Deslocamento da Borda Superior"
+    L.CVAR_LABEL_UPPER_BORDER_ONLY_BOSS = "Permitir SOMENTE chefes grudarem na borda superior da tela"
     L.CVAR_LABEL_ORIGIN_POS = "Deslocamento de Origem"
     L.CVAR_LABEL_SPEED_RAISE = "Velocidade de Elevação"
     L.CVAR_LABEL_SPEED_RESET = "Velocidade de Redefinição"
