@@ -60,9 +60,11 @@ if GetLocale() == "frFR" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "Largeur de la hitbox AMICALE"
     L.CVAR_LABEL_INTERACTION_MODE = "Mode d'interaction"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Angle du cône d'interaction"
+    L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Étendre la hauteur du World Frame"
 
     L.DESC_HITBOX_DISABLED = "0 = DÉSACTIVÉ, ne pas utiliser sans un addon de barres de noms"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(fonctionne uniquement avec la Fonction Douce)"
+    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Permet de toujours voir les barres de noms des boss même s'ils sont grands en étendant la hauteur du World Frame par 5x. Peut casser certains éléments de l'interface."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API de Réaction"

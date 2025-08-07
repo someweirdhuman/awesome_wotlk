@@ -60,9 +60,11 @@ if GetLocale() == "zhTW" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "友方姓名板點擊框寬度"
     L.CVAR_LABEL_INTERACTION_MODE = "互動模式"
     L.CVAR_LABEL_INTERACTION_ANGLE = "互動錐形角度"
+    L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "延展世界框架高度"
 
     L.DESC_HITBOX_DISABLED = "0 = 停用，若無姓名板插件請勿使用"
     L.DESC_SMOOTH_FUNCTION_ONLY = "（僅適用於平滑功能）"
+    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "將世界框架高度延展 5 倍，可讓你即使首領很大也能看到首領姓名板，但可能會破壞部分 UI 元素"
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "反應 API"

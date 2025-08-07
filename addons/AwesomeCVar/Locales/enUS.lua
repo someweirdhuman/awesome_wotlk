@@ -60,9 +60,11 @@ if GetLocale() == "enUS" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "FRIENDLY Nameplate Hitbox Width"
     L.CVAR_LABEL_INTERACTION_MODE = "Interaction Mode"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Interaction Cone Angle"
+    L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Extend World Frame Height"
 
     L.DESC_HITBOX_DISABLED = "0 = DISABLED, don't use without a nameplate addon"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(only works with the Smooth Function)"
+    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Allows you to always see boss nameplates even if boss is large by extending World Frame Height by 5xŁŁ, can break some UI elements"
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "Reaction API"

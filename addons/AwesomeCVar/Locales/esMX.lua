@@ -60,9 +60,11 @@ if GetLocale() == "esMX" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "Ancho del hitbox ALIADO"
     L.CVAR_LABEL_INTERACTION_MODE = "Modo de interacción"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Ángulo del cono de interacción"
+    L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Extender altura del World Frame"
 
     L.DESC_HITBOX_DISABLED = "0 = DESACTIVADO, no usar sin un addon de placas de nombre"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(solo funciona con la Función Suave)"
+    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Permite ver siempre las placas de nombre de jefes aunque sean grandes, extendiendo la altura del World Frame por 5x. Puede romper algunos elementos de la interfaz."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API de reacción"

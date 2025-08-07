@@ -60,9 +60,11 @@ if GetLocale() == "ruRU" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "Ширина хитбокса СОЮЗНИКОВ"
     L.CVAR_LABEL_INTERACTION_MODE = "Режим взаимодействия"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Угол конуса взаимодействия"
+    L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Увеличить высоту World Frame"
 
     L.DESC_HITBOX_DISABLED = "0 = ОТКЛЮЧЕНО, не используйте без аддона для индикаторов здоровья"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(работает только с Плавноq функцией)"
+    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Позволяет всегда видеть индикаторы боссов, даже если босс большой, увеличивая высоту World Frame в 5 раз. Может нарушить работу некоторых элементов интерфейса."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API реакции"

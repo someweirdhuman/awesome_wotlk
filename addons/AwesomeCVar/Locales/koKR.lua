@@ -60,9 +60,11 @@ if GetLocale() == "koKR" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "우호적 이름표 히트박스 너비"
     L.CVAR_LABEL_INTERACTION_MODE = "상호작용 모드"
     L.CVAR_LABEL_INTERACTION_ANGLE = "상호작용 원뿔 각도"
+    L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "월드 프레임 높이 확장"
 
     L.DESC_HITBOX_DISABLED = "0 = 비활성화됨, 이름표 애드온 없이 사용하지 마세요"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(부드러운 기능에서만 작동)"
+    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "월드 프레임 높이를 5배로 확장하여 보스가 커도 항상 이름표를 볼 수 있습니다. 일부 UI 요소가 깨질 수 있습니다."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "반응 API"

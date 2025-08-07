@@ -60,9 +60,11 @@ if GetLocale() == "zhCN" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "友方姓名板点击框宽度"
     L.CVAR_LABEL_INTERACTION_MODE = "互动模式"
     L.CVAR_LABEL_INTERACTION_ANGLE = "互动锥形角度"
+    L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "扩展世界框架高度"
 
     L.DESC_HITBOX_DISABLED = "0 = 禁用，若无姓名板插件请勿使用"
     L.DESC_SMOOTH_FUNCTION_ONLY = "（仅适用于平滑功能）"
+    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "将世界框架高度扩展为 5 倍，即使首领很大也能始终看到首领姓名板，但可能会破坏部分界面元素"
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "反应 API"

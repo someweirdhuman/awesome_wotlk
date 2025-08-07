@@ -60,9 +60,11 @@ if GetLocale() == "deDE" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "FREUNDLICHE Namensplaketten Hitbox-Breite"
     L.CVAR_LABEL_INTERACTION_MODE = "Interaktionsmodus"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Interaktionskegelwinkel"
+    L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "World Frame Höhe erweitern"
 
     L.DESC_HITBOX_DISABLED = "0 = DEAKTIVIERT, nicht ohne ein Namensplaketten-Addon verwenden"
     L.DESC_SMOOTH_FUNCTION_ONLY = "(funktioniert nur mit der 'Smooth'-Funktion)"
+    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Ermöglicht das ständige Anzeigen von Boss-Namensplaketten, auch wenn der Boss groß ist, indem die World Frame Höhe um das 5-fache erhöht wird. Kann einige UI-Elemente beeinträchtigen."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "Reaktions-API"
