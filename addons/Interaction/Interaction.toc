@@ -1,7 +1,0 @@
-## Interface: 30300
-## Title: Interaction
-## Version: 1.0
-## Notes: Interaction
-## Author: Widget
-core.lua
-core.bindings
