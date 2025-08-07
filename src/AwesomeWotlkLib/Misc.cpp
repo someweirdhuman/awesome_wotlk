@@ -317,16 +317,14 @@ static int CVarHandler_cameraFov(Console::CVar* cvar, const char* prevV, const c
 }
 
 static void(__fastcall* Camera_Initialize_orig)(Camera* self, void* edx, float a2, float a3, float fov) = (decltype(Camera_Initialize_orig))0x00607C20;
-static void(__fastcall* CGGameUI__EnterWorld)() = (decltype(CGGameUI__EnterWorld))0x00528010;
 static void __fastcall Camera_Initialize_hk(Camera* self, void* edx, float a2, float a3, float fov)
 {
     fov = parseFov(s_cvar_cameraFov->vStr);
     Camera_Initialize_orig(self, edx, a2, a3, fov);
 }
-static void __fastcall OnEnterWorld()
+static void OnEnterWorld()
 {
     RegisterInteractCommand(GetLuaState());
-    CGGameUI__EnterWorld();
 }
 
 void Misc::initialize()
@@ -337,5 +335,5 @@ void Misc::initialize()
     Hooks::FrameXML::registerLuaLib(lua_openmisclib);
 
     DetourAttach(&(LPVOID&)Camera_Initialize_orig, Camera_Initialize_hk);
-    DetourAttach(&(LPVOID&)CGGameUI__EnterWorld, OnEnterWorld);
+    Hooks::FrameScript::registerOnEnter(OnEnterWorld);
 }
