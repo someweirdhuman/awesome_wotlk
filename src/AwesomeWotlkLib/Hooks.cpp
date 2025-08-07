@@ -169,12 +169,24 @@ static char** GetKeywordsByGuid_hk(guid_t* guid, size_t* size)
 static std::vector<Hooks::DummyCallback_t> s_customOnUpdate;
 void Hooks::FrameScript::registerOnUpdate(DummyCallback_t func) { s_customOnUpdate.push_back(func); }
 
+static std::vector<Hooks::DummyCallback_t> s_customOnEnter;
+void Hooks::FrameScript::registerOnEnter(DummyCallback_t func) { s_customOnEnter.push_back(func); }
+
+
 static int(*FrameScript_FireOnUpdate_orig)(int a1, int a2, int a3, int a4) = (decltype(FrameScript_FireOnUpdate_orig))0x00495810;
 static int FrameScript_FireOnUpdate_hk(int a1, int a2, int a3, int a4)
 {
     for (auto func : s_customOnUpdate)
         func();
     return FrameScript_FireOnUpdate_orig(a1, a2, a3, a4);
+}
+
+static void(__fastcall* CGGameUI__EnterWorld)() = (decltype(CGGameUI__EnterWorld))0x00528010;
+static void __fastcall OnEnterWorld()
+{
+    for (auto func : s_customOnEnter)
+        func();
+    return CGGameUI__EnterWorld();
 }
 
 static std::vector<Hooks::DummyCallback_t> s_glueXmlPostLoad;
@@ -381,6 +393,7 @@ void Hooks::initialize()
     Hooks::FrameScript::registerOnUpdate(onUpdateCallback);
     DetourAttach(&(LPVOID&)CVars_Initialize_orig, CVars_Initialize_hk);
     DetourAttach(&(LPVOID&)FrameScript_FireOnUpdate_orig, FrameScript_FireOnUpdate_hk);
+    DetourAttach(&(LPVOID&)CGGameUI__EnterWorld, OnEnterWorld);
     DetourAttach(&(LPVOID&)FrameScript_FillEvents_orig, FrameScript_FillEvents_hk);
     DetourAttach(&(LPVOID&)Lua_OpenFrameXMLApi_orig, Lua_OpenFrameXMLApi_hk);
     DetourAttach(&(LPVOID&)GetGuidByKeyword_orig, GetGuidByKeyword_hk);

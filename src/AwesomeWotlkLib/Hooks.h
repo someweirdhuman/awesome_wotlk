@@ -16,6 +16,7 @@ void registerToken(const char* token, TokenGuidGetter* getGuid, TokenIdGetter* g
 // One more tokens like party1, raid1, arena1
 void registerToken(const char* token, TokenNGuidGetter* getGuid, TokenIdNGetter* getId);
 void registerOnUpdate(DummyCallback_t func);
+void registerOnEnter(DummyCallback_t func);
 }
 
 namespace FrameXML {
