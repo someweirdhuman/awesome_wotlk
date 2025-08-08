@@ -172,6 +172,8 @@ void Hooks::FrameScript::registerOnUpdate(DummyCallback_t func) { s_customOnUpda
 static std::vector<Hooks::DummyCallback_t> s_customOnEnter;
 void Hooks::FrameScript::registerOnEnter(DummyCallback_t func) { s_customOnEnter.push_back(func); }
 
+static std::vector<Hooks::DummyCallback_t> s_customOnLeave;
+void Hooks::FrameScript::registerOnLeave(DummyCallback_t func) { s_customOnLeave.push_back(func); }
 
 static int(*FrameScript_FireOnUpdate_orig)(int a1, int a2, int a3, int a4) = (decltype(FrameScript_FireOnUpdate_orig))0x00495810;
 static int FrameScript_FireOnUpdate_hk(int a1, int a2, int a3, int a4)
@@ -187,6 +189,14 @@ static void __fastcall OnEnterWorld()
     for (auto func : s_customOnEnter)
         func();
     return CGGameUI__EnterWorld();
+}
+
+static void(__fastcall* CGGameUI__LeaveWorld)() = (decltype(CGGameUI__LeaveWorld))0x00528C30;
+static void __fastcall OnLeaveWorld()
+{
+    for (auto func : s_customOnLeave)
+        func();
+    return CGGameUI__LeaveWorld();
 }
 
 static std::vector<Hooks::DummyCallback_t> s_glueXmlPostLoad;

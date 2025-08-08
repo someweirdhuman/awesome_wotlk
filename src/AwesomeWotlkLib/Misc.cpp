@@ -322,14 +322,20 @@ static void __fastcall Camera_Initialize_hk(Camera* self, void* edx, float a2, f
     fov = parseFov(s_cvar_cameraFov->vStr);
     Camera_Initialize_orig(self, edx, a2, a3, fov);
 }
+
+static bool triggered = false;
 static void OnEnterWorld()
 {
-    static bool triggered = false;
     if (!triggered) {
         RegisterInteractCommand(GetLuaState());
         RegisterLuaBinding("INTERACTIONKEYBIND", "Interaction Button", "AWESOME_WOTLK_KEYBINDS", "Awesome Wotlk Keybinds", "QueueInteract()");
         triggered = true;
     }
+}
+
+static void OnLeaveWorld()
+{
+    triggered = false;
 }
 
 void Misc::initialize()
@@ -341,4 +347,5 @@ void Misc::initialize()
 
     DetourAttach(&(LPVOID&)Camera_Initialize_orig, Camera_Initialize_hk);
     Hooks::FrameScript::registerOnEnter(OnEnterWorld);
+    Hooks::FrameScript::registerOnLeave(OnLeaveWorld);
 }

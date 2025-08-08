@@ -1505,26 +1505,75 @@ struct MockCStatus {
     void** vtable;
 };
 
-//credits: https://github.com/leoaviana/ConsoleXP/blob/38cb2a1ece253b017b3e554a2146033e95054ae2/src/ConsoleXP/Game.cpp#L727
+static bool CheckIfBindingOrHeaderExists(const char* upperName, const char* upperHeader) {
+    lua_State* L = GetLuaState();
+    if (!L) return false;
+
+    // Check Lua global: BINDING_NAME_<NAME>
+    if (upperName && upperName[0]) {
+        lua_getfield(L, LUA_GLOBALSINDEX, ("BINDING_NAME_" + std::string(upperName)).c_str());
+        if (!lua_isnil(L, -1)) {
+            lua_pop(L, 1);
+            return true;
+        }
+        lua_pop(L, 1);
+    }
+
+    // Check Lua global: BINDING_HEADER_<HEADER>
+    if (upperHeader && upperHeader[0]) {
+        lua_getfield(L, LUA_GLOBALSINDEX, ("BINDING_HEADER_" + std::string(upperHeader)).c_str());
+        if (!lua_isnil(L, -1)) {
+            lua_pop(L, 1);
+            return true;
+        }
+        lua_pop(L, 1);
+    }
+
+    // Native XML table check
+    void* root = *reinterpret_cast<void**>(0x00BEADD8);
+    void** hashTable = reinterpret_cast<void**>(root) + 3;
+
+    using SStrHashHTFn = void* (__thiscall*)(void*, const char*);
+    auto SStrHashHT = reinterpret_cast<SStrHashHTFn>(0x0055F4D0); // Double-check this address
+
+    // Check for binding name in native table
+    if (upperName && upperName[0] && SStrHashHT(hashTable, upperName)) {
+        return true;
+    }
+
+    // Check for "HEADER_<HEADER>" in native table
+    if (upperHeader && upperHeader[0]) {
+        std::string fullHeaderKey = "HEADER_" + std::string(upperHeader);
+        if (SStrHashHT(hashTable, fullHeaderKey.c_str())) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+//based on and credits to: https://github.com/leoaviana/ConsoleXP/blob/38cb2a1ece253b017b3e554a2146033e95054ae2/src/ConsoleXP/Game.cpp#L727
 static void RegisterLuaBinding(const char* bindingName, const char* bindingText, const char* bindingHeaderName, const char* bindingHeaderText, const char* luaScript)
 {
     lua_State* L = GetLuaState();
     if (!L) return;
 
-    std::string upperName;
+    std::string upperHeader(bindingHeaderName);
+    std::transform(upperHeader.begin(), upperHeader.end(), upperHeader.begin(), ::toupper);
+
+    std::string upperName(bindingName);
+    std::transform(upperName.begin(), upperName.end(), upperName.begin(), ::toupper);
+
+    if (CheckIfBindingOrHeaderExists(upperName.c_str(), upperHeader.c_str())) {
+        return;
+    }
 
     if (bindingHeaderName && bindingHeaderName[0]) {
-        std::string upperHeader(bindingHeaderName);
-        std::transform(upperHeader.begin(), upperHeader.end(), upperHeader.begin(), ::toupper);
-
         lua_pushstring(L, bindingHeaderText);
         lua_setfield(L, LUA_GLOBALSINDEX, ("BINDING_HEADER_" + upperHeader).c_str());
     }
 
     if (bindingName && bindingName[0]) {
-        upperName = bindingName;
-        std::transform(upperName.begin(), upperName.end(), upperName.begin(), ::toupper);
-
         lua_pushstring(L, bindingText);
         lua_setfield(L, LUA_GLOBALSINDEX, ("BINDING_NAME_" + upperName).c_str());
     }
