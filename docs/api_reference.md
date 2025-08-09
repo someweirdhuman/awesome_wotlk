@@ -212,7 +212,22 @@ Arguments: **height**`number`
 Default: **200**
 
 Only works with `nameplateStackFunction` set to **1**<br>
-Sets maximum height nameplate can go up, before deciding to go down, or staying there. 
+Sets maximum height nameplate can go up, before deciding to go down, or staying there.
+
+## nameplateExtendWorldFrameHeight`CVar` 
+Arguments: **enabled**`bool`
+
+Default: **0**
+
+When enabled, this extends the height of the WorldFrame, allowing nameplates that would normally be out of view to remain visible.
+Note: This may interfere with some UI elements or addons that rely on the original WorldFrame height. It’s recommended to use a WeakAura or an addon to toggle this setting only during raids or boss encounters.
+
+## nameplateUpperBorderOnlyBoss`CVar` 
+Arguments: **enabled**`bool`
+
+Default: **0**
+
+When enabled, only nameplates of boss creatures will stick to top of the screen, all other nameplates will overflow.
 
 ## spellProjectionMode`CVar` 
 Arguments: **mode**`number`
