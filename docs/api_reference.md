@@ -74,7 +74,7 @@ Default: **41**
 Sets the display distance of nameplates in yards
 
 ## nameplateStacking`CVar`
-Arguments: **enabled**`bool`
+Arguments: **enabled**`boolean`
 
 Default: **0**
 
@@ -163,7 +163,7 @@ Width of a clickable nameplate hitbox, addons may override or break this, reload
 Use 0 to disable this and use default values.
 
 ## interactionMode`CVar` 
-Arguments: **mode**`bool`
+Arguments: **mode**`number`
 
 Default: **1**
 
@@ -197,27 +197,49 @@ Changes how friendliness of mobs is decided. <br>
 If set to **0** a UnitReaction("player", "nameplate%") >= 5 + CanAttack check for reaction 4 is used.<br>
 If set to **1** a parsing of healthbar color is used, same as weakaura did it.
 
+## nameplateStackFunction`CVar` 
+Arguments: **mode**`number`
+
+Default: **0**
+
+Sets which function is used to stack nameplates. <br>
+If set to **0** it will use the original weakaura behaviour, or close to it.<br>
+If set to **1** it will use brand new smoother function, that **must** be tweaked by you so it fits your preferences, speeds, max raise distance etc.
+
 ## nameplateMaxRaiseDistance`CVar` 
 Arguments: **height**`number`
 
 Default: **200**
 
+Only works with `nameplateStackFunction` set to **1**<br>
 Sets maximum height nameplate can go up, before deciding to go down, or staying there. 
 
-## nameplateExtendWorldFrameHeight`CVar` 
-Arguments: **enabled**`bool`
+## spellProjectionMode`CVar` 
+Arguments: **mode**`number`
 
 Default: **0**
 
-When enabled, this extends the height of the WorldFrame, allowing nameplates that would normally be out of view to remain visible.
-Note: This may interfere with some UI elements or addons that rely on the original WorldFrame height. It’s recommended to use a WeakAura or an addon to toggle this setting only during raids or boss encounters.
+Controls how the green/red ground targeting visual is handled when casting spells like Blizzard. <br>
+If set to **0** it uses the original 3.3.5 behavior (no projection limits). <br>
+If set to **1** Enables the backported modern/classic-style projection. This restricts projection to within the spell’s maximum range and automatically snaps the effect/texture to the max range if you try to cast beyond it.
 
-## nameplateUpperBorderOnlyBoss`CVar` 
-Arguments: **enabled**`bool`
+## spellProjectionMaxRange`CVar` 
+Arguments: **range**`number`
 
-Default: **0**
+Default: **20**
 
-When enabled, only nameplates of boss creatures will stick to top of the screen, all other nameplates will overflow.
+Sets how far beyond the spell’s actual range the ground targeting cursor is allowed to project. <br>
+Set to 0 to uncap.
+Any positive value allows projection up to that distance beyond the max range; beyond this, the projection disappears.
+
+## spellProjectionHorizontalBias`CVar` 
+Arguments: **bias**`number`
+
+Default: **1.5**
+
+Controls how much the ground targeting visual is offset horizontally toward the cursor when it's outside the spell’s max range. <br>
+Set to 0 to disable.
+Higher values increase the amount of horizontal shift.
 
 # Unit
 
@@ -291,6 +313,29 @@ Returns: **itemID**`number`, **itemType**`string`, **itemSubType**`string`, **it
 Returns id, type, sub-type, equipment slot, icon, class id, and sub-class id if passed valid argument else returns nothing
 
 # Misc
+
+## cameraIndirectVisibility`CVar` 
+Arguments: **mode**`number`
+
+Default: **0**
+
+Controls the camera's behavior when the player character is obstructed by environmental objects.<br> 
+When enabled (1), the camera allows the character to be obscured by the environment.
+
+## cameraIndirectAlpha`CVar` 
+Arguments: **alpha**`number`
+
+Default: **0.6**
+
+Controls the transparency level of objects between the camera and the player character when cameraIndirectVisibility is enabled. <br>
+Limited to [0.6 - 1] range.
+
+## cameraIndirectOffset`CVar` 
+Arguments: **offset**`number`
+
+Default: **10**
+
+Not implemented yet. <br>
 
 ## Cursor`macro`
 
