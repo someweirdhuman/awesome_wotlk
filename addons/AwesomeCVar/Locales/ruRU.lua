@@ -44,7 +44,6 @@ if GetLocale() == "ruRU" then
     L.CVAR_LABEL_ENABLE_STACKING = "Включить наслоение индикаторов"
     L.CVAR_LABEL_STACK_FRIENDLY = "Наслаивать союзные индикаторы |cffff0000(нужен /reload)|r"
     L.CVAR_LABEL_FRIENDLY_DETECT_MODE = "Режим определения союзников |cffff0000(нужен /reload)|r"
-    L.CVAR_LABEL_STACKING_FUNCTION = "Функция наслоения |cffff0000(нужен /reload)|r"
     L.CVAR_LABEL_NAMEPLATE_DISTANCE = "Дистанция индикаторов"
     L.CVAR_LABEL_MAX_RAISE_DISTANCE = "Макс. дистанция подъема"
     L.CVAR_LABEL_X_SPACE = "Пробел X для индикаторов"
@@ -64,14 +63,11 @@ if GetLocale() == "ruRU" then
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Увеличить высоту World Frame"
 
     L.DESC_HITBOX_DISABLED = "0 = ОТКЛЮЧЕНО, не используйте без аддона для индикаторов здоровья"
-    L.DESC_SMOOTH_FUNCTION_ONLY = "(работает только с Плавноq функцией)"
-    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Позволяет всегда видеть индикаторы боссов, даже если босс большой, увеличивая высоту World Frame в 5 раз. Может нарушить работу некоторых элементов интерфейса."
+    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Прикрепляет индикаторы вне поля зрения к верхней границе; может нарушить работу некоторых элементов интерфейса. ТРЕБУЕТ включенного наслоения индикаторов."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API реакции"
     L.MODE_LABEL_COLOR_PARSING = "Анализ цвета"
-    L.MODE_LABEL_LEGACY = "Наследие (стиль Weakaura)"
-    L.MODE_LABEL_SMOOTH = "Плавная функция"
     L.MODE_LABEL_PLAYER_RADIUS = "Радиус игрока 20м"
     L.MODE_LABEL_CONE_ANGLE = "Угол конуса (в градусах) в пределах 20м"
 end

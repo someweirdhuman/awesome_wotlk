@@ -44,7 +44,6 @@ if GetLocale() == "enUS" then
     L.CVAR_LABEL_ENABLE_STACKING = "Enable Nameplate Stacking"
     L.CVAR_LABEL_STACK_FRIENDLY = "Stack Friendly Nameplates |cffff0000(Reload Required)|r"
     L.CVAR_LABEL_FRIENDLY_DETECT_MODE = "Friendly Detection Mode |cffff0000(Reload Required)|r"
-    L.CVAR_LABEL_STACKING_FUNCTION = "Stacking Function |cffff0000(Reload Required)|r"
     L.CVAR_LABEL_NAMEPLATE_DISTANCE = "Nameplate Distance"
     L.CVAR_LABEL_MAX_RAISE_DISTANCE = "Max Raise Distance"
     L.CVAR_LABEL_X_SPACE = "Nameplate X Space"
@@ -64,14 +63,11 @@ if GetLocale() == "enUS" then
     L.CVAR_LABEL_UPPER_BORDER_ONLY_BOSS = "Allow ONLY bosses to stick to upper border of the screen"
 
     L.DESC_HITBOX_DISABLED = "0 = DISABLED, don't use without a nameplate addon"
-    L.DESC_SMOOTH_FUNCTION_ONLY = "(only works with the Smooth Function)"
-    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Allows you to always see boss nameplates even if boss is large by extending World Frame Height by 5xŁŁ, can break some UI elements"
+    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Sticks out-of-view nameplates to top border; may break some UI elements. REQUIRES stacking nameplates enabled."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "Reaction API"
     L.MODE_LABEL_COLOR_PARSING = "Color Parsing"
-    L.MODE_LABEL_LEGACY = "Legacy (Weakaura-style)"
-    L.MODE_LABEL_SMOOTH = "Smooth Function"
     L.MODE_LABEL_PLAYER_RADIUS = "Player Radius 20yd"
     L.MODE_LABEL_CONE_ANGLE = "Cone Angle (dg) within 20yd"
 end

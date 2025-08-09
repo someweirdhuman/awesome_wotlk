@@ -44,7 +44,6 @@ if GetLocale() == "koKR" then
     L.CVAR_LABEL_ENABLE_STACKING = "이름표 겹치기 활성화"
     L.CVAR_LABEL_STACK_FRIENDLY = "우호적 이름표 겹치기 |cffff0000(새로고침 필요)|r"
     L.CVAR_LABEL_FRIENDLY_DETECT_MODE = "우호적 대상 감지 모드 |cffff0000(새로고침 필요)|r"
-    L.CVAR_LABEL_STACKING_FUNCTION = "겹치기 기능 |cffff0000(새로고침 필요)|r"
     L.CVAR_LABEL_NAMEPLATE_DISTANCE = "이름표 거리"
     L.CVAR_LABEL_MAX_RAISE_DISTANCE = "최대 상승 거리"
     L.CVAR_LABEL_X_SPACE = "이름표 X축 간격"
@@ -64,14 +63,11 @@ if GetLocale() == "koKR" then
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "월드 프레임 높이 확장"
 
     L.DESC_HITBOX_DISABLED = "0 = 비활성화됨, 이름표 애드온 없이 사용하지 마세요"
-    L.DESC_SMOOTH_FUNCTION_ONLY = "(부드러운 기능에서만 작동)"
-    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "월드 프레임 높이를 5배로 확장하여 보스가 커도 항상 이름표를 볼 수 있습니다. 일부 UI 요소가 깨질 수 있습니다."
+    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "화면 밖 이름표를 상단 테두리에 고정합니다. 일부 UI 요소가 깨질 수 있습니다. 이름표 겹치기 활성화 필요."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "반응 API"
     L.MODE_LABEL_COLOR_PARSING = "색상 분석"
-    L.MODE_LABEL_LEGACY = "레거시 (Weakaura 스타일)"
-    L.MODE_LABEL_SMOOTH = "부드러운 기능"
     L.MODE_LABEL_PLAYER_RADIUS = "플레이어 반경 20미터"
     L.MODE_LABEL_CONE_ANGLE = "20미터 내 원뿔 각도 (도)"
 end

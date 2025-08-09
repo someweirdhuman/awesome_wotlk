@@ -44,7 +44,6 @@ if GetLocale() == "frFR" then
     L.CVAR_LABEL_ENABLE_STACKING = "Activer l'empilement des barres de noms"
     L.CVAR_LABEL_STACK_FRIENDLY = "Empiler les barres de noms amicales |cffff0000(Recharg. requis)|r"
     L.CVAR_LABEL_FRIENDLY_DETECT_MODE = "Mode de détection amical |cffff0000(Recharg. requis)|r"
-    L.CVAR_LABEL_STACKING_FUNCTION = "Fonction d'empilement |cffff0000(Recharg. requis)|r"
     L.CVAR_LABEL_NAMEPLATE_DISTANCE = "Distance des barres de noms"
     L.CVAR_LABEL_MAX_RAISE_DISTANCE = "Distance d'élévation max"
     L.CVAR_LABEL_X_SPACE = "Espace X des barres de noms"
@@ -64,14 +63,11 @@ if GetLocale() == "frFR" then
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Étendre la hauteur du World Frame"
 
     L.DESC_HITBOX_DISABLED = "0 = DÉSACTIVÉ, ne pas utiliser sans un addon de barres de noms"
-    L.DESC_SMOOTH_FUNCTION_ONLY = "(fonctionne uniquement avec la Fonction Douce)"
-    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Permet de toujours voir les barres de noms des boss même s'ils sont grands en étendant la hauteur du World Frame par 5x. Peut casser certains éléments de l'interface."
-
+    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Prolonge les barres de nom hors de la vue vers la bordure supérieure ; peut casser certains éléments de l’interface. NÉCESSITE l’activation de l’empilement des barres de nom."
+    
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API de Réaction"
     L.MODE_LABEL_COLOR_PARSING = "Analyse de couleur"
-    L.MODE_LABEL_LEGACY = "Legacy (style Weakaura)"
-    L.MODE_LABEL_SMOOTH = "Fonction Douce"
     L.MODE_LABEL_PLAYER_RADIUS = "Rayon du joueur 20m"
     L.MODE_LABEL_CONE_ANGLE = "Angle du cône (dg) à moins de 20m"
 end

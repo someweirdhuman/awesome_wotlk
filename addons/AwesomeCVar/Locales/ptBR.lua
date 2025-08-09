@@ -44,7 +44,6 @@ if GetLocale() == "ptBR" then
     L.CVAR_LABEL_ENABLE_STACKING = "Ativar Empilhamento de Placas de Nome"
     L.CVAR_LABEL_STACK_FRIENDLY = "Empilhar Placas de Nome Aliadas |cffff0000(Req. Recarregar)|r"
     L.CVAR_LABEL_FRIENDLY_DETECT_MODE = "Modo de Detecção de Aliados |cffff0000(Req. Recarregar)|r"
-    L.CVAR_LABEL_STACKING_FUNCTION = "Função de Empilhamento |cffff0000(Req. Recarregar)|r"
     L.CVAR_LABEL_NAMEPLATE_DISTANCE = "Distância das Placas de Nome"
     L.CVAR_LABEL_MAX_RAISE_DISTANCE = "Distância Máxima de Elevação"
     L.CVAR_LABEL_X_SPACE = "Espaço X das Placas de Nome"
@@ -64,14 +63,11 @@ if GetLocale() == "ptBR" then
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Estender Altura do World Frame"
 
     L.DESC_HITBOX_DISABLED = "0 = DESATIVADO, não use sem um addon de placas de nome"
-    L.DESC_SMOOTH_FUNCTION_ONLY = "(só funciona com a Função Suave)"
-    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Permite sempre ver placas de nome de chefes, mesmo que sejam grandes, estendendo a altura do World Frame em 5x. Pode quebrar alguns elementos da interface."
+    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Gruda placas de nome fora de visão na borda superior; pode quebrar alguns elementos da interface. REQUER empilhamento de placas de nome ativado."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API de Reação"
     L.MODE_LABEL_COLOR_PARSING = "Análise de Cor"
-    L.MODE_LABEL_LEGACY = "Legado (estilo Weakaura)"
-    L.MODE_LABEL_SMOOTH = "Função Suave"
     L.MODE_LABEL_PLAYER_RADIUS = "Raio do Jogador 20m"
     L.MODE_LABEL_CONE_ANGLE = "Ângulo do cone (graus) dentro de 20m"
 end

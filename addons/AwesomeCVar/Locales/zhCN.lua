@@ -44,7 +44,6 @@ if GetLocale() == "zhCN" then
     L.CVAR_LABEL_ENABLE_STACKING = "启用姓名板堆叠"
     L.CVAR_LABEL_STACK_FRIENDLY = "堆叠友方姓名板 |cffff0000（需重载）|r"
     L.CVAR_LABEL_FRIENDLY_DETECT_MODE = "友方侦测模式 |cffff0000（需重载）|r"
-    L.CVAR_LABEL_STACKING_FUNCTION = "堆叠功能 |cffff0000（需重载）|r"
     L.CVAR_LABEL_NAMEPLATE_DISTANCE = "姓名板距离"
     L.CVAR_LABEL_MAX_RAISE_DISTANCE = "最大抬升距离"
     L.CVAR_LABEL_X_SPACE = "姓名板 X 轴间距"
@@ -64,14 +63,11 @@ if GetLocale() == "zhCN" then
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "扩展世界框架高度"
 
     L.DESC_HITBOX_DISABLED = "0 = 禁用，若无姓名板插件请勿使用"
-    L.DESC_SMOOTH_FUNCTION_ONLY = "（仅适用于平滑功能）"
-    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "将世界框架高度扩展为 5 倍，即使首领很大也能始终看到首领姓名板，但可能会破坏部分界面元素"
+    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "将视野外的姓名板固定到屏幕上边界；可能会影响部分界面元素。需要启用姓名板堆叠。"
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "反应 API"
     L.MODE_LABEL_COLOR_PARSING = "颜色解析"
-    L.MODE_LABEL_LEGACY = "传统（Weakaura 风格）"
-    L.MODE_LABEL_SMOOTH = "平滑功能"
     L.MODE_LABEL_PLAYER_RADIUS = "玩家半径 20 码"
     L.MODE_LABEL_CONE_ANGLE = "20 码内锥形角度（度）"
 end

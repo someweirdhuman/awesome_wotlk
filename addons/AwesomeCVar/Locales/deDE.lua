@@ -44,7 +44,6 @@ if GetLocale() == "deDE" then
     L.CVAR_LABEL_ENABLE_STACKING = "Stapeln von Namensplaketten aktivieren"
     L.CVAR_LABEL_STACK_FRIENDLY = "Freundliche Namensplaketten stapeln |cffff0000(Neuladen erf.)|r"
     L.CVAR_LABEL_FRIENDLY_DETECT_MODE = "Erkennungsmodus für Freunde |cffff0000(Neuladen erf.)|r"
-    L.CVAR_LABEL_STACKING_FUNCTION = "Stapelfunktion |cffff0000(Neuladen erf.)|r"
     L.CVAR_LABEL_NAMEPLATE_DISTANCE = "Distanz der Namensplaketten"
     L.CVAR_LABEL_MAX_RAISE_DISTANCE = "Max. Anhebedistanz"
     L.CVAR_LABEL_X_SPACE = "X-Abstand der Namensplaketten"
@@ -64,14 +63,11 @@ if GetLocale() == "deDE" then
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "World Frame Höhe erweitern"
 
     L.DESC_HITBOX_DISABLED = "0 = DEAKTIVIERT, nicht ohne ein Namensplaketten-Addon verwenden"
-    L.DESC_SMOOTH_FUNCTION_ONLY = "(funktioniert nur mit der 'Smooth'-Funktion)"
-    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Ermöglicht das ständige Anzeigen von Boss-Namensplaketten, auch wenn der Boss groß ist, indem die World Frame Höhe um das 5-fache erhöht wird. Kann einige UI-Elemente beeinträchtigen."
+    L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Fixiert außerhalb des Sichtbereichs liegende Namensplaketten am oberen Bildschirmrand; kann einige UI-Elemente beeinträchtigen. ERFORDERT aktiviertes Stapeln der Namensplaketten."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "Reaktions-API"
     L.MODE_LABEL_COLOR_PARSING = "Farbanalyse"
-    L.MODE_LABEL_LEGACY = "Legacy (Weakaura-Stil)"
-    L.MODE_LABEL_SMOOTH = "Smooth-Funktion"
     L.MODE_LABEL_PLAYER_RADIUS = "Spielerradius 20yd"
     L.MODE_LABEL_CONE_ANGLE = "Kegelwinkel (Grad) innerhalb von 20yd"
 end
