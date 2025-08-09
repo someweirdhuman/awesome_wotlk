@@ -30,7 +30,6 @@ static Console::CVar* s_cvar_nameplateFriendlyHitboxWidth;
 static Console::CVar* s_cvar_nameplateStackFriendly;
 static Console::CVar* s_cvar_nameplateStackFriendlyMode;
 static Console::CVar* s_cvar_nameplateMaxRaiseDistance;
-static Console::CVar* s_cvar_nameplateStackFunction;
 static Console::CVar* s_cvar_nameplateExtendWorldFrameHeight;
 static Console::CVar* s_cvar_nameplateUpperBorderOnlyBoss;
 
@@ -131,7 +130,6 @@ static int CVarHandler_NameplateHitboxWidth(Console::CVar*, const char*, const c
 static int CVarHandler_NameplateFriendlyHitboxHeight(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateFriendlyHitboxWidth(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateMaxRaiseDistance(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
-static int CVarHandler_NameplateStackFunction(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateUpperBorderOnlyBoss(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateExtendWorldFrameHeight(Console::CVar*, const char*, const char* value, LPVOID) {
     if (!IsInWorld()) return 1;
@@ -275,7 +273,6 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
         int frame_idx = lua_gettop(L);
 
         if (!(entry.flags & NamePlateFlag_Visible)) {
-            
             entry.xpos = 0.f;
             entry.ypos = 0.f;
             entry.currentStackOffset = 0.f;
@@ -385,7 +382,7 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
 
             SetClampedToScreen(L, frame_idx, true);
             if (std::atoi(s_cvar_nameplateUpperBorderOnlyBoss->vStr) == 1) {
-                SetClampRectInsets(L, frame_idx, -10, 10, nameplate.rank == 3 ? upperBorder : -upperBorder, -nameplate.ypos - nameplate.currentStackOffset - originPos + height / 2);
+                SetClampRectInsets(L, frame_idx, -10, 10, nameplate.rank == 3 ? upperBorder : (-upperBorder * 5), -nameplate.ypos - nameplate.currentStackOffset - originPos + height / 2);
             }
             else {
                 SetClampRectInsets(L, frame_idx, -10, 10, upperBorder, -nameplate.ypos - nameplate.currentStackOffset - originPos + height / 2);
@@ -662,12 +659,7 @@ static void onUpdateCallback()
     }
 
     if (strcmp(s_cvar_nameplateStacking->vStr, "1") == 0) {
-        if (strcmp(s_cvar_nameplateStackFunction->vStr, "1") == 0) {
-            NameplateStackingUpdateSmooth(L, &vars);
-        }
-        else {
-            NameplateStackingUpdate(L, &vars);
-        }
+        NameplateStackingUpdateSmooth(L, &vars);
     }
 
     vars.updateId++;
@@ -711,7 +703,6 @@ void NamePlates::initialize()
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateFriendlyHitboxWidth, "nameplateFriendlyHitboxWidth", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateFriendlyHitboxWidth);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateStackFriendly, "nameplateStackFriendly", NULL, (Console::CVarFlags)1, "1", CVarHandler_NameplateStackFriendly);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateStackFriendlyMode, "nameplateStackFriendlyMode", NULL, (Console::CVarFlags)1, "1", CVarHandler_NameplateStackFriendlyMode);
-    Hooks::FrameXML::registerCVar(&s_cvar_nameplateStackFunction, "nameplateStackFunction", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateStackFunction);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateMaxRaiseDistance, "nameplateMaxRaiseDistance", NULL, (Console::CVarFlags)1, "200", CVarHandler_NameplateMaxRaiseDistance);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateExtendWorldFrameHeight, "nameplateExtendWorldFrameHeight", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateExtendWorldFrameHeight);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateUpperBorderOnlyBoss, "nameplateUpperBorderOnlyBoss", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateUpperBorderOnlyBoss);
