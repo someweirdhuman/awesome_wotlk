@@ -1376,6 +1376,18 @@ inline void WorldFrame_PercToScreenPos(float x, float y, float* resX, float* res
     *resY = (y * (screenHeightAptitude * 1024.f)) / someVal;
 }
 
+							  
+									   
+											 
+					   
+ 
+
+								  
+									   
+											 
+																   
+ 
+
 // XML
 struct __declspec(novtable) XMLObject {
     uint32_t gap0[0x38 / 4];

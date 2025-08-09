@@ -1,23 +1,88 @@
-#include "Hooks.h"
+﻿#include "Hooks.h"
 #include <Windows.h>
 #include <Detours/detours.h>
 #include <string>
-#include <vector>
-#include <unordered_map>
+#include <unordered_set>
+
+
+static Console::CVar* s_cvar_spellProjectionHorizontalBias;
+static Console::CVar* s_cvar_spellProjectionMaxRange;
+static Console::CVar* s_cvar_spellProjectionMode;
+static int CVarHandler_spellProjectionHorizontalBias(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_spellProjectionMaxRange(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_spellProjectionMode(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+
+std::unordered_map<void*, float> g_model_original_alphas;
+std::unordered_set<void*> g_forward_current_models;
+std::unordered_set<void*> g_backward_current_models;
+std::unordered_set<void*> g_models_being_faded;
+
+bool g_backwards_mode = false;
+bool g_needs_backward_pass = false;
+
+C3Vector g_saved_start, g_saved_end;
+C3Vector g_saved_hitpoint;
+float g_saved_distance;
+uint32_t g_saved_flag, g_saved_param;
+
+static Console::CVar* s_cvar_cameraIndirectVisibility;
+static Console::CVar* s_cvar_cameraIndirectOffset;
+static Console::CVar* s_cvar_cameraIndirectAlpha;
+
+static int CVarHandler_cameraIndirectVisibility(Console::CVar*, const char*, const char* value, LPVOID) {
+    if (!std::atoi(value)) {
+        for (auto it = g_models_being_faded.begin(); it != g_models_being_faded.end();) {
+            void* modelPtr = *it;
+            *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(modelPtr) + 0x17C) = g_model_original_alphas[modelPtr];
+            g_model_original_alphas.erase(modelPtr);
+            it = g_models_being_faded.erase(it);
+        }
+        g_forward_current_models.clear();
+        g_backward_current_models.clear();
+        g_model_original_alphas.clear();
+    }
+    return 1;
+}
+static int CVarHandler_cameraIndirectOffset(Console::CVar* cvar, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_cameraIndirectAlpha(Console::CVar* cvar, const char*, const char* value, void*)
+{
+    float alpha = std::atof(value);
+    if (alpha < 0.6f || alpha > 1.0f)
+        return 0;
+    return 1;
+}
 
 static constexpr float MAX_TRACE_DISTANCE = 1000.0f;
 static constexpr uint32_t TERRAIN_HIT_FLAGS = 0x10111;
+
 static bool g_cursorKeywordActive = false;
 static bool g_playerLocationKeywordActive = false;
+static bool g_hasAdjustedPos = false;
+static C3Vector g_adjustedSpellPos = { 0, 0, 0 };
+
+static C3Vector g_lastValidPos = { 0, 0, 0 };
+static bool g_hasLastPos = false;
+
+typedef int(__stdcall* ProcessAoETargeting)(uint32_t* a1);
+static ProcessAoETargeting ProcessAoETargeting_orig = (ProcessAoETargeting)0x004F66C0;
+
+typedef int(__cdecl* GetSpellRange)(int, int, float*, float*, int);
+static GetSpellRange GetSpellRange_orig = (GetSpellRange)0x00802C30;
+
+static float clampf(float val, float minVal, float maxVal) { return (val < minVal) ? minVal : (val > maxVal) ? maxVal : val; }
+static float dot(const C3Vector& a, const C3Vector& b) { return a.X * b.X + a.Y * b.Y + a.Z * b.Z; }
 
 typedef int(__cdecl* SecureCmdOptionParse_t)(lua_State* L);
-SecureCmdOptionParse_t SecureCmdOptionParse_orig = (SecureCmdOptionParse_t)0x00564AE0;
+static SecureCmdOptionParse_t SecureCmdOptionParse_orig = (SecureCmdOptionParse_t)0x00564AE0;
 
 typedef void(__cdecl* HandleTerrainClick_t)(TerrainClickEvent*);
 static HandleTerrainClick_t HandleTerrainClick_orig = (HandleTerrainClick_t)0x00527830;
 
 typedef uint8_t(__cdecl* TraceLine_t)(C3Vector* start, C3Vector* end, C3Vector* hitPoint, float* distance, uint32_t flag, uint32_t optional);
 static TraceLine_t TraceLine_orig = (TraceLine_t)0x007A3B70;
+
+typedef char(__cdecl* CGWorldFrame_Intersect_t)(C3Vector* start, C3Vector* end, C3Vector* hitPoint, float* distance, uint32_t flag, uint32_t optional);
+static CGWorldFrame_Intersect_t CGWorldFrame_Intersect_orig = (CGWorldFrame_Intersect_t)0x0077F310;
 
 struct CVarArgs {
     Console::CVar** dst;
@@ -43,7 +108,6 @@ static void CVars_Initialize_hk()
         if (dst) *dst = cvar;
     }
 }
-
 
 static std::vector<const char*> s_customEvents;
 void Hooks::FrameXML::registerEvent(const char* str) { s_customEvents.push_back(str); }
@@ -103,6 +167,7 @@ struct CustomTokenDetails {
         Hooks::FrameScript::TokenIdNGetter* getIdN;
     };
 };
+
 static std::unordered_map<std::string, CustomTokenDetails> s_customTokens;
 void Hooks::FrameScript::registerToken(const char* token, TokenGuidGetter* getGuid, TokenIdGetter* getId) { s_customTokens[token] = { getGuid, getId }; }
 void Hooks::FrameScript::registerToken(const char* token, TokenNGuidGetter* getGuid, TokenIdNGetter* getId) { s_customTokens[token] = { getGuid, getId }; }
@@ -174,7 +239,6 @@ void Hooks::FrameScript::registerOnEnter(DummyCallback_t func) { s_customOnEnter
 
 static std::vector<Hooks::DummyCallback_t> s_customOnLeave;
 void Hooks::FrameScript::registerOnLeave(DummyCallback_t func) { s_customOnLeave.push_back(func); }
-
 static int(*FrameScript_FireOnUpdate_orig)(int a1, int a2, int a3, int a4) = (decltype(FrameScript_FireOnUpdate_orig))0x00495810;
 static int FrameScript_FireOnUpdate_hk(int a1, int a2, int a3, int a4)
 {
@@ -221,7 +285,6 @@ static void __declspec(naked) LoadGlueXML_hk()
     }
 }
 
-
 static std::vector<Hooks::DummyCallback_t> s_glueXmlCharEnum;
 void Hooks::GlueXML::registerCharEnum(DummyCallback_t func) { s_glueXmlCharEnum.push_back(func); }
 
@@ -248,6 +311,8 @@ static void __declspec(naked) LoadCharacters_hk()
     }
 }
 
+static bool isSpellReadied() { return ((DWORD)0x00D3F4E0 & 0x60) != 0 && (DWORD)0x00D3F4E4 != 0; }
+
 static bool TerrainClick(float x, float y, float z) {
     TerrainClickEvent tc = {};
     tc.GUID = 0;
@@ -260,8 +325,7 @@ static bool TerrainClick(float x, float y, float z) {
     return true;
 }
 
-static bool TraceLine(const C3Vector& start, const C3Vector& end, uint32_t hitFlags,
-    C3Vector& intersectionPoint, float& completedBeforeIntersection) {
+static bool TraceLine(const C3Vector& start, const C3Vector& end, uint32_t hitFlags, C3Vector& intersectionPoint, float& completedBeforeIntersection) {
     completedBeforeIntersection = 1.0f;
     intersectionPoint = { 0.0f, 0.0f, 0.0f };
 
@@ -295,7 +359,7 @@ static bool GetCursorWorldPosition(VecXYZ& worldPos) {
 
     float tanHalfFov = tanf(camera->fovInRadians * 0.3f);
     VecXYZ localRay = {
-        nx * camera->aspect* tanHalfFov,
+        nx * camera->aspect * tanHalfFov,
         ny * tanHalfFov,
         1.0f
     };
@@ -329,15 +393,170 @@ static bool GetCursorWorldPosition(VecXYZ& worldPos) {
     return false;
 }
 
-/*inline int __fastcall Spell_C_CancelPlayerSpells() {
-    return ((decltype(&Spell_C_CancelPlayerSpells))0x00809AC0)();
-}*/
+static bool GetScreenSpaceSpellPosition(const C3Vector& playerPos, const C3Vector& cursorPos, float maxRange, C3Vector& outPos) {
+    Camera* camera = GetActiveCamera();
+    if (!camera)
+        return false;
 
-static bool isSpellReadied() {
-    unsigned int spellTargetingFlag = *(unsigned int*)0x00D3F4E4;
-    unsigned int spellTargetingState = *(unsigned int*)0x00D3F4E0;
-    return spellTargetingFlag != 0 && (spellTargetingState & 0x40) != 0;
+    const float* m = (float*)((uintptr_t)camera + 0x14);
+    C3Vector right = { m[3], m[4], m[5] };
+    C3Vector up = { m[6], m[7], m[8] };
+    C3Vector fwd = { m[0], m[1], m[2] };
+
+    C3Vector toCursor = {
+        cursorPos.X - playerPos.X,
+        cursorPos.Y - playerPos.Y,
+        cursorPos.Z - playerPos.Z
+    };
+
+    float sx = dot(toCursor, right);
+    float sy = dot(toCursor, up);
+    float sz = dot(toCursor, fwd);
+
+    double clampDistance = std::atoi(s_cvar_spellProjectionMaxRange->vStr);
+    if (clampDistance > 0 && sqrtf(toCursor.X * toCursor.X + toCursor.Y * toCursor.Y + toCursor.Z * toCursor.Z) > maxRange + clampDistance)
+        return false;
+
+    float dx = cursorPos.X - playerPos.X;
+    float dy = cursorPos.Y - playerPos.Y;
+    float biasT = (sqrtf(dx * dx + dy * dy) - maxRange) / 25.0f;
+
+    if (biasT < 0.0f)
+        biasT = 0.0f;
+    else if (biasT > 1.0f)
+        biasT = 1.0f;
+    sx *= (1.0f + std::atoi(s_cvar_spellProjectionHorizontalBias->vStr) * (biasT * biasT * (3.0f - 2.0f * biasT)));
+
+    C3Vector dir = {
+        sx * right.X + sy * up.X + sz * fwd.X,
+        sx * right.Y + sy * up.Y + sz * fwd.Y,
+        sx * right.Z + sy * up.Z + sz * fwd.Z
+    };
+
+    float dirLenSq = dir.X * dir.X + dir.Y * dir.Y + dir.Z * dir.Z;
+    if (dirLenSq < 1e-6f)
+        return false;
+
+    float invDirLen = 1.0f / sqrtf(dirLenSq);
+    dir.X *= invDirLen; dir.Y *= invDirLen; dir.Z *= invDirLen;
+
+    C3Vector perpA = (fabs(dir.Z) < 0.9f) ?
+        C3Vector{ -dir.Y, dir.X, 0.0f } :
+        C3Vector{ 0.0f, -dir.Z, dir.Y };
+
+    float perpLenSq = perpA.X * perpA.X + perpA.Y * perpA.Y + perpA.Z * perpA.Z;
+    float invPerpLen = 1.0f / sqrtf(perpLenSq + 1e-6f);
+    perpA.X *= invPerpLen; perpA.Y *= invPerpLen; perpA.Z *= invPerpLen;
+
+    C3Vector perpB = {
+        dir.Y * perpA.Z - dir.Z * perpA.Y,
+        dir.Z * perpA.X - dir.X * perpA.Z,
+        dir.X * perpA.Y - dir.Y * perpA.X
+    };
+
+    const float coneRadius = 0.25f;
+    C3Vector coneDirs[3] = {
+        dir,
+        { dir.X + perpA.X * coneRadius, dir.Y + perpA.Y * coneRadius, dir.Z + perpA.Z * coneRadius },
+        { dir.X + perpB.X * coneRadius, dir.Y + perpB.Y * coneRadius, dir.Z + perpB.Z * coneRadius }
+    };
+
+    for (int i = 1; i < 3; ++i) {
+        float lenSq = coneDirs[i].X * coneDirs[i].X + coneDirs[i].Y * coneDirs[i].Y + coneDirs[i].Z * coneDirs[i].Z;
+        float invLen = 1.0f / sqrtf(lenSq);
+        coneDirs[i].X *= invLen;
+        coneDirs[i].Y *= invLen;
+        coneDirs[i].Z *= invLen;
+    }
+
+    const C3Vector castDirs[3] = {
+        { 0.0f, 0.0f, -1.0f },
+        { dir.X * 0.5f, dir.Y * 0.5f, -0.7071f },
+        { 0.0f, 0.0f, 1.0f }
+    };
+
+    const float maxRangeSq = maxRange * maxRange;
+    const float distStep = maxRange * 0.16666667f;
+
+    C3Vector bestHit = playerPos;
+    float bestScore = FLT_MAX;
+    bool foundHit = false;
+
+    C3Vector testPoint = {
+        playerPos.X + dir.X * maxRange,
+        playerPos.Y + dir.Y * maxRange,
+        playerPos.Z + dir.Z * maxRange
+    };
+
+    C3Vector rayStart = { testPoint.X, testPoint.Y, testPoint.Z };
+    C3Vector rayEnd = { testPoint.X, testPoint.Y, testPoint.Z };
+
+    C3Vector hitPoint;
+    float hitDist;
+
+    for (int distStepIdx = 6; distStepIdx >= 1; --distStepIdx) {
+        float testDist = distStep * distStepIdx;
+
+        for (int coneStep = 0; coneStep < 3; ++coneStep) {
+            const C3Vector& testDir = coneDirs[coneStep];
+
+            testPoint.X = playerPos.X + testDir.X * testDist;
+            testPoint.Y = playerPos.Y + testDir.Y * testDist;
+            testPoint.Z = playerPos.Z + testDir.Z * testDist;
+
+            for (int castIdx = 0; castIdx < 3; ++castIdx) {
+                const C3Vector& castDir = castDirs[castIdx];
+
+                rayStart.X = testPoint.X - castDir.X * 50.0f;
+                rayStart.Y = testPoint.Y - castDir.Y * 50.0f;
+                rayStart.Z = testPoint.Z - castDir.Z * 50.0f;
+
+                rayEnd.X = testPoint.X + castDir.X * 100.0f;
+                rayEnd.Y = testPoint.Y + castDir.Y * 100.0f;
+                rayEnd.Z = testPoint.Z + castDir.Z * 100.0f;
+
+                if (TraceLine(rayStart, rayEnd, TERRAIN_HIT_FLAGS, hitPoint, hitDist)) {
+                    float dx = hitPoint.X - playerPos.X;
+                    float dy = hitPoint.Y - playerPos.Y;
+                    float dz = hitPoint.Z - playerPos.Z;
+                    float distSq = dx * dx + dy * dy + dz * dz;
+
+                    if (distSq <= maxRangeSq) {
+                        float score;
+                        if (g_hasLastPos) {
+                            float ldx = hitPoint.X - g_lastValidPos.X;
+                            float ldy = hitPoint.Y - g_lastValidPos.Y;
+                            float ldz = hitPoint.Z - g_lastValidPos.Z;
+                            score = ldx * ldx + ldy * ldy + ldz * ldz;
+                        }
+                        else {
+                            score = fabs(distSq - maxRangeSq);
+                        }
+
+                        if (score < bestScore) {
+                            bestScore = score;
+                            bestHit = hitPoint;
+                            foundHit = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (foundHit) {
+        outPos = bestHit;
+        g_lastValidPos = bestHit;
+        g_hasLastPos = true;
+    }
+    else {
+        outPos.X = playerPos.X + dir.X * maxRange;
+        outPos.Y = playerPos.Y + dir.Y * maxRange;
+        outPos.Z = playerPos.Z + dir.Z * maxRange;
+    }
+    return true;
 }
+
 
 static int __cdecl SecureCmdOptionParse_hk(lua_State* L) {
     int result = SecureCmdOptionParse_orig(L);
@@ -374,36 +593,339 @@ static int __cdecl SecureCmdOptionParse_hk(lua_State* L) {
     return result;
 }
 
-static void onUpdateCallback() {
-    if (!IsInWorld())
-        return;
-
-    if (g_cursorKeywordActive) {
+static void __cdecl HandleTerrainClick_hk(TerrainClickEvent* event)
+{
+    if (g_hasAdjustedPos) {
         if (isSpellReadied()) {
-            VecXYZ cursorPos;
-            if (GetCursorWorldPosition(cursorPos)) {
-                TerrainClick(cursorPos.x, cursorPos.y, cursorPos.z);
+            event->x = g_adjustedSpellPos.X;
+            event->y = g_adjustedSpellPos.Y;
+            event->z = g_adjustedSpellPos.Z;
+        }
+        g_hasAdjustedPos = false;
+    }
+    HandleTerrainClick_orig(event);
+}
+
+static int __stdcall ProcessAoETargeting_hk(uint32_t* a1)
+{
+    g_hasAdjustedPos = false;
+
+    CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
+    if (!player)
+        return ProcessAoETargeting_orig(a1);
+
+    if (g_playerLocationKeywordActive) {
+        C3Vector playerPos;
+        player->GetPosition(playerPos);
+        TerrainClick(playerPos.X, playerPos.Y, playerPos.Z);
+        g_playerLocationKeywordActive = false;
+        return 0;
+    }
+
+    C3Vector originalCursor = {
+        *(float*)&a1[2],
+        *(float*)&a1[3],
+        *(float*)&a1[4]
+    };
+
+    if (!std::atoi(s_cvar_spellProjectionMode->vStr) == 1) {
+        if (g_cursorKeywordActive) {
+            TerrainClick(originalCursor.X, originalCursor.Y, originalCursor.Z);
+            g_cursorKeywordActive = false;
+            return 0;
+        }
+        return ProcessAoETargeting_orig(a1);
+    }
+
+    int spellContext = *(DWORD*)0x00D3F4E4 + 8;
+    int spellObject = static_cast<int>(reinterpret_cast<intptr_t>(ObjectMgr::GetObjectPtr(*reinterpret_cast<uint64_t*>(spellContext + 8), 8)));
+    if (spellObject) {
+        float minRange = 0.0f;
+        float maxRange = 0.0f;
+        GetSpellRange_orig(spellObject, *(DWORD*)(spellContext + 24), &minRange, &maxRange, 0);
+        if (maxRange > 0.0f) {
+            C3Vector playerPos;
+            player->GetPosition(playerPos);
+            float dx = originalCursor.X - playerPos.X;
+            float dy = originalCursor.Y - playerPos.Y;
+            float dz = originalCursor.Z - playerPos.Z;
+
+            if ((dx * dx + dy * dy + dz * dz) > ((maxRange * 0.98f) * (maxRange * 0.98f))) {
+                C3Vector adjustedPos;
+                if (GetScreenSpaceSpellPosition(playerPos, originalCursor, maxRange * 0.98f, adjustedPos)) {
+                    if (g_cursorKeywordActive) {
+                        TerrainClick(adjustedPos.X, adjustedPos.Y, adjustedPos.Z);
+                        g_cursorKeywordActive = false;
+                        return 0;
+                    }
+                    *(float*)&a1[2] = adjustedPos.X;
+                    *(float*)&a1[3] = adjustedPos.Y;
+                    *(float*)&a1[4] = adjustedPos.Z;
+
+                    g_adjustedSpellPos = adjustedPos;
+                    g_hasAdjustedPos = true;
+                }
+                else if (g_cursorKeywordActive) {
+                    TerrainClick(originalCursor.X, originalCursor.Y, originalCursor.Z);
+                    g_cursorKeywordActive = false;
+                    return 0;
+                }
+            }
+            else if (g_cursorKeywordActive) {
+                TerrainClick(originalCursor.X, originalCursor.Y, originalCursor.Z);
+                g_cursorKeywordActive = false;
+                return 0;
             }
         }
-        g_cursorKeywordActive = false;
     }
-    else if (g_playerLocationKeywordActive) {
-        CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
-        if (player && isSpellReadied()) {
-            VecXYZ posPlayer;
-            player->GetPosition(*reinterpret_cast<C3Vector*>(&posPlayer));
-            TerrainClick(posPlayer.x, posPlayer.y, posPlayer.z);
+    return ProcessAoETargeting_orig(a1);
+}
+
+
+static char __cdecl CGWorldFrame_Intersect_new(C3Vector* start, C3Vector* end, C3Vector* hitPoint, float* distance, uint32_t flag, uint32_t buffer)
+{
+    if (!std::atoi(s_cvar_cameraIndirectVisibility->vStr))
+        return CGWorldFrame_Intersect_orig(start, end, hitPoint, distance, flag + 1, 0);
+
+    void* buf = reinterpret_cast<void*>(buffer);
+    std::memset(buf, 0, 2048);
+
+    if (g_needs_backward_pass) {
+        g_needs_backward_pass = false;
+        g_backwards_mode = true;
+
+        char result = CGWorldFrame_Intersect_orig(&g_saved_end, &g_saved_start, &g_saved_hitpoint, &g_saved_distance, flag + 1, reinterpret_cast<uintptr_t>(buf));
+        if (result) {
+            const uint32_t type = *reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(buf) + 0);
+            const uint32_t count = *reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(buf) + 4);
+
+            if (type == 1 && count > 0) {
+                void* modelPtr = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(buf) + 12 + 80);
+                if (modelPtr) {
+                    g_backward_current_models.insert(modelPtr);
+
+                    if (g_model_original_alphas.find(modelPtr) == g_model_original_alphas.end()) {
+                        float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
+                        g_model_original_alphas[modelPtr] = *alphaPtr;
+                    }
+
+                    g_models_being_faded.insert(modelPtr);
+                    float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
+                    float targetAlpha = std::atof(s_cvar_cameraIndirectAlpha->vStr);
+                    *alphaPtr += (targetAlpha - *alphaPtr) * 0.25f;
+                }
+                if (count > 1)
+                    g_needs_backward_pass = true;
+                return 0;
+            }
+            else {
+                g_backwards_mode = false;
+
+                for (auto it = g_models_being_faded.begin(); it != g_models_being_faded.end();) {
+                    void* modelPtr = *it;
+
+                    bool in_forward = g_forward_current_models.find(modelPtr) != g_forward_current_models.end();
+                    bool in_backward = g_backward_current_models.find(modelPtr) != g_backward_current_models.end();
+
+                    if (!in_forward && !in_backward) {
+                        float* alphaPtr = reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(modelPtr) + 0x17C);
+                        float originalAlpha = g_model_original_alphas[modelPtr];
+
+                        *alphaPtr += (originalAlpha - *alphaPtr) * 0.25f;
+
+                        if (std::fabs(*alphaPtr - originalAlpha) < 0.01f) {
+                            *alphaPtr = originalAlpha;
+                            g_model_original_alphas.erase(modelPtr);
+                            it = g_models_being_faded.erase(it);
+                            continue;
+                        }
+                    }
+                    ++it;
+                }
+                g_forward_current_models.clear();
+                g_backward_current_models.clear();
+            }
         }
-        g_playerLocationKeywordActive = false;
+        else {
+            g_backwards_mode = false;
+
+            for (auto it = g_models_being_faded.begin(); it != g_models_being_faded.end();) {
+                void* modelPtr = *it;
+
+                bool in_forward = g_forward_current_models.find(modelPtr) != g_forward_current_models.end();
+                bool in_backward = g_backward_current_models.find(modelPtr) != g_backward_current_models.end();
+
+                if (!in_forward && !in_backward) {
+                    float* alphaPtr = reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(modelPtr) + 0x17C);
+                    float originalAlpha = g_model_original_alphas[modelPtr];
+
+                    *alphaPtr += (originalAlpha - *alphaPtr) * 0.25f;
+
+                    if (std::fabs(*alphaPtr - originalAlpha) < 0.01f) {
+                        *alphaPtr = originalAlpha;
+                        g_model_original_alphas.erase(modelPtr);
+                        it = g_models_being_faded.erase(it);
+                        continue;
+                    }
+                }
+                ++it;
+            }
+
+            g_forward_current_models.clear();
+            g_backward_current_models.clear();
+        }
+
+        return result;
+    }
+
+    g_backwards_mode = false;
+    std::memset(buf, 0, 2048);
+
+    char result = CGWorldFrame_Intersect_orig(start, end, hitPoint, distance, flag + 1, reinterpret_cast<uintptr_t>(buf));
+    if (result) {
+        const uint32_t type = *reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(buf) + 0);
+        const uint32_t count = *reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(buf) + 4);
+
+        if (type == 1 && count > 0) {
+            void* modelPtr = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(buf) + 12 + 80);
+            if (modelPtr) {
+                g_forward_current_models.insert(modelPtr);
+
+                if (g_model_original_alphas.find(modelPtr) == g_model_original_alphas.end()) {
+                    float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
+                    g_model_original_alphas[modelPtr] = *alphaPtr;
+                }
+
+                g_models_being_faded.insert(modelPtr);
+                float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
+                float targetAlpha = std::atof(s_cvar_cameraIndirectAlpha->vStr);
+                *alphaPtr += (targetAlpha - *alphaPtr) * 0.25f;
+            }
+            return 0;
+        }
+        else {
+            g_saved_start = *start;
+            g_saved_end = *end;
+            g_saved_hitpoint = *hitPoint;
+            g_saved_distance = *distance;
+            g_needs_backward_pass = true;
+        }
+    }
+    else {
+        g_saved_start = *start;
+        g_saved_end = *end;
+        g_saved_hitpoint = *hitPoint;
+        g_saved_distance = *distance;
+        g_needs_backward_pass = true;
+
+        for (auto it = g_models_being_faded.begin(); it != g_models_being_faded.end();) {
+            void* modelPtr = *it;
+
+            bool in_forward = g_forward_current_models.find(modelPtr) != g_forward_current_models.end();
+            bool in_backward = g_backward_current_models.find(modelPtr) != g_backward_current_models.end();
+
+            if (!in_forward && !in_backward) {
+                float* alphaPtr = reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(modelPtr) + 0x17C);
+                float originalAlpha = g_model_original_alphas[modelPtr];
+
+                *alphaPtr += (originalAlpha - *alphaPtr) * 0.25f;
+
+                if (std::fabs(*alphaPtr - originalAlpha) < 0.01f) {
+                    *alphaPtr = originalAlpha;
+                    g_model_original_alphas.erase(modelPtr);
+                    it = g_models_being_faded.erase(it);
+                    continue;
+                }
+            }
+            ++it;
+        }
+    }
+    return result;
+}
+
+static void(*IntersectCall_orig)() = (decltype(IntersectCall_orig))0x006060E6;
+static constexpr DWORD_PTR IntersectCall_jmpbackaddr = 0x00606103;
+
+static void __declspec(naked) IntersectCall_hk()
+{
+    __asm {
+        sub esp, 2048
+        lea eax, [esp]
+        fld1
+        push eax
+        and ebx, ~1
+        push ebx
+        fstp dword ptr[ebp + 0x18]
+        lea ecx, [ebp + 0x18]
+        push ecx
+        lea edx, [ebp - 0x48]
+        push edx
+        lea eax, [ebp - 0x18]
+        push eax
+        lea ecx, [ebp - 0x24]
+        push ecx
+        call CGWorldFrame_Intersect_new
+        add esp, 2048
+        jmp IntersectCall_jmpbackaddr
+
+        //todo: handle if block to set indirect offset (zoom speed)
+    }
+}
+
+static void(*IterateCollisionList_orig)() = (decltype(IterateCollisionList_orig))0x007A279D;
+static constexpr DWORD_PTR IterateCollisionList_jmpback = 0x007A27A5;
+static constexpr DWORD_PTR IterateCollisionList_skipaddr = 0x007A2943;
+
+bool __cdecl collisionFilter(void* modelPtr) {
+    if (!modelPtr)
+        return true;
+    else if (g_backwards_mode)
+        return g_backward_current_models.find(modelPtr) == g_backward_current_models.end();
+    else
+        return g_forward_current_models.find(modelPtr) == g_forward_current_models.end();
+}
+
+__declspec(naked) void IterateCollisionList_hk()
+{
+    __asm {
+        mov esi, [edx + 4]       // esi = object entry
+        pushfd
+        push eax
+        push ecx
+        push edx
+        mov eax, [esi + 0x34]    // eax = modelPtr
+        test eax, eax
+        jz skip_collision_processing
+        push eax
+        call collisionFilter
+        add esp, 4
+        test al, al
+        je skip_collision_processing
+        pop edx
+        pop ecx
+        pop eax
+        popfd
+        cmp byte ptr[esi + 25h], bl
+        jmp IterateCollisionList_jmpback
+        skip_collision_processing :
+        pop edx
+            pop ecx
+            pop eax
+            popfd
+            jmp IterateCollisionList_skipaddr
     }
 }
 
 void Hooks::initialize()
 {
-    Hooks::FrameScript::registerOnUpdate(onUpdateCallback);
+    Hooks::FrameXML::registerCVar(&s_cvar_spellProjectionMode, "spellProjectionMode", NULL, (Console::CVarFlags)1, "1", CVarHandler_spellProjectionMode);
+    Hooks::FrameXML::registerCVar(&s_cvar_spellProjectionMaxRange, "spellProjectionMaxRange", NULL, (Console::CVarFlags)1, "20", CVarHandler_spellProjectionMaxRange);
+    Hooks::FrameXML::registerCVar(&s_cvar_spellProjectionHorizontalBias, "spellProjectionHorizontalBias", NULL, (Console::CVarFlags)1, "1.5", CVarHandler_spellProjectionHorizontalBias);
+    Hooks::FrameXML::registerCVar(&s_cvar_cameraIndirectAlpha, "cameraIndirectAlpha", NULL, (Console::CVarFlags)1, "0.6", CVarHandler_cameraIndirectAlpha);
+    Hooks::FrameXML::registerCVar(&s_cvar_cameraIndirectOffset, "cameraIndirectOffset", NULL, (Console::CVarFlags)1, "10", CVarHandler_cameraIndirectOffset);
+    Hooks::FrameXML::registerCVar(&s_cvar_cameraIndirectVisibility, "cameraIndirectVisibility", NULL, (Console::CVarFlags)1, "0", CVarHandler_cameraIndirectVisibility);
     DetourAttach(&(LPVOID&)CVars_Initialize_orig, CVars_Initialize_hk);
     DetourAttach(&(LPVOID&)FrameScript_FireOnUpdate_orig, FrameScript_FireOnUpdate_hk);
-    DetourAttach(&(LPVOID&)CGGameUI__EnterWorld, OnEnterWorld);
     DetourAttach(&(LPVOID&)FrameScript_FillEvents_orig, FrameScript_FillEvents_hk);
     DetourAttach(&(LPVOID&)Lua_OpenFrameXMLApi_orig, Lua_OpenFrameXMLApi_hk);
     DetourAttach(&(LPVOID&)GetGuidByKeyword_orig, GetGuidByKeyword_hk);
@@ -411,4 +933,8 @@ void Hooks::initialize()
     DetourAttach(&(LPVOID&)LoadGlueXML_orig, LoadGlueXML_hk);
     DetourAttach(&(LPVOID&)LoadCharacters_orig, LoadCharacters_hk);
     DetourAttach(&(LPVOID&)SecureCmdOptionParse_orig, SecureCmdOptionParse_hk);
+    DetourAttach(&(LPVOID&)HandleTerrainClick_orig, HandleTerrainClick_hk);
+    DetourAttach(&(LPVOID&)ProcessAoETargeting_orig, ProcessAoETargeting_hk);
+    DetourAttach(&(LPVOID&)IterateCollisionList_orig, IterateCollisionList_hk);
+    DetourAttach(&(LPVOID&)IntersectCall_orig, IntersectCall_hk);
 }
