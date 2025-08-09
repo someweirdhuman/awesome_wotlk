@@ -83,6 +83,26 @@ inline NamePlateVars& lua_findorcreatevars(lua_State* L)
     return *result;
 }
 
+inline bool GetEffectiveScale(lua_State* L, double& scale)
+{
+    // Get UIParent
+    lua_getglobal(L, "UIParent");
+
+    // Get scale: UIParent:GetEffectiveScale()
+    lua_getfield(L, -1, "GetEffectiveScale");
+    lua_pushvalue(L, -2); // push UIParent as self
+
+    if (lua_pcall(L, 1, 1, 0) != 0) {
+        lua_pop(L, 1); // pop UIParent
+        return false;
+    }
+
+    scale = lua_tonumber(L, -1);
+    lua_pop(L, 2); // pop scale and UIParent
+
+    return true;
+}
+
 inline bool GetPoint(lua_State* L, int frame_idx, int point_index,
     std::string& point, std::string& relativeToName, std::string& relativePoint,
     double& xOfs, double& yOfs)
@@ -193,18 +213,8 @@ inline bool SetWidth(lua_State* L, int frame_idx, double height)
 
 inline bool ConfigureWorldFrame(lua_State* L, bool enabledVariable)
 {
-    // Get UIParent
-    lua_getglobal(L, "UIParent");
-
-    // Get scale: UIParent:GetEffectiveScale()
-    lua_getfield(L, -1, "GetEffectiveScale");
-    lua_pushvalue(L, -2); // push UIParent as self
-    if (lua_pcall(L, 1, 1, 0) != 0) {
-        lua_pop(L, 1); // pop UIParent
-        return false;
-    }
-    double scale = lua_tonumber(L, -1);
-    lua_pop(L, 2); // pop scale and UIParent
+    double scale = 0;
+    GetEffectiveScale(L, scale);
 
     // Get ScreenHeight
     lua_getglobal(L, "GetScreenHeight");
