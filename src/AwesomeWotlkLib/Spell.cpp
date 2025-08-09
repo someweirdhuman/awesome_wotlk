@@ -3,6 +3,9 @@
 #include "GameClient.h"
 #include <Detours/detours.h>
 
+static Console::CVar* s_cvar_enableStancePatch;
+static int CVarHandler_enableStancePatch(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+
 uintptr_t spellTablePtr = GetDbcTable(0x00000194);
 static int lua_GetSpellBaseCooldown(lua_State* L) {
     uint8_t rowBuffer[680];
@@ -48,7 +51,7 @@ static SpellCastFn Spell_OnCastOriginal = (SpellCastFn)0x0080DA40;
 int __cdecl Spell_OnCastHook(int spellId, int a2, int a3, int a4, int a5)
 {
     bool success = Spell_OnCastOriginal(spellId, a2, a3, a4, a5);
-    if (success && Spell::IsForm(spellId))
+    if (success && Spell::IsForm(spellId) && std::atoi(s_cvar_enableStancePatch->vStr) == 1)
     {
         CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
         if (player)
@@ -77,6 +80,7 @@ static int lua_openmisclib(lua_State* L)
 void Spell::initialize()
 {
     Hooks::FrameXML::registerLuaLib(lua_openmisclib);
+    Hooks::FrameXML::registerCVar(&s_cvar_enableStancePatch, "enableStancePatch", NULL, (Console::CVarFlags)1, "1", CVarHandler_enableStancePatch);
 
     DetourAttach(&(LPVOID&)Spell_OnCastOriginal, Spell_OnCastHook);
 }

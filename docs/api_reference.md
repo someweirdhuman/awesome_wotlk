@@ -66,6 +66,13 @@ Parameters: **unitId**`string`
 
 Fires when nameplate owner changed (workaround for [this issue](https://github.com/FrostAtom/awesome_wotlk/blob/main/src/AwesomeWotlkLib/NamePlates.cpp#L170))
 
+## enableStancePatch`CVar`
+Arguments: **enabled**`bool`
+
+Default: **1**
+
+Enables patch that allows you to swap stance or form and cast next ability, thats not on gcd, in a single click.
+
 ## nameplateDistance`CVar`
 Arguments: **distance**`number`
 

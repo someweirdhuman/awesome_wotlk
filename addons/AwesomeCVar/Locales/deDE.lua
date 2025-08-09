@@ -61,9 +61,11 @@ if GetLocale() == "deDE" then
     L.CVAR_LABEL_INTERACTION_MODE = "Interaktionsmodus"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Interaktionskegelwinkel"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "World Frame Höhe erweitern"
+    L.CVAR_ENABLE_STANCE_PATCH = "Stance/Form-Wechsel-Patch aktivieren"
 
     L.DESC_HITBOX_DISABLED = "0 = DEAKTIVIERT, nicht ohne ein Namensplaketten-Addon verwenden"
     L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Fixiert außerhalb des Sichtbereichs liegende Namensplaketten am oberen Bildschirmrand; kann einige UI-Elemente beeinträchtigen. ERFORDERT aktiviertes Stapeln der Namensplaketten."
+    L.DESC_STANCE_PATCH = "Ermöglicht das Wechseln der Haltung/Form und das Wirken einer Fähigkeit per Makro mit einem Klick. Funktioniert nicht auf Warmane."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "Reaktions-API"

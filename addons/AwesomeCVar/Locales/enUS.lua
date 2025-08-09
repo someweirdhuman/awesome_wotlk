@@ -61,9 +61,11 @@ if GetLocale() == "enUS" then
     L.CVAR_LABEL_INTERACTION_ANGLE = "Interaction Cone Angle"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Extend World Frame Height"
     L.CVAR_LABEL_UPPER_BORDER_ONLY_BOSS = "Allow ONLY bosses to stick to upper border of the screen"
+    L.CVAR_ENABLE_STANCE_PATCH = "Enable stance/form swap patch"
 
     L.DESC_HITBOX_DISABLED = "0 = DISABLED, don't use without a nameplate addon"
     L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Sticks out-of-view nameplates to top border; may break some UI elements. REQUIRES stacking nameplates enabled."
+    L.DESC_STANCE_PATCH = "Allows you to change stance/form and cast ability if macroed in single click. Doesnt work on Warmane."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "Reaction API"

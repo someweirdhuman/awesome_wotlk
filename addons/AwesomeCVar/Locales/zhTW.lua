@@ -61,9 +61,11 @@ if GetLocale() == "zhTW" then
     L.CVAR_LABEL_INTERACTION_MODE = "互動模式"
     L.CVAR_LABEL_INTERACTION_ANGLE = "互動錐形角度"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "延展世界框架高度"
+    L.CVAR_ENABLE_STANCE_PATCH = "啟用姿態/形態切換修補"
 
     L.DESC_HITBOX_DISABLED = "0 = 停用，若無姓名板插件請勿使用"
     L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "將視野外的姓名板固定到螢幕上邊界；可能會影響部分介面元素。需要啟用姓名板堆疊。"
+    L.DESC_STANCE_PATCH = "允許你用巨集單擊切換姿態/形態並施放技能。在 Warmane 伺服器無效。"
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "反應 API"

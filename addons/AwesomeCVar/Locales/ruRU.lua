@@ -61,9 +61,11 @@ if GetLocale() == "ruRU" then
     L.CVAR_LABEL_INTERACTION_MODE = "Режим взаимодействия"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Угол конуса взаимодействия"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Увеличить высоту World Frame"
+    L.CVAR_ENABLE_STANCE_PATCH = "Включить патч смены стойки/формы"
 
     L.DESC_HITBOX_DISABLED = "0 = ОТКЛЮЧЕНО, не используйте без аддона для индикаторов здоровья"
     L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Прикрепляет индикаторы вне поля зрения к верхней границе; может нарушить работу некоторых элементов интерфейса. ТРЕБУЕТ включенного наслоения индикаторов."
+    L.DESC_STANCE_PATCH = "Позволяет сменить стойку/форму и применить способность макросом одним кликом. Не работает на Warmane."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API реакции"

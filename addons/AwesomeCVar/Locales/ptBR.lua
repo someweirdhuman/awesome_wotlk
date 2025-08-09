@@ -61,9 +61,11 @@ if GetLocale() == "ptBR" then
     L.CVAR_LABEL_INTERACTION_MODE = "Modo de Interação"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Ângulo do Cone de Interação"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Estender Altura do World Frame"
+    L.CVAR_ENABLE_STANCE_PATCH = "Ativar patch de troca de postura/forma"
 
     L.DESC_HITBOX_DISABLED = "0 = DESATIVADO, não use sem um addon de placas de nome"
     L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Gruda placas de nome fora de visão na borda superior; pode quebrar alguns elementos da interface. REQUER empilhamento de placas de nome ativado."
+    L.DESC_STANCE_PATCH = "Permite trocar postura/forma e lançar habilidade via macro com um único clique. Não funciona no Warmane."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API de Reação"
