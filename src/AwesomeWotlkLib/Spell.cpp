@@ -80,7 +80,7 @@ static int lua_openmisclib(lua_State* L)
 void Spell::initialize()
 {
     Hooks::FrameXML::registerLuaLib(lua_openmisclib);
-    Hooks::FrameXML::registerCVar(&s_cvar_enableStancePatch, "enableStancePatch", NULL, (Console::CVarFlags)1, "1", CVarHandler_enableStancePatch);
+    Hooks::FrameXML::registerCVar(&s_cvar_enableStancePatch, "enableStancePatch", NULL, (Console::CVarFlags)1, "0", CVarHandler_enableStancePatch);
 
     DetourAttach(&(LPVOID&)Spell_OnCastOriginal, Spell_OnCastHook);
 }

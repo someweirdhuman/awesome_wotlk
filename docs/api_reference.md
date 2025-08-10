@@ -257,6 +257,13 @@ Returns info about item transmogrification
 
 # Spell
 
+## enableStancePatch`CVar`
+Arguments: **enabled**`bool`
+
+Default: **0**
+
+Enables patch that allows you to swap stance or form and cast next ability, thats not on gcd, in a single click.
+
 ## GetSpellBaseCooldown`API`
 Arguments: **spellId**`string`
 
@@ -315,13 +322,6 @@ Default: **60**
 
 The size of the cone-shaped area in front of the player (measured in degrees) within which a mob or entity must be located to be eligible for interaction. <br>
 This is only used if `interactionMode` is set to 1, which is the default.
-
-## enableStancePatch`CVar`
-Arguments: **enabled**`bool`
-
-Default: **1**
-
-Enables patch that allows you to swap stance or form and cast next ability, thats not on gcd, in a single click.
 
 ## Cursor`macro`
 
