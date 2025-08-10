@@ -66,13 +66,6 @@ Parameters: **unitId**`string`
 
 Fires when nameplate owner changed (workaround for [this issue](https://github.com/FrostAtom/awesome_wotlk/blob/main/src/AwesomeWotlkLib/NamePlates.cpp#L170))
 
-## enableStancePatch`CVar`
-Arguments: **enabled**`bool`
-
-Default: **1**
-
-Enables patch that allows you to swap stance or form and cast next ability, thats not on gcd, in a single click.
-
 ## nameplateDistance`CVar`
 Arguments: **distance**`number`
 
@@ -168,23 +161,6 @@ Default: **0**
 
 Width of a clickable nameplate hitbox, addons may override or break this, reload or disable/enable nameplates afterwards.<br>
 Use 0 to disable this and use default values.
-
-## interactionMode`CVar` 
-Arguments: **mode**`bool`
-
-Default: **1**
-
-Toggles behaviour of interaction keybind, or macro. <br>
-If set to **1**, interaction is limited to entities located in front of the player within the angle defined by the `interactionAngle` CVar and within 20 yards.<br>
-If set to **0**, interaction will occur with the nearest entity within 20 yards of the player, regardless of its direction.
-
-## interactionAngle`CVar` 
-Arguments: **angle**`number`
-
-Default: **60**
-
-The size of the cone-shaped area in front of the player (measured in degrees) within which a mob or entity must be located to be eligible for interaction. <br>
-This is only used if `interactionMode` is set to 1, which is the default.
 
 ## nameplateStackFriendly`CVar` 
 Arguments: **toggle**`bool`
@@ -298,6 +274,53 @@ Returns: **itemID**`number`, **itemType**`string`, **itemSubType**`string`, **it
 Returns id, type, sub-type, equipment slot, icon, class id, and sub-class id if passed valid argument else returns nothing
 
 # Misc
+
+## cameraIndirectVisibility`CVar` 
+Arguments: **mode**`number`
+
+Default: **0**
+
+Controls the camera's behavior when the player character is obstructed by environmental objects.<br> 
+When enabled (1), the camera allows the character to be obscured by the environment.
+
+## cameraIndirectAlpha`CVar` 
+Arguments: **alpha**`number`
+
+Default: **0.6**
+
+Controls the transparency level of objects between the camera and the player character when cameraIndirectVisibility is enabled. <br>
+Limited to [0.6 - 1] range.
+
+## cameraIndirectOffset`CVar` 
+Arguments: **offset**`number`
+
+Default: **10**
+
+Not implemented yet. <br>
+
+## interactionMode`CVar` 
+Arguments: **mode**`bool`
+
+Default: **1**
+
+Toggles behaviour of interaction keybind, or macro. <br>
+If set to **1**, interaction is limited to entities located in front of the player within the angle defined by the `interactionAngle` CVar and within 20 yards.<br>
+If set to **0**, interaction will occur with the nearest entity within 20 yards of the player, regardless of its direction.
+
+## interactionAngle`CVar` 
+Arguments: **angle**`number`
+
+Default: **60**
+
+The size of the cone-shaped area in front of the player (measured in degrees) within which a mob or entity must be located to be eligible for interaction. <br>
+This is only used if `interactionMode` is set to 1, which is the default.
+
+## enableStancePatch`CVar`
+Arguments: **enabled**`bool`
+
+Default: **1**
+
+Enables patch that allows you to swap stance or form and cast next ability, thats not on gcd, in a single click.
 
 ## Cursor`macro`
 
