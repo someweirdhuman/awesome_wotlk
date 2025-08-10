@@ -276,12 +276,13 @@ Returns id, type, sub-type, equipment slot, icon, class id, and sub-class id if 
 # Misc
 
 ## cameraIndirectVisibility`CVar` 
-Arguments: **mode**`number`
+Arguments: **enabled**`number`
 
 Default: **0**
 
-Controls the camera's behavior when the player character is obstructed by environmental objects.<br> 
-When enabled (1), the camera allows the character to be obscured by the environment.
+Toggles behaviour of camera when obstructed by objects in the world. <br>
+If set to **0**, it uses default client behaviour.
+If set to **1**, it allows your camera to move freely through some world objects without being blocked.
 
 ## cameraIndirectAlpha`CVar` 
 Arguments: **alpha**`number`
