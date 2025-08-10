@@ -4,20 +4,76 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
+
+std::unordered_map<void*, float> g_model_original_alphas;
+std::unordered_set<void*> g_forward_current_models;
+std::unordered_set<void*> g_backward_current_models;
+std::unordered_set<void*> g_models_being_faded;
+
+bool g_backwards_mode = false;
+bool g_needs_backward_pass = false;
+
+C3Vector g_saved_start, g_saved_end;
+C3Vector g_saved_hitpoint;
+float g_saved_distance;
+uint32_t g_saved_flag, g_saved_param;
+
+static Console::CVar* s_cvar_cameraIndirectVisibility;
+static Console::CVar* s_cvar_cameraIndirectOffset;
+static Console::CVar* s_cvar_cameraIndirectAlpha;
+
+static int CVarHandler_cameraIndirectVisibility(Console::CVar*, const char*, const char* value, LPVOID) {
+    if (!std::atoi(value)) {
+        for (auto it = g_models_being_faded.begin(); it != g_models_being_faded.end();) {
+            void* modelPtr = *it;
+            *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(modelPtr) + 0x17C) = g_model_original_alphas[modelPtr];
+            g_model_original_alphas.erase(modelPtr);
+            it = g_models_being_faded.erase(it);
+        }
+        g_forward_current_models.clear();
+        g_backward_current_models.clear();
+        g_model_original_alphas.clear();
+    }
+    return 1;
+}
+static int CVarHandler_cameraIndirectOffset(Console::CVar* cvar, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_cameraIndirectAlpha(Console::CVar* cvar, const char*, const char* value, void*)
+{
+    float alpha = std::atof(value);
+    if (alpha < 0.6f || alpha > 1.0f)
+        return 0;
+    return 1;
+}
 
 static constexpr float MAX_TRACE_DISTANCE = 1000.0f;
 static constexpr uint32_t TERRAIN_HIT_FLAGS = 0x10111;
 static bool g_cursorKeywordActive = false;
 static bool g_playerLocationKeywordActive = false;
+static bool g_hasAdjustedPos = false;
+static C3Vector g_adjustedSpellPos = { 0, 0, 0 };
+
+typedef int(__stdcall* ProcessAoETargeting)(uint32_t* a1);
+static ProcessAoETargeting ProcessAoETargeting_orig = (ProcessAoETargeting)0x004F66C0;
+
+typedef int(__cdecl* GetSpellRange)(int, int, float*, float*, int);
+static GetSpellRange GetSpellRange_orig = (GetSpellRange)0x00802C30;
+
+
+static float clampf(float val, float minVal, float maxVal) { return (val < minVal) ? minVal : (val > maxVal) ? maxVal : val; }
+static float dot(const C3Vector& a, const C3Vector& b) { return a.X * b.X + a.Y * b.Y + a.Z * b.Z; }
 
 typedef int(__cdecl* SecureCmdOptionParse_t)(lua_State* L);
-SecureCmdOptionParse_t SecureCmdOptionParse_orig = (SecureCmdOptionParse_t)0x00564AE0;
+static SecureCmdOptionParse_t SecureCmdOptionParse_orig = (SecureCmdOptionParse_t)0x00564AE0;
 
 typedef void(__cdecl* HandleTerrainClick_t)(TerrainClickEvent*);
 static HandleTerrainClick_t HandleTerrainClick_orig = (HandleTerrainClick_t)0x00527830;
 
 typedef uint8_t(__cdecl* TraceLine_t)(C3Vector* start, C3Vector* end, C3Vector* hitPoint, float* distance, uint32_t flag, uint32_t optional);
 static TraceLine_t TraceLine_orig = (TraceLine_t)0x007A3B70;
+
+typedef char(__cdecl* CGWorldFrame_Intersect_t)(C3Vector* start, C3Vector* end, C3Vector* hitPoint, float* distance, uint32_t flag, uint32_t optional);
+static CGWorldFrame_Intersect_t CGWorldFrame_Intersect_orig = (CGWorldFrame_Intersect_t)0x0077F310;
 
 struct CVarArgs {
     Console::CVar** dst;
@@ -295,7 +351,7 @@ static bool GetCursorWorldPosition(VecXYZ& worldPos) {
 
     float tanHalfFov = tanf(camera->fovInRadians * 0.3f);
     VecXYZ localRay = {
-        nx * camera->aspect* tanHalfFov,
+        nx * camera->aspect * tanHalfFov,
         ny * tanHalfFov,
         1.0f
     };
@@ -374,36 +430,292 @@ static int __cdecl SecureCmdOptionParse_hk(lua_State* L) {
     return result;
 }
 
-static void onUpdateCallback() {
-    if (!IsInWorld())
-        return;
+static int __stdcall ProcessAoETargeting_hk(uint32_t* a1)
+{
+    g_hasAdjustedPos = false;
+
+    CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
+    if (!player)
+        return ProcessAoETargeting_orig(a1);
+
+    if (g_playerLocationKeywordActive) {
+        C3Vector playerPos;
+        player->GetPosition(playerPos);
+        TerrainClick(playerPos.X, playerPos.Y, playerPos.Z);
+        g_playerLocationKeywordActive = false;
+        return 0;
+    }
 
     if (g_cursorKeywordActive) {
+        C3Vector originalCursor = {
+            *(float*)&a1[2],
+            *(float*)&a1[3],
+            *(float*)&a1[4]
+        };
+
+        TerrainClick(originalCursor.X, originalCursor.Y, originalCursor.Z);
+        g_cursorKeywordActive = false;
+        return 0;
+    }
+    return ProcessAoETargeting_orig(a1);
+}
+
+static void __cdecl HandleTerrainClick_hk(TerrainClickEvent* event)
+{
+    if (g_hasAdjustedPos) {
         if (isSpellReadied()) {
-            VecXYZ cursorPos;
-            if (GetCursorWorldPosition(cursorPos)) {
-                TerrainClick(cursorPos.x, cursorPos.y, cursorPos.z);
+            event->x = g_adjustedSpellPos.X;
+            event->y = g_adjustedSpellPos.Y;
+            event->z = g_adjustedSpellPos.Z;
+        }
+        g_hasAdjustedPos = false;
+    }
+    HandleTerrainClick_orig(event);
+}
+
+static char __cdecl CGWorldFrame_Intersect_new(C3Vector* start, C3Vector* end, C3Vector* hitPoint, float* distance, uint32_t flag, uint32_t buffer)
+{
+    if (!std::atoi(s_cvar_cameraIndirectVisibility->vStr))
+        return CGWorldFrame_Intersect_orig(start, end, hitPoint, distance, flag + 1, 0);
+
+    void* buf = reinterpret_cast<void*>(buffer);
+    std::memset(buf, 0, 2048);
+
+    if (g_needs_backward_pass) {
+        g_needs_backward_pass = false;
+        g_backwards_mode = true;
+
+        char result = CGWorldFrame_Intersect_orig(&g_saved_end, &g_saved_start, &g_saved_hitpoint, &g_saved_distance, flag + 1, reinterpret_cast<uintptr_t>(buf));
+        if (result) {
+            const uint32_t type = *reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(buf) + 0);
+            const uint32_t count = *reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(buf) + 4);
+
+            if (type == 1 && count > 0) {
+                void* modelPtr = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(buf) + 12 + 80);
+                if (modelPtr) {
+                    g_backward_current_models.insert(modelPtr);
+
+                    if (g_model_original_alphas.find(modelPtr) == g_model_original_alphas.end()) {
+                        float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
+                        g_model_original_alphas[modelPtr] = *alphaPtr;
+                    }
+
+                    g_models_being_faded.insert(modelPtr);
+                    float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
+                    float targetAlpha = std::atof(s_cvar_cameraIndirectAlpha->vStr);
+                    *alphaPtr += (targetAlpha - *alphaPtr) * 0.25f;
+                }
+                if (count > 1)
+                    g_needs_backward_pass = true;
+                return 0;
+            }
+            else {
+                g_backwards_mode = false;
+
+                for (auto it = g_models_being_faded.begin(); it != g_models_being_faded.end();) {
+                    void* modelPtr = *it;
+
+                    bool in_forward = g_forward_current_models.find(modelPtr) != g_forward_current_models.end();
+                    bool in_backward = g_backward_current_models.find(modelPtr) != g_backward_current_models.end();
+
+                    if (!in_forward && !in_backward) {
+                        float* alphaPtr = reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(modelPtr) + 0x17C);
+                        float originalAlpha = g_model_original_alphas[modelPtr];
+
+                        *alphaPtr += (originalAlpha - *alphaPtr) * 0.25f;
+
+                        if (std::fabs(*alphaPtr - originalAlpha) < 0.01f) {
+                            *alphaPtr = originalAlpha;
+                            g_model_original_alphas.erase(modelPtr);
+                            it = g_models_being_faded.erase(it);
+                            continue;
+                        }
+                    }
+                    ++it;
+                }
+                g_forward_current_models.clear();
+                g_backward_current_models.clear();
             }
         }
-        g_cursorKeywordActive = false;
-    }
-    else if (g_playerLocationKeywordActive) {
-        CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
-        if (player && isSpellReadied()) {
-            VecXYZ posPlayer;
-            player->GetPosition(*reinterpret_cast<C3Vector*>(&posPlayer));
-            TerrainClick(posPlayer.x, posPlayer.y, posPlayer.z);
+        else {
+            g_backwards_mode = false;
+
+            for (auto it = g_models_being_faded.begin(); it != g_models_being_faded.end();) {
+                void* modelPtr = *it;
+
+                bool in_forward = g_forward_current_models.find(modelPtr) != g_forward_current_models.end();
+                bool in_backward = g_backward_current_models.find(modelPtr) != g_backward_current_models.end();
+
+                if (!in_forward && !in_backward) {
+                    float* alphaPtr = reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(modelPtr) + 0x17C);
+                    float originalAlpha = g_model_original_alphas[modelPtr];
+
+                    *alphaPtr += (originalAlpha - *alphaPtr) * 0.25f;
+
+                    if (std::fabs(*alphaPtr - originalAlpha) < 0.01f) {
+                        *alphaPtr = originalAlpha;
+                        g_model_original_alphas.erase(modelPtr);
+                        it = g_models_being_faded.erase(it);
+                        continue;
+                    }
+                }
+                ++it;
+            }
+
+            g_forward_current_models.clear();
+            g_backward_current_models.clear();
         }
-        g_playerLocationKeywordActive = false;
+
+        return result;
+    }
+
+    g_backwards_mode = false;
+    std::memset(buf, 0, 2048);
+
+    char result = CGWorldFrame_Intersect_orig(start, end, hitPoint, distance, flag + 1, reinterpret_cast<uintptr_t>(buf));
+    if (result) {
+        const uint32_t type = *reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(buf) + 0);
+        const uint32_t count = *reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(buf) + 4);
+
+        if (type == 1 && count > 0) {
+            void* modelPtr = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(buf) + 12 + 80);
+            if (modelPtr) {
+                g_forward_current_models.insert(modelPtr);
+
+                if (g_model_original_alphas.find(modelPtr) == g_model_original_alphas.end()) {
+                    float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
+                    g_model_original_alphas[modelPtr] = *alphaPtr;
+                }
+
+                g_models_being_faded.insert(modelPtr);
+                float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
+                float targetAlpha = std::atof(s_cvar_cameraIndirectAlpha->vStr);
+                *alphaPtr += (targetAlpha - *alphaPtr) * 0.25f;
+            }
+            return 0;
+        }
+        else {
+            g_saved_start = *start;
+            g_saved_end = *end;
+            g_saved_hitpoint = *hitPoint;
+            g_saved_distance = *distance;
+            g_needs_backward_pass = true;
+        }
+    }
+    else {
+        g_saved_start = *start;
+        g_saved_end = *end;
+        g_saved_hitpoint = *hitPoint;
+        g_saved_distance = *distance;
+        g_needs_backward_pass = true;
+
+        for (auto it = g_models_being_faded.begin(); it != g_models_being_faded.end();) {
+            void* modelPtr = *it;
+
+            bool in_forward = g_forward_current_models.find(modelPtr) != g_forward_current_models.end();
+            bool in_backward = g_backward_current_models.find(modelPtr) != g_backward_current_models.end();
+
+            if (!in_forward && !in_backward) {
+                float* alphaPtr = reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(modelPtr) + 0x17C);
+                float originalAlpha = g_model_original_alphas[modelPtr];
+
+                *alphaPtr += (originalAlpha - *alphaPtr) * 0.25f;
+
+                if (std::fabs(*alphaPtr - originalAlpha) < 0.01f) {
+                    *alphaPtr = originalAlpha;
+                    g_model_original_alphas.erase(modelPtr);
+                    it = g_models_being_faded.erase(it);
+                    continue;
+                }
+            }
+            ++it;
+        }
+    }
+    return result;
+}
+
+static void(*IntersectCall_orig)() = (decltype(IntersectCall_orig))0x006060E6;
+static constexpr DWORD_PTR IntersectCall_jmpbackaddr = 0x00606103;
+
+static void __declspec(naked) IntersectCall_hk()
+{
+    __asm {
+        sub esp, 2048
+        lea eax, [esp]
+        fld1
+        push eax
+        and ebx, ~1
+        push ebx
+        fstp dword ptr[ebp + 0x18]
+        lea ecx, [ebp + 0x18]
+        push ecx
+        lea edx, [ebp - 0x48]
+        push edx
+        lea eax, [ebp - 0x18]
+        push eax
+        lea ecx, [ebp - 0x24]
+        push ecx
+        call CGWorldFrame_Intersect_new
+        add esp, 2048
+        jmp IntersectCall_jmpbackaddr
+
+        //todo: handle if block to set indirect offset (zoom speed)
+    }
+}
+
+static void(*IterateCollisionList_orig)() = (decltype(IterateCollisionList_orig))0x007A279D;
+static constexpr DWORD_PTR IterateCollisionList_jmpback = 0x007A27A5;
+static constexpr DWORD_PTR IterateCollisionList_skipaddr = 0x007A2943;
+
+bool __cdecl collisionFilter(void* modelPtr) {
+    if (!modelPtr)
+        return true;
+    else if (g_backwards_mode)
+        return g_backward_current_models.find(modelPtr) == g_backward_current_models.end();
+    else
+        return g_forward_current_models.find(modelPtr) == g_forward_current_models.end();
+}
+
+__declspec(naked) void IterateCollisionList_hk()
+{
+    __asm {
+        mov esi, [edx + 4]       // esi = object entry
+        pushfd
+        push eax
+        push ecx
+        push edx
+        mov eax, [esi + 0x34]    // eax = modelPtr
+        test eax, eax
+        jz skip_collision_processing
+        push eax
+        call collisionFilter
+        add esp, 4
+        test al, al
+        je skip_collision_processing
+        pop edx
+        pop ecx
+        pop eax
+        popfd
+        cmp byte ptr[esi + 25h], bl
+        jmp IterateCollisionList_jmpback
+        skip_collision_processing :
+        pop edx
+            pop ecx
+            pop eax
+            popfd
+            jmp IterateCollisionList_skipaddr
     }
 }
 
 void Hooks::initialize()
 {
-    Hooks::FrameScript::registerOnUpdate(onUpdateCallback);
+    Hooks::FrameXML::registerCVar(&s_cvar_cameraIndirectAlpha, "cameraIndirectAlpha", NULL, (Console::CVarFlags)1, "0.6", CVarHandler_cameraIndirectAlpha);
+    Hooks::FrameXML::registerCVar(&s_cvar_cameraIndirectOffset, "cameraIndirectOffset", NULL, (Console::CVarFlags)1, "10", CVarHandler_cameraIndirectOffset);
+    Hooks::FrameXML::registerCVar(&s_cvar_cameraIndirectVisibility, "cameraIndirectVisibility", NULL, (Console::CVarFlags)1, "0", CVarHandler_cameraIndirectVisibility);
     DetourAttach(&(LPVOID&)CVars_Initialize_orig, CVars_Initialize_hk);
     DetourAttach(&(LPVOID&)FrameScript_FireOnUpdate_orig, FrameScript_FireOnUpdate_hk);
     DetourAttach(&(LPVOID&)CGGameUI__EnterWorld, OnEnterWorld);
+    DetourAttach(&(LPVOID&)CGGameUI__LeaveWorld, OnLeaveWorld);
     DetourAttach(&(LPVOID&)FrameScript_FillEvents_orig, FrameScript_FillEvents_hk);
     DetourAttach(&(LPVOID&)Lua_OpenFrameXMLApi_orig, Lua_OpenFrameXMLApi_hk);
     DetourAttach(&(LPVOID&)GetGuidByKeyword_orig, GetGuidByKeyword_hk);
@@ -411,4 +723,8 @@ void Hooks::initialize()
     DetourAttach(&(LPVOID&)LoadGlueXML_orig, LoadGlueXML_hk);
     DetourAttach(&(LPVOID&)LoadCharacters_orig, LoadCharacters_hk);
     DetourAttach(&(LPVOID&)SecureCmdOptionParse_orig, SecureCmdOptionParse_hk);
+    DetourAttach(&(LPVOID&)HandleTerrainClick_orig, HandleTerrainClick_hk);
+    DetourAttach(&(LPVOID&)ProcessAoETargeting_orig, ProcessAoETargeting_hk);
+    DetourAttach(&(LPVOID&)IterateCollisionList_orig, IterateCollisionList_hk);
+    DetourAttach(&(LPVOID&)IntersectCall_orig, IntersectCall_hk);
 }
