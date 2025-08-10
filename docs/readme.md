@@ -58,7 +58,9 @@ ___
     - nameplateMaxRaiseDistance<br>
     - nameplateExtendWorldFrameHeight<br>
     - nameplateUpperBorderOnlyBoss<br>
-    - enableStancePatch
+    - enableStancePatch<br>
+    - cameraIndirectVisibility<br>
+    - cameraIndirectAlpha
 > - New Interaction Keybind:<br>
     - It loots mobs, skins mobs, interacts with near object like veins, chairs, doors, etc, mailboxes, etc.<br>
     - You can keybind this in options menu like any other keybind (Requires Interaction Addon, bundled in release rar)<br>
