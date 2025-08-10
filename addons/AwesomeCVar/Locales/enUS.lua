@@ -38,6 +38,7 @@ if GetLocale() == "enUS" then
     L.CATEGORY_CAMERA = "Camera"
     L.CATEGORY_NAMEPLATES = "Nameplates"
     L.CATEGORY_INTERACTION = "Interaction"
+    L.CATEGORY_OTHER = "Other"
 
     -- CVar Labels & Descriptions
     L.CVAR_LABEL_CAMERA_FOV = "Camera FoV"
@@ -62,10 +63,15 @@ if GetLocale() == "enUS" then
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Extend World Frame Height"
     L.CVAR_LABEL_UPPER_BORDER_ONLY_BOSS = "Allow ONLY bosses to stick to upper border of the screen"
     L.CVAR_ENABLE_STANCE_PATCH = "Enable stance/form swap patch"
+    L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Camera Indirect Visibility"
+	L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "Camera Indirect Alpha"
+	L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "Camera Indirect Offset"
 
     L.DESC_HITBOX_DISABLED = "0 = DISABLED, don't use without a nameplate addon"
     L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Sticks out-of-view nameplates to top border; may break some UI elements. REQUIRES stacking nameplates enabled."
     L.DESC_STANCE_PATCH = "Allows you to change stance/form and cast ability if macroed in single click. Doesnt work on Warmane."
+    L.DESC_CAMERA_INDIRECT_VISIBILITY = "Allows your camera to move freely through some world objects without being blocked."
+    L.DESC_CAMERA_INDIRECT_ALPHA = "Defines the transparency of objects between the camera and player."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "Reaction API"

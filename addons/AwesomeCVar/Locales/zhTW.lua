@@ -62,10 +62,15 @@ if GetLocale() == "zhTW" then
     L.CVAR_LABEL_INTERACTION_ANGLE = "互動錐形角度"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "延展世界框架高度"
     L.CVAR_ENABLE_STANCE_PATCH = "啟用姿態/形態切換修補"
+    L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "鏡頭間接可見性"
+    L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "鏡頭間接透明度"
+    L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "鏡頭間接偏移"
 
     L.DESC_HITBOX_DISABLED = "0 = 停用，若無姓名板插件請勿使用"
     L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "將視野外的姓名板固定到螢幕上邊界；可能會影響部分介面元素。需要啟用姓名板堆疊。"
     L.DESC_STANCE_PATCH = "允許你用巨集單擊切換姿態/形態並施放技能。在 Warmane 伺服器無效。"
+    L.DESC_CAMERA_INDIRECT_VISIBILITY = "允許鏡頭自由穿越部分世界物件而不被阻擋。"
+    L.DESC_CAMERA_INDIRECT_ALPHA = "設定鏡頭與玩家之間物件的透明度。"
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "反應 API"

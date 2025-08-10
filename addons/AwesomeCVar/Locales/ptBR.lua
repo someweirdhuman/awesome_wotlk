@@ -62,10 +62,15 @@ if GetLocale() == "ptBR" then
     L.CVAR_LABEL_INTERACTION_ANGLE = "Ângulo do Cone de Interação"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Estender Altura do World Frame"
     L.CVAR_ENABLE_STANCE_PATCH = "Ativar patch de troca de postura/forma"
+    L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Visibilidade Indireta da Câmera"
+    L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "Alpha Indireto da Câmera"
+    L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "Offset Indireto da Câmera"
 
     L.DESC_HITBOX_DISABLED = "0 = DESATIVADO, não use sem um addon de placas de nome"
     L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Gruda placas de nome fora de visão na borda superior; pode quebrar alguns elementos da interface. REQUER empilhamento de placas de nome ativado."
     L.DESC_STANCE_PATCH = "Permite trocar postura/forma e lançar habilidade via macro com um único clique. Não funciona no Warmane."
+    L.DESC_CAMERA_INDIRECT_VISIBILITY = "Permite que sua câmera se mova livremente por alguns objetos do mundo sem ser bloqueada."
+    L.DESC_CAMERA_INDIRECT_ALPHA = "Define a transparência dos objetos entre a câmera e o jogador."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API de Reação"

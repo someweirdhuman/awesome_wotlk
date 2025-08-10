@@ -62,10 +62,15 @@ if GetLocale() == "koKR" then
     L.CVAR_LABEL_INTERACTION_ANGLE = "상호작용 원뿔 각도"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "월드 프레임 높이 확장"
     L.CVAR_ENABLE_STANCE_PATCH = "태세/폼 전환 패치 활성화"
+    L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "카메라 간접 가시성"
+    L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "카메라 간접 투명도"
+    L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "카메라 간접 오프셋"
 
     L.DESC_HITBOX_DISABLED = "0 = 비활성화됨, 이름표 애드온 없이 사용하지 마세요"
     L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "화면 밖 이름표를 상단 테두리에 고정합니다. 일부 UI 요소가 깨질 수 있습니다. 이름표 겹치기 활성화 필요."
     L.DESC_STANCE_PATCH = "매크로로 한 번 클릭 시 태세/폼 변경과 기술 시전이 가능합니다. Warmane 서버에서는 작동하지 않습니다."
+    L.DESC_CAMERA_INDIRECT_VISIBILITY = "카메라가 일부 월드 오브젝트를 자유롭게 통과할 수 있도록 허용합니다."
+    L.DESC_CAMERA_INDIRECT_ALPHA = "카메라와 플레이어 사이 오브젝트의 투명도를 정의합니다."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "반응 API"

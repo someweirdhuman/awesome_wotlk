@@ -32,13 +32,14 @@ ACVar.CONSTANTS = {
 ACVar.CVARS = {
     [L.CATEGORY_CAMERA] = {
         { name = "cameraFov", label = L.CVAR_LABEL_CAMERA_FOV, type = "slider", min = 30, max = 150, default = 90 },
+        { name = "cameraIndirectVisibility", label = L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY, desc = L.DESC_CAMERA_INDIRECT_VISIBILITY, type = "toggle", min = 0, max = 1 },
+        { name = "cameraIndirectAlpha", label = L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA, desc = L.DESC_CAMERA_INDIRECT_ALPHA, type = "slider", min = 0.6, max = 1, step = 0.05, default = 0.6 },
     },
     [L.CATEGORY_NAMEPLATES] = {
         { name = "nameplateStacking", label = L.CVAR_LABEL_ENABLE_STACKING, type = "toggle", min = 0, max = 1 },
         { name = "nameplateStackFriendly", label = L.CVAR_LABEL_STACK_FRIENDLY, type = "toggle", min = 0, max = 1, reloadRequired = true },
         { name = "nameplateExtendWorldFrameHeight", label = L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT, desc = L.DESC_EXTEND_WORLD_FRAME_HEIGHT, type = "toggle", min = 0, max = 1 },
         { name = "nameplateUpperBorderOnlyBoss", label = L.CVAR_LABEL_UPPER_BORDER_ONLY_BOSS, type = "toggle", min = 0, max = 1 },
-        { name = "enableStancePatch", label = L.CVAR_ENABLE_STANCE_PATCH, desc = L.DESC_STANCE_PATCH, type = "toggle", min = 0, max = 1 },
         { name = "nameplateStackFriendlyMode", label = L.CVAR_LABEL_FRIENDLY_DETECT_MODE, type = "mode", modes = { {value = 0, label = L.MODE_LABEL_REACTION_API}, {value = 1, label = L.MODE_LABEL_COLOR_PARSING} }, reloadRequired = true },
         { name = "nameplateDistance", label = L.CVAR_LABEL_NAMEPLATE_DISTANCE, type = "slider", min = 1, max = 200, step = 1, default = 40 },
         { name = "nameplateMaxRaiseDistance", label = L.CVAR_LABEL_MAX_RAISE_DISTANCE, type = "slider", min = 0, max = 500, step = 1, default = 200 },
@@ -58,4 +59,7 @@ ACVar.CVARS = {
         { name = "interactionMode", label = L.CVAR_LABEL_INTERACTION_MODE, type = "mode", modes = { {value = 0, label = L.MODE_LABEL_PLAYER_RADIUS}, {value = 1, label = L.MODE_LABEL_CONE_ANGLE} } },
         { name = "interactionAngle", label = L.CVAR_LABEL_INTERACTION_ANGLE, type = "slider", min = 1, max = 360, step = 1, default = 90 },
     },
+    [L.CATEGORY_OTHER] = {
+        { name = "enableStancePatch", label = L.CVAR_ENABLE_STANCE_PATCH, desc = L.DESC_STANCE_PATCH, type = "toggle", min = 0, max = 1 },
+    }
 }
