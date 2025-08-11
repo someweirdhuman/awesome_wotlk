@@ -364,7 +364,7 @@ Returns: `none`
 Copies text to clipboard
 
 ## cameraFov`CVar`
-Parameters: **value**`number`
+Arguments: **value**`number`
 
 Default: **100**
 
