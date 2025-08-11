@@ -10,6 +10,7 @@
 
 static Console::CVar* s_cvar_interactionMode;
 static Console::CVar* s_cvar_interactionAngle;
+static Console::CVar* s_cvar_interactionRange;
 static Console::CVar* s_cvar_cameraFov = NULL;
 
 
@@ -148,6 +149,7 @@ static int lua_QueueInteract(lua_State* L)
         return false;
     };
 
+    float interactionRange = std::atof(s_cvar_interactionRange->vStr);
     uint16_t angleDegrees = std::atoi(s_cvar_interactionAngle->vStr) / 2;
     bool lookInAngle = std::atoi(s_cvar_interactionMode->vStr) == 1;
 
@@ -159,7 +161,7 @@ static int lua_QueueInteract(lua_State* L)
         if (!object) return;
 
         float distance = player->distance(object);
-        if (distance == 0.f || distance > 20.0f || distance > bestDistance) return;
+        if (distance == 0.f || distance > interactionRange || distance > bestDistance) return;
 
         if (!isValidObject(object)) return;
 
@@ -310,6 +312,14 @@ static int lua_openmisclib(lua_State* L)
 static double parseFov(const char* v) { return  M_PI / 200.f * double(std::max(std::min(gc_atoi(&v), 200), 1)); }
 static int CVarHandler_interactionAngle(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_interactionMode(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_interactionRange(Console::CVar* cvar, const char*, const char* value, void*)
+{
+    float v = std::atof(value);
+    if (v < 5.0f || v > 30.0f)
+        return 0;
+
+    return 1;
+}
 static int CVarHandler_cameraFov(Console::CVar* cvar, const char* prevV, const char* newV, void* udata)
 {
     if (Camera* camera = GetActiveCamera()) camera->fovInRadians = parseFov(newV);
@@ -343,6 +353,7 @@ void Misc::initialize()
     Hooks::FrameXML::registerCVar(&s_cvar_cameraFov, "cameraFov", NULL, (Console::CVarFlags)1, "100", CVarHandler_cameraFov);
     Hooks::FrameXML::registerCVar(&s_cvar_interactionAngle, "interactionAngle", NULL, (Console::CVarFlags)1, "60", CVarHandler_interactionAngle);
     Hooks::FrameXML::registerCVar(&s_cvar_interactionMode, "interactionMode", NULL, (Console::CVarFlags)1, "1", CVarHandler_interactionMode);
+    Hooks::FrameXML::registerCVar(&s_cvar_interactionRange, "interactionRange", NULL, (Console::CVarFlags)1, "20", CVarHandler_interactionRange);
     Hooks::FrameXML::registerLuaLib(lua_openmisclib);
 
     DetourAttach(&(LPVOID&)Camera_Initialize_orig, Camera_Initialize_hk);
