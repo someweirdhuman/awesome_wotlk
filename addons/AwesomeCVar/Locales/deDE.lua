@@ -60,6 +60,7 @@ if GetLocale() == "deDE" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "FREUNDLICHE Namensplaketten Hitbox-Breite"
     L.CVAR_LABEL_INTERACTION_MODE = "Interaktionsmodus"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Interaktionskegelwinkel"
+    L.CVAR_LABEL_INTERACTION_RANGE = "Interaktionsreichweite (yd)"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "World Frame Höhe erweitern"
     L.CVAR_ENABLE_STANCE_PATCH = "Stance/Form-Wechsel-Patch aktivieren"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Indirekte Kamerasichtbarkeit"
@@ -75,6 +76,6 @@ if GetLocale() == "deDE" then
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "Reaktions-API"
     L.MODE_LABEL_COLOR_PARSING = "Farbanalyse"
-    L.MODE_LABEL_PLAYER_RADIUS = "Spielerradius 20yd"
-    L.MODE_LABEL_CONE_ANGLE = "Kegelwinkel (Grad) innerhalb von 20yd"
+    L.MODE_LABEL_PLAYER_RADIUS = "Spielerradius"
+    L.MODE_LABEL_CONE_ANGLE = "Kegelwinkel (Grad)"
 end

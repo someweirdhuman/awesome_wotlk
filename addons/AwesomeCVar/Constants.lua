@@ -58,6 +58,7 @@ ACVar.CVARS = {
     [L.CATEGORY_INTERACTION] = {
         { name = "interactionMode", label = L.CVAR_LABEL_INTERACTION_MODE, type = "mode", modes = { {value = 0, label = L.MODE_LABEL_PLAYER_RADIUS}, {value = 1, label = L.MODE_LABEL_CONE_ANGLE} } },
         { name = "interactionAngle", label = L.CVAR_LABEL_INTERACTION_ANGLE, type = "slider", min = 1, max = 360, step = 1, default = 90 },
+        { name = "interactionRange", label = L.CVAR_LABEL_INTERACTION_RANGE, type = "slider", min = 5, max = 30, step = 1, default = 20 },
     },
     [L.CATEGORY_OTHER] = {
         { name = "enableStancePatch", label = L.CVAR_ENABLE_STANCE_PATCH, desc = L.DESC_STANCE_PATCH, type = "toggle", min = 0, max = 1 },

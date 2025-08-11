@@ -60,6 +60,7 @@ if GetLocale() == "ruRU" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "Ширина хитбокса СОЮЗНИКОВ"
     L.CVAR_LABEL_INTERACTION_MODE = "Режим взаимодействия"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Угол конуса взаимодействия"
+    L.CVAR_LABEL_INTERACTION_RANGE = "Дальность взаимодействия (м)"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Увеличить высоту World Frame"
     L.CVAR_ENABLE_STANCE_PATCH = "Включить патч смены стойки/формы"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Косвенная видимость камеры"
@@ -75,6 +76,6 @@ if GetLocale() == "ruRU" then
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API реакции"
     L.MODE_LABEL_COLOR_PARSING = "Анализ цвета"
-    L.MODE_LABEL_PLAYER_RADIUS = "Радиус игрока 20м"
-    L.MODE_LABEL_CONE_ANGLE = "Угол конуса (в градусах) в пределах 20м"
+    L.MODE_LABEL_PLAYER_RADIUS = "Радиус игрока"
+    L.MODE_LABEL_CONE_ANGLE = "Угол конуса (в градусах)"
 end

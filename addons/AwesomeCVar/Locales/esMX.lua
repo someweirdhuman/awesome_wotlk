@@ -60,6 +60,7 @@ if GetLocale() == "esMX" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "Ancho del hitbox ALIADO"
     L.CVAR_LABEL_INTERACTION_MODE = "Modo de interacción"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Ángulo del cono de interacción"
+    L.CVAR_LABEL_INTERACTION_RANGE = "Rango de interacción (yd)"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Extender altura del World Frame"
     L.CVAR_ENABLE_STANCE_PATCH = "Activar parche de cambio de postura/forma"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Visibilidad indirecta de la cámara"
@@ -75,6 +76,6 @@ if GetLocale() == "esMX" then
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API de reacción"
     L.MODE_LABEL_COLOR_PARSING = "Análisis de color"
-    L.MODE_LABEL_PLAYER_RADIUS = "Radio del jugador 20yd"
-    L.MODE_LABEL_CONE_ANGLE = "Ángulo de cono (grados) dentro de 20yd"
+    L.MODE_LABEL_PLAYER_RADIUS = "Radio del jugador"
+    L.MODE_LABEL_CONE_ANGLE = "Ángulo de cono (grados)"
 end

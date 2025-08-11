@@ -60,6 +60,7 @@ if GetLocale() == "enUS" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "FRIENDLY Nameplate Hitbox Width"
     L.CVAR_LABEL_INTERACTION_MODE = "Interaction Mode"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Interaction Cone Angle"
+    L.CVAR_LABEL_INTERACTION_RANGE = "Interaction Range (yd)"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Extend World Frame Height"
     L.CVAR_LABEL_UPPER_BORDER_ONLY_BOSS = "Allow ONLY bosses to stick to upper border of the screen"
     L.CVAR_ENABLE_STANCE_PATCH = "Enable stance/form swap patch"
@@ -76,6 +77,6 @@ if GetLocale() == "enUS" then
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "Reaction API"
     L.MODE_LABEL_COLOR_PARSING = "Color Parsing"
-    L.MODE_LABEL_PLAYER_RADIUS = "Player Radius 20yd"
-    L.MODE_LABEL_CONE_ANGLE = "Cone Angle (dg) within 20yd"
+    L.MODE_LABEL_PLAYER_RADIUS = "Player Radius"
+    L.MODE_LABEL_CONE_ANGLE = "Cone Angle (dg)"
 end

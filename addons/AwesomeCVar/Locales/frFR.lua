@@ -60,6 +60,7 @@ if GetLocale() == "frFR" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "Largeur de la hitbox AMICALE"
     L.CVAR_LABEL_INTERACTION_MODE = "Mode d'interaction"
     L.CVAR_LABEL_INTERACTION_ANGLE = "Angle du cône d'interaction"
+    L.CVAR_LABEL_INTERACTION_RANGE = "Portée d'interaction (m)"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Étendre la hauteur du World Frame"
     L.CVAR_ENABLE_STANCE_PATCH = "Activer le patch de changement de posture/forme"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Visibilité indirecte de la caméra"
@@ -75,6 +76,6 @@ if GetLocale() == "frFR" then
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API de Réaction"
     L.MODE_LABEL_COLOR_PARSING = "Analyse de couleur"
-    L.MODE_LABEL_PLAYER_RADIUS = "Rayon du joueur 20m"
-    L.MODE_LABEL_CONE_ANGLE = "Angle du cône (dg) à moins de 20m"
+    L.MODE_LABEL_PLAYER_RADIUS = "Rayon du joueur"
+    L.MODE_LABEL_CONE_ANGLE = "Angle du cône (dg)"
 end

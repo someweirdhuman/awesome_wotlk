@@ -60,6 +60,7 @@ if GetLocale() == "koKR" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "우호적 이름표 히트박스 너비"
     L.CVAR_LABEL_INTERACTION_MODE = "상호작용 모드"
     L.CVAR_LABEL_INTERACTION_ANGLE = "상호작용 원뿔 각도"
+    L.CVAR_LABEL_INTERACTION_RANGE = "상호작용 범위 (미터)"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "월드 프레임 높이 확장"
     L.CVAR_ENABLE_STANCE_PATCH = "태세/폼 전환 패치 활성화"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "카메라 간접 가시성"
@@ -75,6 +76,6 @@ if GetLocale() == "koKR" then
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "반응 API"
     L.MODE_LABEL_COLOR_PARSING = "색상 분석"
-    L.MODE_LABEL_PLAYER_RADIUS = "플레이어 반경 20미터"
-    L.MODE_LABEL_CONE_ANGLE = "20미터 내 원뿔 각도 (도)"
+    L.MODE_LABEL_PLAYER_RADIUS = "플레이어 반경"
+    L.MODE_LABEL_CONE_ANGLE = "원뿔 각도 (도)"
 end

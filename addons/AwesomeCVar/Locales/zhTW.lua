@@ -60,6 +60,7 @@ if GetLocale() == "zhTW" then
     L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH = "友方姓名板點擊框寬度"
     L.CVAR_LABEL_INTERACTION_MODE = "互動模式"
     L.CVAR_LABEL_INTERACTION_ANGLE = "互動錐形角度"
+    L.CVAR_LABEL_INTERACTION_RANGE = "互動範圍 (碼)"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "延展世界框架高度"
     L.CVAR_ENABLE_STANCE_PATCH = "啟用姿態/形態切換修補"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "鏡頭間接可見性"
@@ -75,6 +76,6 @@ if GetLocale() == "zhTW" then
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "反應 API"
     L.MODE_LABEL_COLOR_PARSING = "顏色解析"
-    L.MODE_LABEL_PLAYER_RADIUS = "玩家半徑 20 碼"
-    L.MODE_LABEL_CONE_ANGLE = "20 碼內錐形角度（度）"
+    L.MODE_LABEL_PLAYER_RADIUS = "玩家半徑"
+    L.MODE_LABEL_CONE_ANGLE = "錐形角度（度）"
 end
