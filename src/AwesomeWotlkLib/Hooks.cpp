@@ -6,13 +6,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-static Console::CVar* s_cvar_spellProjectionHorizontalBias;
-static Console::CVar* s_cvar_spellProjectionMaxRange;
-static Console::CVar* s_cvar_spellProjectionMode;
-static int CVarHandler_spellProjectionHorizontalBias(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
-static int CVarHandler_spellProjectionMaxRange(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
-static int CVarHandler_spellProjectionMode(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
-
 static std::unordered_map<void*, float> g_models_original_alphas;
 static std::unordered_set<void*> g_models_current;
 static std::unordered_set<void*> g_models_being_faded;
