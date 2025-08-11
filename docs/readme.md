@@ -53,6 +53,7 @@ ___
     - nameplateFriendlyHitboxWidth<br>
     - interactionMode<br>
     - interactionAngle<br>
+    - interactionRange<br>
     - nameplateStackFriendly<br>
     - nameplateStackFriendlyMode<br>
     - nameplateMaxRaiseDistance<br>
