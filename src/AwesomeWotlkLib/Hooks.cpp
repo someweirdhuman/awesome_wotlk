@@ -6,38 +6,36 @@
 #include <unordered_map>
 #include <unordered_set>
 
-std::unordered_map<void*, float> g_model_original_alphas;
-std::unordered_set<void*> g_forward_current_models;
-std::unordered_set<void*> g_backward_current_models;
-std::unordered_set<void*> g_models_being_faded;
+static Console::CVar* s_cvar_spellProjectionHorizontalBias;
+static Console::CVar* s_cvar_spellProjectionMaxRange;
+static Console::CVar* s_cvar_spellProjectionMode;
+static int CVarHandler_spellProjectionHorizontalBias(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_spellProjectionMaxRange(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_spellProjectionMode(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 
-bool g_backwards_mode = false;
-bool g_needs_backward_pass = false;
-
-C3Vector g_saved_start, g_saved_end;
-C3Vector g_saved_hitpoint;
-float g_saved_distance;
-uint32_t g_saved_flag, g_saved_param;
+static std::unordered_map<void*, float> g_models_original_alphas;
+static std::unordered_set<void*> g_models_current;
+static std::unordered_set<void*> g_models_being_faded;
+static int g_models_cleanup_timer = 0;
 
 static Console::CVar* s_cvar_cameraIndirectVisibility;
 static Console::CVar* s_cvar_cameraIndirectOffset;
 static Console::CVar* s_cvar_cameraIndirectAlpha;
-
+static int CVarHandler_cameraIndirectOffset(Console::CVar* cvar, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_cameraIndirectVisibility(Console::CVar*, const char*, const char* value, LPVOID) {
     if (!std::atoi(value)) {
-        for (auto it = g_models_being_faded.begin(); it != g_models_being_faded.end();) {
-            void* modelPtr = *it;
-            *reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(modelPtr) + 0x17C) = g_model_original_alphas[modelPtr];
-            g_model_original_alphas.erase(modelPtr);
-            it = g_models_being_faded.erase(it);
+        for (void* modelPtr : g_models_being_faded) {
+            if (g_models_original_alphas.find(modelPtr) != g_models_original_alphas.end()) {
+                float* alphaPtr = reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(modelPtr) + 0x17C);
+                *alphaPtr = g_models_original_alphas[modelPtr];
+            }
         }
-        g_forward_current_models.clear();
-        g_backward_current_models.clear();
-        g_model_original_alphas.clear();
+        g_models_being_faded.clear();
+        g_models_original_alphas.clear();
+        g_models_current.clear();
     }
     return 1;
 }
-static int CVarHandler_cameraIndirectOffset(Console::CVar* cvar, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_cameraIndirectAlpha(Console::CVar* cvar, const char*, const char* value, void*)
 {
     float alpha = std::atof(value);
@@ -481,97 +479,6 @@ static char __cdecl CGWorldFrame_Intersect_new(C3Vector* start, C3Vector* end, C
     void* buf = reinterpret_cast<void*>(buffer);
     std::memset(buf, 0, 2048);
 
-    if (g_needs_backward_pass) {
-        g_needs_backward_pass = false;
-        g_backwards_mode = true;
-
-        char result = CGWorldFrame_Intersect_orig(&g_saved_end, &g_saved_start, &g_saved_hitpoint, &g_saved_distance, flag + 1, reinterpret_cast<uintptr_t>(buf));
-        if (result) {
-            const uint32_t type = *reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(buf) + 0);
-            const uint32_t count = *reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(buf) + 4);
-
-            if (type == 1 && count > 0) {
-                void* modelPtr = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(buf) + 12 + 80);
-                if (modelPtr) {
-                    g_backward_current_models.insert(modelPtr);
-
-                    if (g_model_original_alphas.find(modelPtr) == g_model_original_alphas.end()) {
-                        float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
-                        g_model_original_alphas[modelPtr] = *alphaPtr;
-                    }
-
-                    g_models_being_faded.insert(modelPtr);
-                    float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
-                    float targetAlpha = std::atof(s_cvar_cameraIndirectAlpha->vStr);
-                    *alphaPtr += (targetAlpha - *alphaPtr) * 0.25f;
-                }
-                if (count > 1)
-                    g_needs_backward_pass = true;
-                return 0;
-            }
-            else {
-                g_backwards_mode = false;
-
-                for (auto it = g_models_being_faded.begin(); it != g_models_being_faded.end();) {
-                    void* modelPtr = *it;
-
-                    bool in_forward = g_forward_current_models.find(modelPtr) != g_forward_current_models.end();
-                    bool in_backward = g_backward_current_models.find(modelPtr) != g_backward_current_models.end();
-
-                    if (!in_forward && !in_backward) {
-                        float* alphaPtr = reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(modelPtr) + 0x17C);
-                        float originalAlpha = g_model_original_alphas[modelPtr];
-
-                        *alphaPtr += (originalAlpha - *alphaPtr) * 0.25f;
-
-                        if (std::fabs(*alphaPtr - originalAlpha) < 0.01f) {
-                            *alphaPtr = originalAlpha;
-                            g_model_original_alphas.erase(modelPtr);
-                            it = g_models_being_faded.erase(it);
-                            continue;
-                        }
-                    }
-                    ++it;
-                }
-                g_forward_current_models.clear();
-                g_backward_current_models.clear();
-            }
-        }
-        else {
-            g_backwards_mode = false;
-
-            for (auto it = g_models_being_faded.begin(); it != g_models_being_faded.end();) {
-                void* modelPtr = *it;
-
-                bool in_forward = g_forward_current_models.find(modelPtr) != g_forward_current_models.end();
-                bool in_backward = g_backward_current_models.find(modelPtr) != g_backward_current_models.end();
-
-                if (!in_forward && !in_backward) {
-                    float* alphaPtr = reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(modelPtr) + 0x17C);
-                    float originalAlpha = g_model_original_alphas[modelPtr];
-
-                    *alphaPtr += (originalAlpha - *alphaPtr) * 0.25f;
-
-                    if (std::fabs(*alphaPtr - originalAlpha) < 0.01f) {
-                        *alphaPtr = originalAlpha;
-                        g_model_original_alphas.erase(modelPtr);
-                        it = g_models_being_faded.erase(it);
-                        continue;
-                    }
-                }
-                ++it;
-            }
-
-            g_forward_current_models.clear();
-            g_backward_current_models.clear();
-        }
-
-        return result;
-    }
-
-    g_backwards_mode = false;
-    std::memset(buf, 0, 2048);
-
     char result = CGWorldFrame_Intersect_orig(start, end, hitPoint, distance, flag + 1, reinterpret_cast<uintptr_t>(buf));
     if (result) {
         const uint32_t type = *reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(buf) + 0);
@@ -580,57 +487,42 @@ static char __cdecl CGWorldFrame_Intersect_new(C3Vector* start, C3Vector* end, C
         if (type == 1 && count > 0) {
             void* modelPtr = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(buf) + 12 + 80);
             if (modelPtr) {
-                g_forward_current_models.insert(modelPtr);
-
-                if (g_model_original_alphas.find(modelPtr) == g_model_original_alphas.end()) {
-                    float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
-                    g_model_original_alphas[modelPtr] = *alphaPtr;
-                }
-
+                g_models_current.insert(modelPtr);
                 g_models_being_faded.insert(modelPtr);
+
+                if (g_models_original_alphas.find(modelPtr) == g_models_original_alphas.end())
+                    g_models_original_alphas[modelPtr] = *reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
+
                 float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
-                float targetAlpha = std::atof(s_cvar_cameraIndirectAlpha->vStr);
-                *alphaPtr += (targetAlpha - *alphaPtr) * 0.25f;
+                *alphaPtr += (std::atof(s_cvar_cameraIndirectAlpha->vStr) - *alphaPtr) * 0.25f;
             }
             return 0;
         }
-        else {
-            g_saved_start = *start;
-            g_saved_end = *end;
-            g_saved_hitpoint = *hitPoint;
-            g_saved_distance = *distance;
-            g_needs_backward_pass = true;
-        }
     }
-    else {
-        g_saved_start = *start;
-        g_saved_end = *end;
-        g_saved_hitpoint = *hitPoint;
-        g_saved_distance = *distance;
-        g_needs_backward_pass = true;
-
+    else if (g_models_cleanup_timer > 2) {
         for (auto it = g_models_being_faded.begin(); it != g_models_being_faded.end();) {
             void* modelPtr = *it;
 
-            bool in_forward = g_forward_current_models.find(modelPtr) != g_forward_current_models.end();
-            bool in_backward = g_backward_current_models.find(modelPtr) != g_backward_current_models.end();
-
-            if (!in_forward && !in_backward) {
-                float* alphaPtr = reinterpret_cast<float*>(reinterpret_cast<uintptr_t>(modelPtr) + 0x17C);
-                float originalAlpha = g_model_original_alphas[modelPtr];
+            if (!(g_models_current.find(modelPtr) != g_models_current.end())) {
+                float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
+                float originalAlpha = g_models_original_alphas[modelPtr];
 
                 *alphaPtr += (originalAlpha - *alphaPtr) * 0.25f;
 
                 if (std::fabs(*alphaPtr - originalAlpha) < 0.01f) {
                     *alphaPtr = originalAlpha;
-                    g_model_original_alphas.erase(modelPtr);
+                    g_models_original_alphas.erase(modelPtr);
                     it = g_models_being_faded.erase(it);
                     continue;
                 }
             }
             ++it;
         }
+        g_models_current.clear();
+        g_models_cleanup_timer = 0;
     }
+    g_models_cleanup_timer++;
+
     return result;
 }
 
@@ -658,8 +550,6 @@ static void __declspec(naked) IntersectCall_hk()
         call CGWorldFrame_Intersect_new
         add esp, 2048
         jmp IntersectCall_jmpbackaddr
-
-        //todo: handle if block to set indirect offset (zoom speed)
     }
 }
 
@@ -667,13 +557,11 @@ static void(*IterateCollisionList_orig)() = (decltype(IterateCollisionList_orig)
 static constexpr DWORD_PTR IterateCollisionList_jmpback = 0x007A27A5;
 static constexpr DWORD_PTR IterateCollisionList_skipaddr = 0x007A2943;
 
-bool __cdecl collisionFilter(void* modelPtr) {
+static bool __cdecl collisionFilter(void* modelPtr) {
     if (!modelPtr)
-        return true;
-    else if (g_backwards_mode)
-        return g_backward_current_models.find(modelPtr) == g_backward_current_models.end();
+        return false;
     else
-        return g_forward_current_models.find(modelPtr) == g_forward_current_models.end();
+        return g_models_current.find(modelPtr) == g_models_current.end();
 }
 
 __declspec(naked) void IterateCollisionList_hk()
