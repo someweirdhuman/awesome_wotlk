@@ -38,6 +38,7 @@ if GetLocale() == "deDE" then
     L.CATEGORY_CAMERA = "Kamera"
     L.CATEGORY_NAMEPLATES = "Namensplaketten"
     L.CATEGORY_INTERACTION = "Interaktion"
+    L.CATEGORY_OTHER = "Sonstige"
 
     -- CVar Labels & Descriptions
     L.CVAR_LABEL_CAMERA_FOV = "Kamera-Sichtfeld (FoV)"

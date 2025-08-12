@@ -38,6 +38,7 @@ if GetLocale() == "ruRU" then
     L.CATEGORY_CAMERA = "Камера"
     L.CATEGORY_NAMEPLATES = "Индикаторы здоровья"
     L.CATEGORY_INTERACTION = "Взаимодействие"
+    L.CATEGORY_OTHER = "Другие"
 
     -- CVar Labels & Descriptions
     L.CVAR_LABEL_CAMERA_FOV = "Поле зрения камеры (FoV)"

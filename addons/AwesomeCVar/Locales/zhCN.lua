@@ -38,6 +38,7 @@ if GetLocale() == "zhCN" then
     L.CATEGORY_CAMERA = "镜头"
     L.CATEGORY_NAMEPLATES = "姓名板"
     L.CATEGORY_INTERACTION = "互动"
+    L.CATEGORY_OTHER = "其他"
 
     -- CVar Labels & Descriptions
     L.CVAR_LABEL_CAMERA_FOV = "镜头视野（FoV）"
