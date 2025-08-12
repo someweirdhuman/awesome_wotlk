@@ -38,6 +38,7 @@ if GetLocale() == "esMX" then
     L.CATEGORY_CAMERA = "Cámara"
     L.CATEGORY_NAMEPLATES = "Placas de nombre"
     L.CATEGORY_INTERACTION = "Interacción"
+    L.CATEGORY_OTHER = "Otros"
 
     -- CVar Labels & Descriptions
     L.CVAR_LABEL_CAMERA_FOV = "Campo de visión (FoV) de la cámara"

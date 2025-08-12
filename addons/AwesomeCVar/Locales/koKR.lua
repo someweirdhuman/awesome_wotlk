@@ -38,6 +38,7 @@ if GetLocale() == "koKR" then
     L.CATEGORY_CAMERA = "카메라"
     L.CATEGORY_NAMEPLATES = "이름표"
     L.CATEGORY_INTERACTION = "상호작용"
+    L.CATEGORY_OTHER = "기타"
 
     -- CVar Labels & Descriptions
     L.CVAR_LABEL_CAMERA_FOV = "카메라 시야각 (FoV)"
