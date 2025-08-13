@@ -66,12 +66,14 @@ if GetLocale() == "deDE" then
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Indirekte Kamerasichtbarkeit"
     L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "Indirekter Kamera-Alpha"
     L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "Indirekter Kamera-Offset"
+    L.CVAR_LABEL_CAMERA_DISTANCE_MAX = "Kameradistanz"
 
     L.DESC_HITBOX_DISABLED = "0 = DEAKTIVIERT, nicht ohne ein Namensplaketten-Addon verwenden"
     L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Fixiert außerhalb des Sichtbereichs liegende Namensplaketten am oberen Bildschirmrand; kann einige UI-Elemente beeinträchtigen. ERFORDERT aktiviertes Stapeln der Namensplaketten."
     L.DESC_STANCE_PATCH = "Ermöglicht das Wechseln der Haltung/Form und das Wirken einer Fähigkeit per Makro mit einem Klick. Funktioniert nicht auf Warmane."
     L.DESC_CAMERA_INDIRECT_VISIBILITY = "Erlaubt der Kamera, sich frei durch einige Weltobjekte zu bewegen, ohne blockiert zu werden."
     L.DESC_CAMERA_INDIRECT_ALPHA = "Definiert die Transparenz von Objekten zwischen Kamera und Spieler."
+    L.DESC_CAMERA_DISTANCE_MAX = "Legt die maximale Entfernung fest, bis zu der du herauszoomen kannst."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "Reaktions-API"

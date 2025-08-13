@@ -66,12 +66,14 @@ if GetLocale() == "enUS" then
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Camera Indirect Visibility"
 	L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "Camera Indirect Alpha"
 	L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "Camera Indirect Offset"
+	L.CVAR_LABEL_CAMERA_DISTANCE_MAX = "Camera Distance"
 
     L.DESC_HITBOX_DISABLED = "0 = DISABLED, don't use without a nameplate addon"
     L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Sticks out-of-view nameplates to top border; may break some UI elements. REQUIRES stacking nameplates enabled."
-    L.DESC_STANCE_PATCH = "Allows you to change stance/form and cast ability if macroed in single click. Doesnt work on Warmane."
+    L.DESC_STANCE_PATCH = "Allows you to change stance/form and cast ability if macroed in single click. Doesn't work on Warmane."
     L.DESC_CAMERA_INDIRECT_VISIBILITY = "Allows your camera to move freely through some world objects without being blocked."
     L.DESC_CAMERA_INDIRECT_ALPHA = "Defines the transparency of objects between the camera and player."
+    L.DESC_CAMERA_DISTANCE_MAX = "Sets the maximum distance which you can zoom out to."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "Reaction API"

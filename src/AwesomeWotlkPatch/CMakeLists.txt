@@ -13,8 +13,8 @@ target_compile_definitions(
     APP_NAME="${PROJECT_NAME}"
 )
 
-#uac escalation doesnt allow console output, need to remove escalation to get proper output
 #removing escalation may fail in some instances where player has client in C: 
+#uac escalation doesn't allow console output, need to remove escalation to get proper output
 if(MSVC)
     target_link_options(${PROJECT_NAME} PRIVATE
         "/MANIFESTUAC:level='requireAdministrator' uiAccess='false'"

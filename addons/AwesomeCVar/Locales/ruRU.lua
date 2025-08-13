@@ -66,12 +66,14 @@ if GetLocale() == "ruRU" then
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Косвенная видимость камеры"
     L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "Косвенная прозрачность камеры"
     L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "Косвенный сдвиг камеры"
+    L.CVAR_LABEL_CAMERA_DISTANCE_MAX = "Дистанция камеры"
 
     L.DESC_HITBOX_DISABLED = "0 = ОТКЛЮЧЕНО, не используйте без аддона для индикаторов здоровья"
     L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Прикрепляет индикаторы вне поля зрения к верхней границе; может нарушить работу некоторых элементов интерфейса. ТРЕБУЕТ включенного наслоения индикаторов."
     L.DESC_STANCE_PATCH = "Позволяет сменить стойку/форму и применить способность макросом одним кликом. Не работает на Warmane."
     L.DESC_CAMERA_INDIRECT_VISIBILITY = "Позволяет камере свободно перемещаться сквозь некоторые объекты мира без блокировки."
     L.DESC_CAMERA_INDIRECT_ALPHA = "Определяет прозрачность объектов между камерой и игроком."
+    L.DESC_CAMERA_DISTANCE_MAX = "Устанавливает максимальное расстояние, на которое вы можете отдалить камеру."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API реакции"

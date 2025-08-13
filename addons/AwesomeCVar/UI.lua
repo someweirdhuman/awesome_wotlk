@@ -7,16 +7,17 @@ local CONSTANTS = ACVar.CONSTANTS
 local CVARS = ACVar.CVARS
 
 local _G = _G
+local ipairs = ipairs
+local max = math.max
+local pairs = pairs
+local tinsert = table.insert
 local tostring = tostring
 local unpack = unpack
-local max = math.max
-local tinsert = table.insert
-local pairs = pairs
-local ipairs = ipairs
 
 local CreateFrame = CreateFrame
-local ReloadUI = ReloadUI
 local HideUIPanel = HideUIPanel
+local PlaySound = PlaySound
+local ReloadUI = ReloadUI
 local UIParent = UIParent
 
 local function getFrameName(prefix, suffix)
@@ -64,9 +65,11 @@ local function createToggleControl(control, cvarDef, text)
     checkbox:SetPoint("LEFT", text, "RIGHT", 10, 0)
     checkbox.cvarDef = cvarDef
     checkbox:SetScript("OnClick", function(self)
-        local newVal = self:GetChecked() and self.cvarDef.max or self.cvarDef.min
+        local checked = self:GetChecked()
+        local newVal = checked and self.cvarDef.max or self.cvarDef.min
         ACVar:SetCVarValue(self.cvarDef.name, newVal, self.cvarDef)
         ACVar:PrintCVarChange(self.cvarDef.name, newVal)
+        PlaySound(checked and "igMainMenuOptionCheckBoxOn" or "igMainMenuOptionCheckBoxOff")
     end)
     return 25
 end
@@ -101,6 +104,8 @@ local function createSliderControl(control, cvarDef, text, descText)
         ACVar:PrintCVarChange(self.cvarDef.name, self.cvarDef.default)
         self.slider:SetValue(self.cvarDef.default)
         self:Hide()
+
+        PlaySound("igMainMenuOptionFaerTab")
     end)
 
     slider:SetScript("OnValueChanged", function(self, val)
@@ -139,6 +144,7 @@ local function createModeControl(control, cvarDef, text, descText)
             self:SetChecked(true)
             ACVar:SetCVarValue(self.cvarDef.name, self.modeValue, self.cvarDef)
             ACVar:PrintCVarChange(self.cvarDef.name, self.modeValue)
+            PlaySound("igMainMenuOptionCheckBoxOn")
         end)
     end
     return 25 * #cvarDef.modes
@@ -184,8 +190,10 @@ function ACVar:ToggleFrame()
     if self.Frame then
         if self.Frame:IsShown() then
             self:HideFrame()
+            PlaySound("igMainMenuOptionFaerTab")
         else
             self:ShowFrame()
+            PlaySound("igMainMenuContinue")
         end
     end
 end
@@ -194,12 +202,14 @@ function ACVar:ShowFrame()
     if self.Frame then
         self.Frame:Show()
         self:UpdateAllUI()
+        PlaySound("igMainMenuContinue")
     end
 end
 
 function ACVar:HideFrame()
     if self.Frame then
         self.Frame:Hide()
+        PlaySound("igMainMenuOptionFaerTab")
     end
 end
 
@@ -220,6 +230,7 @@ function ACVar:CreateReloadPopup()
     acceptButton:SetPoint("BOTTOM", frame, "BOTTOM", -60, 20)
     acceptButton:SetScript("OnClick", function()
         ReloadUI()
+        PlaySound("igMainMenuClose")
     end)
 
     local cancelButton = createButton(frame, "AwesomeCVarCancelButton", _G.CANCEL)
@@ -227,7 +238,10 @@ function ACVar:CreateReloadPopup()
     cancelButton:SetScript("OnClick", function()
         self.reloadIsPending = false -- User chose not to reload now
         frame:Hide()
+        PlaySound("igMainMenuOptionFaerTab")
     end)
+
+    frame:SetScript("OnShow", function() PlaySound("igMainMenuOpen") end)
 end
 
 function ACVar:CreateDefaultConfirmationPopup()
@@ -246,13 +260,17 @@ function ACVar:CreateDefaultConfirmationPopup()
         self:ResetFramePosition()
         self:UpdateAllUI()
         frame:Hide()
+        PlaySound("igMainMenuClose")
     end)
 
     local cancelButton = createButton(frame, "AwesomeCVarCancelButton", _G.CANCEL)
     cancelButton:SetPoint("BOTTOM", frame, "BOTTOM", 60, 20)
     cancelButton:SetScript("OnClick", function()
         frame:Hide()
+        PlaySound("igMainMenuOptionFaerTab")
     end)
+
+    frame:SetScript("OnShow", function() PlaySound("igMainMenuOpen") end)
 end
 
 local gameMenuFrameIsShown = false
@@ -386,6 +404,7 @@ function ACVar:CreateMainFrame()
 
         tab:SetScript("OnClick", function(self)
             selectTab(self)
+            PlaySound("igCharacterInfoTab")
         end)
 
         -- Populate panel content
@@ -438,13 +457,19 @@ function ACVar:CreateMainFrame()
     -- Bottom Buttons
     local closeButton = createButton(frame, "AwesomeCVarCloseButton", _G.CLOSE)
     closeButton:SetPoint("BOTTOMRIGHT", -16, 16)
-    closeButton:SetScript("OnClick", function() frame:Hide() end)
+    closeButton:SetScript("OnClick", function()
+        ACVar:HideFrame()
+    end)
 
     local okayButton = createButton(frame, "AwesomeCVarOkayButton", _G.OKAY)
     okayButton:SetPoint("RIGHT", closeButton, "LEFT", -10, 0)
-    okayButton:SetScript("OnClick", function() frame:Hide() end)
+    okayButton:SetScript("OnClick", function()
+        ACVar:HideFrame()
+    end)
 
     local defaultsButton = createButton(frame, "AwesomeCVarDefaultsButton", _G.DEFAULTS)
     defaultsButton:SetPoint("BOTTOMLEFT", 16, 16)
-    defaultsButton:SetScript("OnClick", function() self.DefaultConfirmationPopup:Show() end)
+    defaultsButton:SetScript("OnClick", function()
+        self.DefaultConfirmationPopup:Show()
+    end)
 end
