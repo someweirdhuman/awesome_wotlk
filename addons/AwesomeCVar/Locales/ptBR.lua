@@ -66,12 +66,14 @@ if GetLocale() == "ptBR" then
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Visibilidade Indireta da Câmera"
     L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "Alpha Indireto da Câmera"
     L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "Offset Indireto da Câmera"
+    L.CVAR_LABEL_CAMERA_DISTANCE_MAX = "Distância da câmera"
 
     L.DESC_HITBOX_DISABLED = "0 = DESATIVADO, não use sem um addon de placas de nome"
     L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Gruda placas de nome fora de visão na borda superior; pode quebrar alguns elementos da interface. REQUER empilhamento de placas de nome ativado."
     L.DESC_STANCE_PATCH = "Permite trocar postura/forma e lançar habilidade via macro com um único clique. Não funciona no Warmane."
     L.DESC_CAMERA_INDIRECT_VISIBILITY = "Permite que sua câmera se mova livremente por alguns objetos do mundo sem ser bloqueada."
     L.DESC_CAMERA_INDIRECT_ALPHA = "Define a transparência dos objetos entre a câmera e o jogador."
+    L.DESC_CAMERA_DISTANCE_MAX = "Define a distância máxima para a qual você pode afastar a câmera."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API de Reação"

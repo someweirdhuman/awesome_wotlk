@@ -32,6 +32,7 @@ ACVar.CONSTANTS = {
 ACVar.CVARS = {
     [L.CATEGORY_CAMERA] = {
         { name = "cameraFov", label = L.CVAR_LABEL_CAMERA_FOV, type = "slider", min = 30, max = 150, default = 100 },
+        { name = "cameraDistanceMax", label = L.CVAR_LABEL_CAMERA_DISTANCE_MAX, desc = L.DESC_CAMERA_DISTANCE_MAX, type = "slider", min = 0, max = 50, step = 1, default = 15 },
         { name = "cameraIndirectVisibility", label = L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY, desc = L.DESC_CAMERA_INDIRECT_VISIBILITY, type = "toggle", min = 0, max = 1 },
         { name = "cameraIndirectAlpha", label = L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA, desc = L.DESC_CAMERA_INDIRECT_ALPHA, type = "slider", min = 0.6, max = 1, step = 0.05, default = 0.6 },
     },
