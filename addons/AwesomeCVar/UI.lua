@@ -190,7 +190,7 @@ function ACVar:ToggleFrame()
     if self.Frame then
         if self.Frame:IsShown() then
             self:HideFrame()
-            PlaySound("igInventoryRotateCharacter")
+            PlaySound("igMainMenuOptionFaerTab")
         else
             self:ShowFrame()
             PlaySound("igMainMenuContinue")
@@ -209,7 +209,7 @@ end
 function ACVar:HideFrame()
     if self.Frame then
         self.Frame:Hide()
-        PlaySound("igInventoryRotateCharacter")
+        PlaySound("igMainMenuOptionFaerTab")
     end
 end
 
@@ -230,6 +230,7 @@ function ACVar:CreateReloadPopup()
     acceptButton:SetPoint("BOTTOM", frame, "BOTTOM", -60, 20)
     acceptButton:SetScript("OnClick", function()
         ReloadUI()
+        PlaySound("igMainMenuClose")
     end)
 
     local cancelButton = createButton(frame, "AwesomeCVarCancelButton", _G.CANCEL)
@@ -237,10 +238,10 @@ function ACVar:CreateReloadPopup()
     cancelButton:SetScript("OnClick", function()
         self.reloadIsPending = false -- User chose not to reload now
         frame:Hide()
+        PlaySound("igMainMenuOptionFaerTab")
     end)
 
     frame:SetScript("OnShow", function() PlaySound("igMainMenuOpen") end)
-    frame:SetScript("OnHide", function() PlaySound("igMainMenuClose") end)
 end
 
 function ACVar:CreateDefaultConfirmationPopup()
@@ -259,16 +260,17 @@ function ACVar:CreateDefaultConfirmationPopup()
         self:ResetFramePosition()
         self:UpdateAllUI()
         frame:Hide()
+        PlaySound("igMainMenuClose")
     end)
 
     local cancelButton = createButton(frame, "AwesomeCVarCancelButton", _G.CANCEL)
     cancelButton:SetPoint("BOTTOM", frame, "BOTTOM", 60, 20)
     cancelButton:SetScript("OnClick", function()
         frame:Hide()
+        PlaySound("igMainMenuOptionFaerTab")
     end)
 
     frame:SetScript("OnShow", function() PlaySound("igMainMenuOpen") end)
-    frame:SetScript("OnHide", function() PlaySound("igMainMenuClose") end)
 end
 
 local gameMenuFrameIsShown = false
