@@ -12,7 +12,7 @@ static bool s_quietMode = false;
 
 const char* findGameClientExecutable()
 {
-    static const char* possibleNames[] = { "Ascension.exe", "Project-Epoch.exe", "Wow.exe" };
+    static const char* possibleNames[] = { "Project-Epoch.exe", "Wow.exe" };
     for (const char* name : possibleNames)
         if (std::filesystem::is_regular_file(name))
             return name;
