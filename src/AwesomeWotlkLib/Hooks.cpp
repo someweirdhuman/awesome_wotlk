@@ -460,9 +460,6 @@ static char __cdecl CGWorldFrame_Intersect_new(C3Vector* playerPos, C3Vector* ca
     void* buf = reinterpret_cast<void*>(buffer);
     std::memset(buf, 0, 2048);
 
-    for (auto& pair : g_models_grace_timers)
-        pair.second++;
-
     char result = CGWorldFrame_Intersect_orig(playerPos, cameraPos, hitPoint, hitDistance, hitFlags + 1, reinterpret_cast<uintptr_t>(buf));
     if (result) {
         const uint32_t* bufData = reinterpret_cast<const uint32_t*>(buf);
@@ -472,14 +469,19 @@ static char __cdecl CGWorldFrame_Intersect_new(C3Vector* playerPos, C3Vector* ca
                 g_models_current.insert(modelPtr);
                 g_models_being_faded.insert(modelPtr);
 
-                if (g_models_original_alphas.find(modelPtr) == g_models_original_alphas.end())
-                    g_models_original_alphas[modelPtr] = *reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
-
                 float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
+
+                if (g_models_original_alphas.find(modelPtr) == g_models_original_alphas.end())
+                    g_models_original_alphas[modelPtr] = *alphaPtr;
+
                 *alphaPtr += (std::atof(s_cvar_cameraIndirectAlpha->vStr) - *alphaPtr) * 0.25f;
 
                 g_models_grace_timers[modelPtr] = 0;
-                *hitDistance = g_actual_distance;
+
+                if (g_actual_distance < 1.0f)
+                    *hitDistance = g_actual_distance;
+                else
+                    result = false;
             }
         }
         else {
@@ -487,19 +489,25 @@ static char __cdecl CGWorldFrame_Intersect_new(C3Vector* playerPos, C3Vector* ca
             g_actual_distance = *hitDistance;
         }
     }
+    else if (g_models_being_faded.empty()) {
+        return result;
+    }
+    else {
+        g_models_current.clear();
+        g_actual_distance = 1.0f;
+    }
 
-    int cleanup_timer = g_models_current.size() + 1;
+    int cleanup_timer = g_models_being_faded.size() + 1;
     for (auto it = g_models_being_faded.begin(); it != g_models_being_faded.end();) {
         void* modelPtr = *it;
 
-        if (g_models_grace_timers[modelPtr] > cleanup_timer && g_models_current.find(modelPtr) == g_models_current.end()) {
+        if (g_models_grace_timers[modelPtr] > cleanup_timer) {
             float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
             float originalAlpha = g_models_original_alphas[modelPtr];
             *alphaPtr += (originalAlpha - *alphaPtr) * 0.25f;
             if (std::fabs(*alphaPtr - originalAlpha) < 0.01f) {
                 *alphaPtr = originalAlpha;
                 g_models_original_alphas.erase(modelPtr);
-                g_models_grace_timers.erase(modelPtr);
                 it = g_models_being_faded.erase(it);
                 continue;
             }
@@ -507,14 +515,9 @@ static char __cdecl CGWorldFrame_Intersect_new(C3Vector* playerPos, C3Vector* ca
         ++it;
     }
 
-    if (!result) {
-        if (g_models_cleanup_timer > cleanup_timer) {
-            g_models_current.clear();
-            g_actual_distance = 1.0f;
-            g_models_cleanup_timer = 0;
-        }
-        g_models_cleanup_timer++;
-    }
+    for (auto& pair : g_models_grace_timers)
+        pair.second++;
+
     return result;
 }
 
@@ -550,7 +553,7 @@ static constexpr DWORD_PTR IterateCollisionList_jmpback = 0x007A27A5;
 static constexpr DWORD_PTR IterateCollisionList_skipaddr = 0x007A2943;
 
 static bool __cdecl collisionFilter(void* modelPtr) {
-    return !modelPtr ? false : g_models_current.find(modelPtr) == g_models_current.end();
+    return g_models_current.find(modelPtr) == g_models_current.end();
 }
 
 __declspec(naked) void IterateCollisionList_hk()
@@ -581,6 +584,26 @@ __declspec(naked) void IterateCollisionList_hk()
             pop eax
             popfd
             jmp IterateCollisionList_skipaddr
+    }
+}
+
+static void(*IterateWorldObjCollisionList_orig)() = (decltype(IterateWorldObjCollisionList_orig))0x007A2A1C;
+static constexpr DWORD_PTR IterateWorldObjCollisionList_jmpback = 0x007A2A23;
+static constexpr DWORD_PTR IterateWorldObjCollisionList_skipaddr = 0x007A2A8A;
+
+__declspec(naked) void IterateWorldObjCollisionList_hk()
+{
+    __asm {
+        push eax    // eax = modelPtr
+        call collisionFilter
+        add esp, 4
+        test al, al
+        mov eax, [ebp - 68h]
+        je skip_collision_processing
+        cmp dword ptr[eax + 2D8h], 0
+        jmp IterateWorldObjCollisionList_jmpback
+        skip_collision_processing :
+            jmp IterateWorldObjCollisionList_skipaddr
     }
 }
 
@@ -619,6 +642,7 @@ void Hooks::initialize()
     DetourAttach(&(LPVOID&)SecureCmdOptionParse_orig, SecureCmdOptionParse_hk);
     DetourAttach(&(LPVOID&)ProcessAoETargeting_orig, ProcessAoETargeting_hk);
     DetourAttach(&(LPVOID&)IterateCollisionList_orig, IterateCollisionList_hk);
+    DetourAttach(&(LPVOID&)IterateWorldObjCollisionList_orig, IterateWorldObjCollisionList_hk);
     DetourAttach(&(LPVOID&)IntersectCall_orig, IntersectCall_hk);
     DetourAttach(&(LPVOID&)SpellCastReset_orig, SpellCastReset_hk);
 }
