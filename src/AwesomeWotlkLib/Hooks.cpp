@@ -119,17 +119,11 @@ static void Lua_OpenFrameXMlApi_bulk()
         func(L);
 }
 
-static void(*Lua_OpenFrameXMLApi_orig)() = (decltype(Lua_OpenFrameXMLApi_orig))0x00530F85;
-static void __declspec(naked) Lua_OpenFrameXMLApi_hk()
+static void (*Lua_OpenFrameXMLApi_orig)() = (void(*)())0x005120e0;
+static void Lua_OpenFrameXMLApi_hk()
 {
-    __asm {
-        pushad;
-        pushfd;
-        call Lua_OpenFrameXMlApi_bulk;
-        popfd;
-        popad;
-        ret;
-    }
+    Lua_OpenFrameXMLApi_orig();
+    Lua_OpenFrameXMlApi_bulk();
 }
 
 struct CustomTokenDetails {
