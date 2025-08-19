@@ -66,6 +66,9 @@ static TraceLine_t TraceLine_orig = (TraceLine_t)0x007A3B70;
 typedef char(__cdecl* CGWorldFrame_Intersect_t)(C3Vector* start, C3Vector* end, C3Vector* hitPoint, float* distance, uint32_t flag, uint32_t optional);
 static CGWorldFrame_Intersect_t CGWorldFrame_Intersect_orig = (CGWorldFrame_Intersect_t)0x0077F310;
 
+static void (*InvalidFunctionPointerCheck_orig)() = (decltype(InvalidFunctionPointerCheck_orig))0x0086B5A0;
+static void InvalidFunctionPointerCheck_hk() {}
+
 struct CVarArgs {
     Console::CVar** dst;
     const char* name;
@@ -593,6 +596,7 @@ void Hooks::initialize()
     Hooks::FrameXML::registerCVar(&s_cvar_cameraIndirectAlpha, "cameraIndirectAlpha", NULL, (Console::CVarFlags)1, "0.6", CVarHandler_cameraIndirectAlpha);
     Hooks::FrameXML::registerCVar(&s_cvar_cameraIndirectOffset, "cameraIndirectOffset", NULL, (Console::CVarFlags)1, "10", CVarHandler_cameraIndirectOffset);
     Hooks::FrameXML::registerCVar(&s_cvar_cameraIndirectVisibility, "cameraIndirectVisibility", NULL, (Console::CVarFlags)1, "0", CVarHandler_cameraIndirectVisibility);
+    DetourAttach(&(LPVOID&)InvalidFunctionPointerCheck_orig, InvalidFunctionPointerCheck_hk);
     DetourAttach(&(LPVOID&)CVars_Initialize_orig, CVars_Initialize_hk);
     DetourAttach(&(LPVOID&)FrameScript_FireOnUpdate_orig, FrameScript_FireOnUpdate_hk);
     DetourAttach(&(LPVOID&)CGGameUI__EnterWorld, OnEnterWorld);

@@ -36,10 +36,6 @@ static void OnAttach()
 //    FreeConsole();
 //#endif
 
-    // Invalid function pointer hack
-    *(DWORD*)0x00D415B8 = 1;
-    *(DWORD*)0x00D415BC = 0x7FFFFFFF;
-
     *(DWORD*)0x00B6AF54 = 1; // TOSAccepted = 1
     *(DWORD*)0x00B6AF5C = 1; // EULAAccepted = 1
 
