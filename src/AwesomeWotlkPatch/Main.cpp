@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <format>
 #include <iostream>
+#include <span>
 #include <string>
 #define AWESOMEWOTLKLIB_DLL "AwesomeWotlkLib.dll"
 
@@ -12,7 +13,7 @@ static bool s_quietMode = false;
 
 const char* findGameClientExecutable()
 {
-    static const char* possibleNames[] = { "Project-Epoch.exe", "Wow.exe" };
+    static const char* possibleNames[] = { "Ascension.exe", "Project-Epoch.exe", "Wow.exe" };
     for (const char* name : possibleNames)
         if (std::filesystem::is_regular_file(name))
             return name;
@@ -23,7 +24,14 @@ bool applyPatches(const char* path)
 {
     std::vector<char> image;
     if (!readFile(path, image)) return false;
-    for (auto& [virtualAddress, hexBytes] : s_patches) {
+
+    std::span<const PatchDetails> patches = s_patches;
+
+    if (!strcmp(path, "Ascension.exe")) {
+        patches = s_patches_ascension;
+    }
+
+    for (auto& [virtualAddress, hexBytes] : patches) {
         unsigned offset = virtualAddress2RawOffset(image.data(), virtualAddress);
         if (!offset) {
             SetLastError(ERROR_INVALID_ADDRESS);

@@ -33,3 +33,18 @@ PatchDetails s_patches[] = {
         "909090" // nop (3 times)
     }
 };
+
+PatchDetails s_patches_ascension[] = {
+    {
+        0x009E425D,
+        "417765736F6D65576F746C6B4C69622E646C6C00" // "AwesomeWotlkLib.dll\0"
+    },
+    {
+        0x007744CC,
+        "68" "5D429E00"   // push 0x009E425D
+        "FF15" "48F29D00" // call dword ptr [KERNEL32.LoadLibraryA]
+        // Original instructions
+        "61"              // popad
+        "E9" "C5A8F1FF"   // jmp FUN_0068EDA2
+    }
+};
