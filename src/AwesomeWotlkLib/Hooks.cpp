@@ -12,7 +12,7 @@ static std::unordered_set<void*> g_models_being_faded;
 static std::unordered_map<void*, uint32_t> g_models_grace_timers;
 
 static uint32_t g_models_cleanup_timer = 0;
-static float g_actual_distance = 0.0f;
+static float g_actual_distance = 1.0f;
 
 static Console::CVar* s_cvar_cameraIndirectVisibility;
 static Console::CVar* s_cvar_cameraIndirectAlpha;
@@ -460,7 +460,7 @@ static char __cdecl CGWorldFrame_Intersect_new(C3Vector* playerPos, C3Vector* ca
     void* buf = reinterpret_cast<void*>(buffer);
     std::memset(buf, 0, 2048);
 
-    char result = CGWorldFrame_Intersect_orig(playerPos, cameraPos, hitPoint, hitDistance, hitFlags + 1, reinterpret_cast<uintptr_t>(buf));
+    char result = CGWorldFrame_Intersect_orig(playerPos, cameraPos, hitPoint, hitDistance, hitFlags + 1 + 0x8000000, reinterpret_cast<uintptr_t>(buf));
     if (result) {
         const uint32_t* bufData = reinterpret_cast<const uint32_t*>(buf);
         if ((bufData[0] == 1 || bufData[0] == 2) && bufData[1] > 0) {
@@ -548,13 +548,13 @@ static void __declspec(naked) IntersectCall_hk()
     }
 }
 
-static void(*IterateCollisionList_orig)() = (decltype(IterateCollisionList_orig))0x007A279D;
-static constexpr DWORD_PTR IterateCollisionList_jmpback = 0x007A27A5;
-static constexpr DWORD_PTR IterateCollisionList_skipaddr = 0x007A2943;
-
 static bool __cdecl collisionFilter(void* modelPtr) {
     return g_models_current.find(modelPtr) == g_models_current.end();
 }
+
+static void(*IterateCollisionList_orig)() = (decltype(IterateCollisionList_orig))0x007A279D;
+static constexpr DWORD_PTR IterateCollisionList_jmpback = 0x007A27A5;
+static constexpr DWORD_PTR IterateCollisionList_skipaddr = 0x007A2943;
 
 __declspec(naked) void IterateCollisionList_hk()
 {
@@ -564,6 +564,9 @@ __declspec(naked) void IterateCollisionList_hk()
         push eax
         push ecx
         push edx
+        mov eax, [ebp + 0Ch]
+        and eax, 0x8000000
+        jz run_collision_processing
         mov eax, [esi + 0x34]    // eax = modelPtr
         test eax, eax
         jz skip_collision_processing
@@ -572,14 +575,15 @@ __declspec(naked) void IterateCollisionList_hk()
         add esp, 4
         test al, al
         je skip_collision_processing
-        pop edx
-        pop ecx
-        pop eax
-        popfd
-        cmp byte ptr[esi + 25h], bl
-        jmp IterateCollisionList_jmpback
+        run_collision_processing :
+            pop edx
+            pop ecx
+            pop eax
+            popfd
+            cmp byte ptr[esi + 25h], bl
+            jmp IterateCollisionList_jmpback
         skip_collision_processing :
-        pop edx
+            pop edx
             pop ecx
             pop eax
             popfd
@@ -594,14 +598,18 @@ static constexpr DWORD_PTR IterateWorldObjCollisionList_skipaddr = 0x007A2A8A;
 __declspec(naked) void IterateWorldObjCollisionList_hk()
 {
     __asm {
+        mov edx, [ebp + 0Ch]
+        test edx, 0x8000000
+        jz run_collision_processing
         push eax    // eax = modelPtr
         call collisionFilter
         add esp, 4
         test al, al
-        mov eax, [ebp - 68h]
         je skip_collision_processing
-        cmp dword ptr[eax + 2D8h], 0
-        jmp IterateWorldObjCollisionList_jmpback
+        run_collision_processing :
+            mov eax, [ebp - 68h]
+            cmp dword ptr[eax + 2D8h], 0
+            jmp IterateWorldObjCollisionList_jmpback
         skip_collision_processing :
             jmp IterateWorldObjCollisionList_skipaddr
     }
