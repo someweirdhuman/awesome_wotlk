@@ -9,12 +9,14 @@
 static std::unordered_map<void*, float> g_models_original_alphas;
 static std::unordered_set<void*> g_models_current;
 static std::unordered_set<void*> g_models_being_faded;
-static int g_models_cleanup_timer = 0;
+static std::unordered_map<void*, uint32_t> g_models_grace_timers;
+
+static uint32_t g_models_cleanup_timer = 0;
+static float g_actual_distance = 1.0f;
 
 static Console::CVar* s_cvar_cameraIndirectVisibility;
-static Console::CVar* s_cvar_cameraIndirectOffset;
 static Console::CVar* s_cvar_cameraIndirectAlpha;
-static int CVarHandler_cameraIndirectOffset(Console::CVar* cvar, const char*, const char* value, LPVOID) { return 1; }
+
 static int CVarHandler_cameraIndirectVisibility(Console::CVar*, const char*, const char* value, LPVOID) {
     if (!std::atoi(value)) {
         for (void* modelPtr : g_models_being_faded) {
@@ -38,21 +40,19 @@ static int CVarHandler_cameraIndirectAlpha(Console::CVar* cvar, const char*, con
 }
 
 static constexpr float MAX_TRACE_DISTANCE = 1000.0f;
-static constexpr uint32_t TERRAIN_HIT_FLAGS = 0x10111;
+static constexpr uint32_t TERRAIN_HIT_FLAGS = 0x100171;
 static bool g_cursorKeywordActive = false;
 static bool g_playerLocationKeywordActive = false;
-static bool g_hasAdjustedPos = false;
-static C3Vector g_adjustedSpellPos = { 0, 0, 0 };
+
+static float clampf(float val, float minVal, float maxVal) { return (val < minVal) ? minVal : (val > maxVal) ? maxVal : val; }
+static float dot(const C3Vector& a, const C3Vector& b) { return a.X * b.X + a.Y * b.Y + a.Z * b.Z; }
+
 
 typedef int(__stdcall* ProcessAoETargeting)(uint32_t* a1);
 static ProcessAoETargeting ProcessAoETargeting_orig = (ProcessAoETargeting)0x004F66C0;
 
 typedef int(__cdecl* GetSpellRange)(int, int, float*, float*, int);
 static GetSpellRange GetSpellRange_orig = (GetSpellRange)0x00802C30;
-
-
-static float clampf(float val, float minVal, float maxVal) { return (val < minVal) ? minVal : (val > maxVal) ? maxVal : val; }
-static float dot(const C3Vector& a, const C3Vector& b) { return a.X * b.X + a.Y * b.Y + a.Z * b.Z; }
 
 typedef int(__cdecl* SecureCmdOptionParse_t)(lua_State* L);
 static SecureCmdOptionParse_t SecureCmdOptionParse_orig = (SecureCmdOptionParse_t)0x00564AE0;
@@ -65,6 +65,9 @@ static TraceLine_t TraceLine_orig = (TraceLine_t)0x007A3B70;
 
 typedef char(__cdecl* CGWorldFrame_Intersect_t)(C3Vector* start, C3Vector* end, C3Vector* hitPoint, float* distance, uint32_t flag, uint32_t optional);
 static CGWorldFrame_Intersect_t CGWorldFrame_Intersect_orig = (CGWorldFrame_Intersect_t)0x0077F310;
+
+typedef void(__cdecl* ReleaseAoETargetingCircle_t)();
+static ReleaseAoETargetingCircle_t ReleaseAoETargetingCircle_orig = (ReleaseAoETargetingCircle_t)0x007FCC30;
 
 struct CVarArgs {
     Console::CVar** dst;
@@ -423,8 +426,6 @@ static int __cdecl SecureCmdOptionParse_hk(lua_State* L) {
 
 static int __stdcall ProcessAoETargeting_hk(uint32_t* a1)
 {
-    g_hasAdjustedPos = false;
-
     CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
     if (!player)
         return ProcessAoETargeting_orig(a1);
@@ -451,70 +452,71 @@ static int __stdcall ProcessAoETargeting_hk(uint32_t* a1)
     return ProcessAoETargeting_orig(a1);
 }
 
-static void __cdecl HandleTerrainClick_hk(TerrainClickEvent* event)
-{
-    if (g_hasAdjustedPos) {
-        if (isSpellReadied()) {
-            event->x = g_adjustedSpellPos.X;
-            event->y = g_adjustedSpellPos.Y;
-            event->z = g_adjustedSpellPos.Z;
-        }
-        g_hasAdjustedPos = false;
-    }
-    HandleTerrainClick_orig(event);
-}
-
-static char __cdecl CGWorldFrame_Intersect_new(C3Vector* start, C3Vector* end, C3Vector* hitPoint, float* distance, uint32_t flag, uint32_t buffer)
+static char __cdecl CGWorldFrame_Intersect_new(C3Vector* playerPos, C3Vector* cameraPos, C3Vector* hitPoint, float* hitDistance, uint32_t hitFlags, uint32_t buffer)
 {
     if (!std::atoi(s_cvar_cameraIndirectVisibility->vStr))
-        return CGWorldFrame_Intersect_orig(start, end, hitPoint, distance, flag + 1, 0);
+        return CGWorldFrame_Intersect_orig(playerPos, cameraPos, hitPoint, hitDistance, hitFlags + 1, 0);
 
     void* buf = reinterpret_cast<void*>(buffer);
     std::memset(buf, 0, 2048);
 
-    char result = CGWorldFrame_Intersect_orig(start, end, hitPoint, distance, flag + 1, reinterpret_cast<uintptr_t>(buf));
+    char result = CGWorldFrame_Intersect_orig(playerPos, cameraPos, hitPoint, hitDistance, hitFlags + 1 + 0x8000000, reinterpret_cast<uintptr_t>(buf));
     if (result) {
-        const uint32_t type = *reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(buf) + 0);
-        const uint32_t count = *reinterpret_cast<const uint32_t*>(reinterpret_cast<const uint8_t*>(buf) + 4);
-
-        if (type == 1 && count > 0) {
+        const uint32_t* bufData = reinterpret_cast<const uint32_t*>(buf);
+        if ((bufData[0] == 1 || bufData[0] == 2) && bufData[1] > 0) {
             void* modelPtr = *reinterpret_cast<void**>(reinterpret_cast<uint8_t*>(buf) + 12 + 80);
             if (modelPtr) {
                 g_models_current.insert(modelPtr);
                 g_models_being_faded.insert(modelPtr);
 
+                float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
+
                 if (g_models_original_alphas.find(modelPtr) == g_models_original_alphas.end())
-                    g_models_original_alphas[modelPtr] = *reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
+                    g_models_original_alphas[modelPtr] = *alphaPtr;
 
-                float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
                 *alphaPtr += (std::atof(s_cvar_cameraIndirectAlpha->vStr) - *alphaPtr) * 0.25f;
+
+                g_models_grace_timers[modelPtr] = 0;
+
+                if (g_actual_distance < 1.0f)
+                    *hitDistance = g_actual_distance;
+                else
+                    result = false;
             }
-            return 0;
+        }
+        else {
+            g_models_current.clear();
+            g_actual_distance = *hitDistance;
         }
     }
-    else if (g_models_cleanup_timer > 2) {
-        for (auto it = g_models_being_faded.begin(); it != g_models_being_faded.end();) {
-            void* modelPtr = *it;
-
-            if (!(g_models_current.find(modelPtr) != g_models_current.end())) {
-                float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
-                float originalAlpha = g_models_original_alphas[modelPtr];
-
-                *alphaPtr += (originalAlpha - *alphaPtr) * 0.25f;
-
-                if (std::fabs(*alphaPtr - originalAlpha) < 0.01f) {
-                    *alphaPtr = originalAlpha;
-                    g_models_original_alphas.erase(modelPtr);
-                    it = g_models_being_faded.erase(it);
-                    continue;
-                }
-            }
-            ++it;
-        }
+    else if (g_models_being_faded.empty()) {
+        return result;
+    }
+    else {
         g_models_current.clear();
-        g_models_cleanup_timer = 0;
+        g_actual_distance = 1.0f;
     }
-    g_models_cleanup_timer++;
+
+    int cleanup_timer = g_models_being_faded.size() + 1;
+    for (auto it = g_models_being_faded.begin(); it != g_models_being_faded.end();) {
+        void* modelPtr = *it;
+
+        if (g_models_grace_timers[modelPtr] > cleanup_timer) {
+            float* alphaPtr = reinterpret_cast<float*>(static_cast<char*>(modelPtr) + 0x17C);
+            float originalAlpha = g_models_original_alphas[modelPtr];
+            *alphaPtr += (originalAlpha - *alphaPtr) * 0.25f;
+            if (std::fabs(*alphaPtr - originalAlpha) < 0.01f) {
+                *alphaPtr = originalAlpha;
+                g_models_original_alphas.erase(modelPtr);
+                it = g_models_being_faded.erase(it);
+                continue;
+            }
+        }
+        ++it;
+    }
+
+    for (auto& pair : g_models_grace_timers)
+        pair.second++;
 
     return result;
 }
@@ -546,16 +548,13 @@ static void __declspec(naked) IntersectCall_hk()
     }
 }
 
+static bool __cdecl collisionFilter(void* modelPtr) {
+    return g_models_current.find(modelPtr) == g_models_current.end();
+}
+
 static void(*IterateCollisionList_orig)() = (decltype(IterateCollisionList_orig))0x007A279D;
 static constexpr DWORD_PTR IterateCollisionList_jmpback = 0x007A27A5;
 static constexpr DWORD_PTR IterateCollisionList_skipaddr = 0x007A2943;
-
-static bool __cdecl collisionFilter(void* modelPtr) {
-    if (!modelPtr)
-        return false;
-    else
-        return g_models_current.find(modelPtr) == g_models_current.end();
-}
 
 __declspec(naked) void IterateCollisionList_hk()
 {
@@ -565,6 +564,9 @@ __declspec(naked) void IterateCollisionList_hk()
         push eax
         push ecx
         push edx
+        mov eax, [ebp + 0Ch]
+        and eax, 0x8000000
+        jz run_collision_processing
         mov eax, [esi + 0x34]    // eax = modelPtr
         test eax, eax
         jz skip_collision_processing
@@ -573,14 +575,15 @@ __declspec(naked) void IterateCollisionList_hk()
         add esp, 4
         test al, al
         je skip_collision_processing
-        pop edx
-        pop ecx
-        pop eax
-        popfd
-        cmp byte ptr[esi + 25h], bl
-        jmp IterateCollisionList_jmpback
+        run_collision_processing :
+            pop edx
+            pop ecx
+            pop eax
+            popfd
+            cmp byte ptr[esi + 25h], bl
+            jmp IterateCollisionList_jmpback
         skip_collision_processing :
-        pop edx
+            pop edx
             pop ecx
             pop eax
             popfd
@@ -588,10 +591,51 @@ __declspec(naked) void IterateCollisionList_hk()
     }
 }
 
+static void(*IterateWorldObjCollisionList_orig)() = (decltype(IterateWorldObjCollisionList_orig))0x007A2A1C;
+static constexpr DWORD_PTR IterateWorldObjCollisionList_jmpback = 0x007A2A23;
+static constexpr DWORD_PTR IterateWorldObjCollisionList_skipaddr = 0x007A2A8A;
+
+__declspec(naked) void IterateWorldObjCollisionList_hk()
+{
+    __asm {
+        mov edx, [ebp + 0Ch]
+        test edx, 0x8000000
+        jz run_collision_processing
+        push eax    // eax = modelPtr
+        call collisionFilter
+        add esp, 4
+        test al, al
+        je skip_collision_processing
+        run_collision_processing :
+            mov eax, [ebp - 68h]
+            cmp dword ptr[eax + 2D8h], 0
+            jmp IterateWorldObjCollisionList_jmpback
+        skip_collision_processing :
+            jmp IterateWorldObjCollisionList_skipaddr
+    }
+}
+
+
+static void(*SpellCastReset_orig)() = (decltype(SpellCastReset_orig))0x007FEE99;
+static constexpr DWORD_PTR SpellCastReset_jmpback = 0x007FEE9E;
+
+static void __cdecl ResetKeywordFlags() {
+    g_cursorKeywordActive = false;
+    g_playerLocationKeywordActive = false;
+}
+
+void __declspec(naked) SpellCastReset_hk() {
+    __asm {
+        call ResetKeywordFlags
+        call ReleaseAoETargetingCircle_orig
+        jmp SpellCastReset_jmpback
+    }
+}
+
+
 void Hooks::initialize()
 {
     Hooks::FrameXML::registerCVar(&s_cvar_cameraIndirectAlpha, "cameraIndirectAlpha", NULL, (Console::CVarFlags)1, "0.6", CVarHandler_cameraIndirectAlpha);
-    Hooks::FrameXML::registerCVar(&s_cvar_cameraIndirectOffset, "cameraIndirectOffset", NULL, (Console::CVarFlags)1, "10", CVarHandler_cameraIndirectOffset);
     Hooks::FrameXML::registerCVar(&s_cvar_cameraIndirectVisibility, "cameraIndirectVisibility", NULL, (Console::CVarFlags)1, "0", CVarHandler_cameraIndirectVisibility);
     DetourAttach(&(LPVOID&)CVars_Initialize_orig, CVars_Initialize_hk);
     DetourAttach(&(LPVOID&)FrameScript_FireOnUpdate_orig, FrameScript_FireOnUpdate_hk);
@@ -604,8 +648,9 @@ void Hooks::initialize()
     DetourAttach(&(LPVOID&)LoadGlueXML_orig, LoadGlueXML_hk);
     DetourAttach(&(LPVOID&)LoadCharacters_orig, LoadCharacters_hk);
     DetourAttach(&(LPVOID&)SecureCmdOptionParse_orig, SecureCmdOptionParse_hk);
-    DetourAttach(&(LPVOID&)HandleTerrainClick_orig, HandleTerrainClick_hk);
     DetourAttach(&(LPVOID&)ProcessAoETargeting_orig, ProcessAoETargeting_hk);
     DetourAttach(&(LPVOID&)IterateCollisionList_orig, IterateCollisionList_hk);
+    DetourAttach(&(LPVOID&)IterateWorldObjCollisionList_orig, IterateWorldObjCollisionList_hk);
     DetourAttach(&(LPVOID&)IntersectCall_orig, IntersectCall_hk);
+    DetourAttach(&(LPVOID&)SpellCastReset_orig, SpellCastReset_hk);
 }
