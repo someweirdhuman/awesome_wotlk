@@ -11,7 +11,9 @@
 static Console::CVar* s_cvar_interactionMode;
 static Console::CVar* s_cvar_interactionAngle;
 static Console::CVar* s_cvar_cameraFov = NULL;
+static Console::CVar* s_cvar_showPlayer;
 
+static uint32_t gCvar_HidePlayer = 1;
 
 static int lua_FlashWindow(lua_State* L)
 {
@@ -323,23 +325,47 @@ static void __fastcall Camera_Initialize_hk(Camera* self, void* edx, float a2, f
     Camera_Initialize_orig(self, edx, a2, a3, fov);
 }
 
+void updateShowPlayer()
+{
+    CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
+    if (!player)
+        return;
+
+    float* alphaPtr = reinterpret_cast<float*>(reinterpret_cast<uint8_t*>(player) + 0x98);
+    *alphaPtr = gCvar_HidePlayer == 0 ? 0.0f : 1.0f;
+}
+static int CVarHandler_showPlayer(Console::CVar* cvar, const char*, const char* value, void*)
+{
+    int v = std::atoi(value);
+    
+    if (v != 0 && v != 1)
+        v = 1;
+
+    gCvar_HidePlayer = v; // store as global flag
+    updateShowPlayer();
+    return 1;
+}
+
 static bool triggered = false;
 static void OnEnterWorld()
 {
     if (!triggered) {
         RegisterInteractCommand(GetLuaState());
         RegisterLuaBinding("INTERACTIONKEYBIND", "Interaction Button", "AWESOME_WOTLK_KEYBINDS", "Awesome Wotlk Keybinds", "QueueInteract()");
+        updateShowPlayer();
         triggered = true;
     }
 }
 
 static void OnLeaveWorld()
 {
+    updateShowPlayer();
     triggered = false;
 }
 
 void Misc::initialize()
 {
+    Hooks::FrameXML::registerCVar(&s_cvar_showPlayer, "showPlayer", NULL, (Console::CVarFlags)1, "1", CVarHandler_showPlayer);
     Hooks::FrameXML::registerCVar(&s_cvar_cameraFov, "cameraFov", NULL, (Console::CVarFlags)1, "100", CVarHandler_cameraFov);
     Hooks::FrameXML::registerCVar(&s_cvar_interactionAngle, "interactionAngle", NULL, (Console::CVarFlags)1, "60", CVarHandler_interactionAngle);
     Hooks::FrameXML::registerCVar(&s_cvar_interactionMode, "interactionMode", NULL, (Console::CVarFlags)1, "1", CVarHandler_interactionMode);
