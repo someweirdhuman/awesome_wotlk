@@ -18,6 +18,20 @@ ___
     - C_NamePlate.GetNamePlateForUnit<br>
     - C_NamePlate.GetNamePlateByGUID<br>
     - C_NamePlate.GetNamePlateTokenByGUID<br>
+    - C_VoiceChat.SpeakText<br>
+    - C_VoiceChat.StopSpeakingText<br>
+    - C_VoiceChat.GetTtsVoices<br>
+    - C_VoiceChat.GetRemoteTtsVoices<br>
+    - C_TTSSettings.GetSpeechRate<br>
+    - C_TTSSettings.GetSpeechVolume<br>
+    - C_TTSSettings.GetSpeechVoiceID<br>
+    - C_TTSSettings.GetVoiceOptionName<br>
+    - C_TTSSettings.SetDefaultSettings<br>
+    - C_TTSSettings.SetSpeechRate<br>
+    - C_TTSSettings.SetSpeechVolume<br>
+    - C_TTSSettings.SetVoiceOption<br>
+    - C_TTSSettings.SetVoiceOptionByName<br>
+    - C_TTSSettings.RefreshVoices<br>
     - UnitIsControlled<br>
     - UnitIsDisarmed<br>
     - UnitIsSilenced<br>
@@ -31,12 +45,17 @@ ___
     - UnitTokenFromGUID<br>
     - GetSpellBaseCooldown<br>
     - GetItemInfoInstant<br>
-    - QueueInteract
+    - QueueInteract<br>
 > - New events:<br>
     - NAME_PLATE_CREATED<br>
     - NAME_PLATE_UNIT_ADDED<br>
     - NAME_PLATE_UNIT_REMOVED<br>
-    - NAME_PLATE_OWNER_CHANGED
+    - NAME_PLATE_OWNER_CHANGED<br>
+    - VOICE_CHAT_TTS_PLAYBACK_STARTED<br>
+    - VOICE_CHAT_TTS_PLAYBACK_FINISHED<br>
+    - VOICE_CHAT_TTS_PLAYBACK_FAILED<br>
+    - VOICE_CHAT_TTS_SPEAK_TEXT_UPDATE _(unused)_<br>
+    - VOICE_CHAT_TTS_VOICES_UPDATE
 > - New CVars:<br>
     - nameplateDistance<br>
     - nameplateStacking<br>
@@ -60,7 +79,10 @@ ___
     - nameplateUpperBorderOnlyBoss<br>
     - enableStancePatch<br>
     - cameraIndirectVisibility<br>
-    - cameraIndirectAlpha
+    - cameraIndirectAlpha<br>
+    - ttsVoice<br>
+    - ttsSpeed<br>
+    - ttsVolume<br>
 > - New Interaction Keybind:<br>
     - It loots mobs, skins mobs, interacts with near object like veins, chairs, doors, etc, mailboxes, etc.<br>
     - You can keybind this in options menu like any other keybind (Requires Interaction Addon, bundled in release rar)<br>

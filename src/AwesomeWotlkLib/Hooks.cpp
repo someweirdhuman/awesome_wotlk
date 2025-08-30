@@ -6,6 +6,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
+namespace VoiceChat {
+    void shutdown();  // Forward-Declaration
+}
+
 static std::unordered_map<void*, float> g_models_original_alphas;
 static std::unordered_set<void*> g_models_current;
 static std::unordered_set<void*> g_models_being_faded;
@@ -632,6 +636,26 @@ void __declspec(naked) SpellCastReset_hk() {
     }
 }
 
+using tCGameDestroy = void(__thiscall*)(void* self);
+static tCGameDestroy CGame_Destroy_orig =
+    (decltype(CGame_Destroy_orig))0x00406B70;
+
+static void __declspec(naked) CGame_Destroy_hk()
+{
+    __asm {
+        pushad
+        pushfd
+    }
+
+    VoiceChat::shutdown();
+
+    __asm {
+        popfd
+        popad
+        mov eax, CGame_Destroy_orig
+        jmp eax
+    }
+}
 
 void Hooks::initialize()
 {
@@ -653,4 +677,5 @@ void Hooks::initialize()
     DetourAttach(&(LPVOID&)IterateWorldObjCollisionList_orig, IterateWorldObjCollisionList_hk);
     DetourAttach(&(LPVOID&)IntersectCall_orig, IntersectCall_hk);
     DetourAttach(&(LPVOID&)SpellCastReset_orig, SpellCastReset_hk);
+    DetourAttach(&(LPVOID&)CGame_Destroy_orig, CGame_Destroy_hk);
 }
