@@ -1,4 +1,4 @@
-[C_NamePlates](#c_nameplate) - [Unit](#unit) - [Inventory](#inventory) - [Misc](#misc)
+[C_NamePlates](#c_nameplate) - [C_VoiceChat](#c_voicechat) - [Unit](#unit) - [Inventory](#inventory) - [Misc](#misc)
 
 # C_NamePlate
 Backported C-Lua interfaces from retail
@@ -201,6 +201,326 @@ Arguments: **enabled**`bool`
 Default: **0**
 
 When enabled, only nameplates of boss creatures will stick to top of the screen, all other nameplates will overflow.
+
+# C_VoiceChat
+Windows SAPI–backed Text-to-Speech backport from retail
+
+## C_VoiceChat.GetTtsVoices`API`
+Arguments: `none`  
+Returns: **voiceList**`table` → `{ { voiceID = number, name = string }, ... }`
+
+Returns all locally available TTS voices.
+
+```lua
+for _, v in ipairs(C_VoiceChat.GetTtsVoices()) do
+  print(v.voiceID, v.name)
+end
+````
+
+## C\_VoiceChat.GetRemoteTtsVoices`API`
+
+Arguments: `none`
+Returns: **voiceList**`table`
+
+Same as `GetTtsVoices()`.
+
+## C\_VoiceChat.SpeakText`API`
+
+Arguments:
+
+* **voiceID**`number`
+* **text**`string`
+* **destination**`number` *(optional, default=1)*
+* **rate**`number` *(optional)*
+* **volume**`number` *(optional)*
+
+Returns: **utteranceID**`number`
+
+Speaks a text asynchronously.
+
+* `destination = 1` → speak immediately (FIFO)
+* `destination = 4` → accepted, no special handling (async)
+
+```lua
+C_VoiceChat.SpeakText(1, "Hello World", 1, 0, 100)
+```
+
+## C\_VoiceChat.StopSpeakingText`API`
+
+Arguments: `none`
+Returns: `none`
+
+Stops all queued or currently playing utterances.
+
+## C\_TTSSettings.GetSpeechRate`API`
+
+Arguments: `none`
+Returns: **rate**`number` \[-10..10]
+
+## C\_TTSSettings.GetSpeechVolume`API`
+
+Arguments: `none`
+Returns: **volume**`number` \[0..100]
+
+## C\_TTSSettings.GetSpeechVoiceID`API`
+
+Arguments: `none`
+Returns: **voiceID**`number`
+
+## C\_TTSSettings.GetVoiceOptionName`API`
+
+Arguments: `none`
+Returns: **voiceName**`string`
+
+## C\_TTSSettings.SetDefaultSettings`API`
+
+Arguments: `none`
+Returns: `none`
+
+Resets to defaults: voice=1 (if available), rate=0, volume=100.
+
+## C\_TTSSettings.SetSpeechRate`API`
+
+Arguments: **rate**`number` \[-10..10]
+Returns: `none`
+
+## C\_TTSSettings.SetSpeechVolume`API`
+
+Arguments: **volume**`number` \[0..100]
+Returns: `none`
+
+## C\_TTSSettings.SetVoiceOption`API`
+
+Arguments: **voiceID**`number`
+Returns: `none`
+
+## C\_TTSSettings.SetVoiceOptionByName`API`
+
+Arguments: **voiceName**`string`
+Returns: `none`
+
+## C\_TTSSettings.RefreshVoices`API`
+
+Arguments: `none`
+Returns: `none`
+
+Refreshes the voice list.
+Fires `VOICE_CHAT_TTS_VOICES_UPDATE` if the list has changed.
+
+# C_VoiceChat Events
+
+## VOICE\_CHAT\_TTS\_PLAYBACK\_STARTED`Event`
+
+Parameters: **numConsumers**`number`, **utteranceID**`number`, **durationMS**`number`, **destination**`number`
+
+Fired when SAPI starts playback.
+`durationMS` is always **0**.
+
+## VOICE\_CHAT\_TTS\_PLAYBACK\_FINISHED`Event`
+
+Parameters: **numConsumers**`number`, **utteranceID**`number`, **destination**`number`
+
+Fired when SAPI finishes playback.
+
+## VOICE\_CHAT\_TTS\_PLAYBACK\_FAILED`Event`
+
+Parameters: **status**`string`, **utteranceID**`number`, **destination**`number`
+
+Fired if `SpeakText()` or setup fails (e.g. no voice/device available).
+
+## VOICE\_CHAT\_TTS\_SPEAK\_TEXT\_UPDATE`Event`
+
+Parameters: **status**`string`, **utteranceID**`number`
+
+Unused placeholder.
+
+## VOICE\_CHAT\_TTS\_VOICES\_UPDATE`Event`
+
+Parameters: `none`
+
+Fired when the enumerated voice list changes.
+
+# C_VoiceChat CVars
+
+## ttsVoice`CVar`
+
+Arguments: **voiceID**`number`
+Default: **1**
+
+Sets the active voice.
+
+## ttsSpeed`CVar`
+
+Arguments: **rate**`number` \[-10..10]
+Default: **0**
+
+Controls the speech rate.
+
+## ttsVolume`CVar`
+
+Arguments: **volume**`number` \[0..100]
+Default: **100**
+
+Controls the speech volume.# C_VoiceChat
+Windows SAPI–backed Text-to-Speech backport from retail
+
+## C_VoiceChat.GetTtsVoices`API`
+Arguments: `none`  
+Returns: **voiceList**`table` → `{ { voiceID = number, name = string }, ... }`
+
+Returns all locally available TTS voices.
+
+```lua
+for _, v in ipairs(C_VoiceChat.GetTtsVoices()) do
+  print(v.voiceID, v.name)
+end
+````
+
+## C\_VoiceChat.GetRemoteTtsVoices`API`
+
+Arguments: `none`
+Returns: **voiceList**`table`
+
+Same as `GetTtsVoices()`.
+
+## C\_VoiceChat.SpeakText`API`
+
+Arguments:
+
+* **voiceID**`number`
+* **text**`string`
+* **destination**`number` *(optional, default=1)*
+* **rate**`number` *(optional)*
+* **volume**`number` *(optional)*
+
+Returns: **utteranceID**`number`
+
+Speaks a text asynchronously.
+
+* `destination = 1` → speak immediately (FIFO)
+* `destination = 4` → accepted, no special handling (async)
+
+```lua
+C_VoiceChat.SpeakText(1, "Hello World", 1, 0, 100)
+```
+
+## C\_VoiceChat.StopSpeakingText`API`
+
+Arguments: `none`
+Returns: `none`
+
+Stops all queued or currently playing utterances.
+
+## C\_TTSSettings.GetSpeechRate`API`
+
+Arguments: `none`
+Returns: **rate**`number` \[-10..10]
+
+## C\_TTSSettings.GetSpeechVolume`API`
+
+Arguments: `none`
+Returns: **volume**`number` \[0..100]
+
+## C\_TTSSettings.GetSpeechVoiceID`API`
+
+Arguments: `none`
+Returns: **voiceID**`number`
+
+## C\_TTSSettings.GetVoiceOptionName`API`
+
+Arguments: `none`
+Returns: **voiceName**`string`
+
+## C\_TTSSettings.SetDefaultSettings`API`
+
+Arguments: `none`
+Returns: `none`
+
+Resets to defaults: voice=1 (if available), rate=0, volume=100.
+
+## C\_TTSSettings.SetSpeechRate`API`
+
+Arguments: **rate**`number` \[-10..10]
+Returns: `none`
+
+## C\_TTSSettings.SetSpeechVolume`API`
+
+Arguments: **volume**`number` \[0..100]
+Returns: `none`
+
+## C\_TTSSettings.SetVoiceOption`API`
+
+Arguments: **voiceID**`number`
+Returns: `none`
+
+## C\_TTSSettings.SetVoiceOptionByName`API`
+
+Arguments: **voiceName**`string`
+Returns: `none`
+
+## C\_TTSSettings.RefreshVoices`API`
+
+Arguments: `none`
+Returns: `none`
+
+Refreshes the voice list.
+Fires `VOICE_CHAT_TTS_VOICES_UPDATE` if the list has changed.
+
+# VoiceChat TTS Events
+
+## VOICE\_CHAT\_TTS\_PLAYBACK\_STARTED`Event`
+
+Parameters: **numConsumers**`number`, **utteranceID**`number`, **durationMS**`number`, **destination**`number`
+
+Fired when SAPI starts playback.
+`durationMS` is always **0**.
+
+## VOICE\_CHAT\_TTS\_PLAYBACK\_FINISHED`Event`
+
+Parameters: **numConsumers**`number`, **utteranceID**`number`, **destination**`number`
+
+Fired when SAPI finishes playback.
+
+## VOICE\_CHAT\_TTS\_PLAYBACK\_FAILED`Event`
+
+Parameters: **status**`string`, **utteranceID**`number`, **destination**`number`
+
+Fired if `SpeakText()` or setup fails (e.g. no voice/device available).
+
+## VOICE\_CHAT\_TTS\_SPEAK\_TEXT\_UPDATE`Event`
+
+Parameters: **status**`string`, **utteranceID**`number`
+
+Unused placeholder.
+
+## VOICE\_CHAT\_TTS\_VOICES\_UPDATE`Event`
+
+Parameters: `none`
+
+Fired when the enumerated voice list changes.
+
+# VoiceChat TTS CVars
+
+## ttsVoice`CVar`
+
+Arguments: **voiceID**`number`
+Default: **1**
+
+Sets the active voice.
+
+## ttsSpeed`CVar`
+
+Arguments: **rate**`number` \[-10..10]
+Default: **0**
+
+Controls the speech rate.
+
+## ttsVolume`CVar`
+
+Arguments: **volume**`number` \[0..100]
+Default: **100**
+
+Controls the speech volume.
 
 # Unit
 
