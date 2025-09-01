@@ -63,6 +63,7 @@ if GetLocale() == "koKR" then
     L.CVAR_LABEL_INTERACTION_ANGLE = "상호작용 원뿔 각도"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "월드 프레임 높이 확장"
     L.CVAR_ENABLE_STANCE_PATCH = "태세/폼 전환 패치 활성화"
+    L.CVAR_ENABLE_SHOW_PLAYER = "플레이어 캐릭터 모델 렌더링 활성화"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "카메라 간접 가시성"
     L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "카메라 간접 투명도"
     L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "카메라 간접 오프셋"
