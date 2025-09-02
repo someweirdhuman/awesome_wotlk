@@ -37,10 +37,14 @@ if GetLocale() == "koKR" then
     -- CVar Categories
     L.CATEGORY_CAMERA = "카메라"
     L.CATEGORY_NAMEPLATES = "이름표"
+    L.CATEGORY_TEXT_TO_SPEECH = "Text to Speech"
     L.CATEGORY_INTERACTION = "상호작용"
     L.CATEGORY_OTHER = "기타"
 
     -- CVar Labels & Descriptions
+    L.CVAR_LABEL_TTS_VOICE = "TTS Voice"
+    L.CVAR_LABEL_TTS_VOLUME = "TTS Volume"
+    L.CVAR_LABEL_TTS_SPEED = "TTS Rate"
     L.CVAR_LABEL_CAMERA_FOV = "카메라 시야각 (FoV)"
     L.CVAR_LABEL_ENABLE_STACKING = "이름표 겹치기 활성화"
     L.CVAR_LABEL_STACK_FRIENDLY = "우호적 이름표 겹치기 |cffff0000(새로고침 필요)|r"

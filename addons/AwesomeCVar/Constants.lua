@@ -28,6 +28,22 @@ ACVar.CONSTANTS = {
     }
 }
 
+-- This table holds TTS_VOICES that is populated at runtime.
+ACVar.TTS_VOICES = {}
+
+local function updateTts()
+    wipe(ACVar.TTS_VOICES)
+    for i, voiceInfo in pairs(C_VoiceChat and C_VoiceChat.GetTtsVoices() or {}) do
+        ACVar.TTS_VOICES[voiceInfo.voiceID] = voiceInfo.name
+    end
+end
+
+updateTts()
+
+local TtsUpdateFrame = CreateFrame("Frame")
+TtsUpdateFrame:RegisterEvent("VOICE_CHAT_TTS_VOICES_UPDATE")
+TtsUpdateFrame:SetScript("OnEvent", updateTts)
+
 -- This table defines every CVar control that will appear in the UI.
 ACVar.CVARS = {
     [L.CATEGORY_CAMERA] = {
@@ -55,6 +71,11 @@ ACVar.CVARS = {
         { name = "nameplateHitboxWidth", label = L.CVAR_LABEL_HITBOX_WIDTH, desc = L.DESC_HITBOX_DISABLED, type = "slider", min = 0, max = 200, step = 1, default = 0 },
         { name = "nameplateFriendlyHitboxHeight", label = L.CVAR_LABEL_FRIENDLY_HITBOX_HEIGHT, desc = L.DESC_HITBOX_DISABLED, type = "slider", min = 0, max = 50, step = 1, default = 0 },
         { name = "nameplateFriendlyHitboxWidth", label = L.CVAR_LABEL_FRIENDLY_HITBOX_WIDTH, desc = L.DESC_HITBOX_DISABLED, type = "slider", min = 0, max = 200, step = 1, default = 0 },
+    },
+    [L.CATEGORY_TEXT_TO_SPEECH] = {
+        { name = "ttsVoice", label = L.CVAR_LABEL_TTS_VOICE, type = "dropdown", default = 1, options = ACVar.TTS_VOICES },
+        { name = "ttsVolume", label = L.CVAR_LABEL_TTS_VOLUME, type = "slider", min = 0, max = 100, step = 1, default = 100 },
+        { name = "ttsSpeed", label = L.CVAR_LABEL_TTS_SPEED, type = "slider", min = -10, max = 10, step = 0.25, default = 0 },
     },
     [L.CATEGORY_INTERACTION] = {
         { name = "interactionMode", label = L.CVAR_LABEL_INTERACTION_MODE, type = "mode", modes = { {value = 0, label = L.MODE_LABEL_PLAYER_RADIUS}, {value = 1, label = L.MODE_LABEL_CONE_ANGLE} } },

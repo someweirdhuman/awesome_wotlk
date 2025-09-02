@@ -37,10 +37,14 @@ if GetLocale() == "zhTW" then
     -- CVar Categories
     L.CATEGORY_CAMERA = "鏡頭"
     L.CATEGORY_NAMEPLATES = "姓名板"
+    L.CATEGORY_TEXT_TO_SPEECH = "Text to Speech"
     L.CATEGORY_INTERACTION = "互動"
     L.CATEGORY_OTHER = "其他"
 
     -- CVar Labels & Descriptions
+    L.CVAR_LABEL_TTS_VOICE = "TTS Voice"
+    L.CVAR_LABEL_TTS_VOLUME = "TTS Volume"
+    L.CVAR_LABEL_TTS_SPEED = "TTS Rate"
     L.CVAR_LABEL_CAMERA_FOV = "鏡頭視野（FoV）"
     L.CVAR_LABEL_ENABLE_STACKING = "啟用姓名板堆疊"
     L.CVAR_LABEL_STACK_FRIENDLY = "堆疊友方姓名板 |cffff0000（需重載）|r"

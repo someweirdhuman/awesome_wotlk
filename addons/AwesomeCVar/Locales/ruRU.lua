@@ -37,10 +37,14 @@ if GetLocale() == "ruRU" then
     -- CVar Categories
     L.CATEGORY_CAMERA = "Камера"
     L.CATEGORY_NAMEPLATES = "Индикаторы здоровья"
+    L.CATEGORY_TEXT_TO_SPEECH = "Text to Speech"
     L.CATEGORY_INTERACTION = "Взаимодействие"
     L.CATEGORY_OTHER = "Другие"
 
     -- CVar Labels & Descriptions
+    L.CVAR_LABEL_TTS_VOICE = "TTS Voice"
+    L.CVAR_LABEL_TTS_VOLUME = "TTS Volume"
+    L.CVAR_LABEL_TTS_SPEED = "TTS Rate"
     L.CVAR_LABEL_CAMERA_FOV = "Поле зрения камеры (FoV)"
     L.CVAR_LABEL_ENABLE_STACKING = "Включить наслоение индикаторов"
     L.CVAR_LABEL_STACK_FRIENDLY = "Наслаивать союзные индикаторы |cffff0000(нужен /reload)|r"
