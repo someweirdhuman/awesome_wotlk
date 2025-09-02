@@ -1,0 +1,64 @@
+name: CMake Windows Win32 Release
+
+on:
+  push:
+    tags:
+      - "*"
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-windows-win32-release:
+    runs-on: windows-latest
+    permissions:
+      contents: write 
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Configure CMake
+        run: >
+          cmake -S "${{ github.workspace }}"
+          -B "${{ github.workspace }}\build"
+          -G "Visual Studio 17 2022"
+          -A Win32
+          -T host=x64
+
+      - name: Build
+        run: cmake --build "${{ github.workspace }}\build" --config ${{ env.BUILD_TYPE }} -- /m
+
+      - name: Package artifact (exe + dll only, tag-based name)
+        run: |
+          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}\dist" | Out-Null
+          $src = "${{ github.workspace }}\build\Release"
+          $tag = "${{ github.ref_name }}"
+          $zip = "${{ github.workspace }}\dist\AwesomeWotLK_$tag.zip"
+
+          if (!(Test-Path "$src\AwesomeWotlkPatch.exe")) { throw "Not found: $src\AwesomeWotlkPatch.exe" }
+          if (!(Test-Path "$src\AwesomeWotlkLib.dll"))   { throw "Not found: $src\AwesomeWotlkLib.dll" }
+
+          Compress-Archive -Path "$src\AwesomeWotlkPatch.exe","$src\AwesomeWotlkLib.dll" -DestinationPath $zip -Force
+
+      - name: Package addons folder
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $addonsPath = "${{ github.workspace }}\addons"
+          if (!(Test-Path $addonsPath)) { throw "Not found: $addonsPath" }
+
+          $addonsZip = "${{ github.workspace }}\dist\addons_$tag.zip"
+          Compress-Archive -Path "$addonsPath" -DestinationPath $addonsZip -Force
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: win32-release
+          path: dist/*.zip
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip

@@ -67,6 +67,7 @@ if GetLocale() == "ptBR" then
     L.CVAR_LABEL_INTERACTION_ANGLE = "Ângulo do Cone de Interação"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Estender Altura do World Frame"
     L.CVAR_ENABLE_STANCE_PATCH = "Ativar patch de troca de postura/forma"
+    L.CVAR_ENABLE_SHOW_PLAYER = "Habilitar renderização do modelo do personagem do jogador"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Visibilidade Indireta da Câmera"
     L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "Alpha Indireto da Câmera"
     L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "Offset Indireto da Câmera"

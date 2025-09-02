@@ -67,6 +67,7 @@ if GetLocale() == "deDE" then
     L.CVAR_LABEL_INTERACTION_ANGLE = "Interaktionskegelwinkel"
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "World Frame Höhe erweitern"
     L.CVAR_ENABLE_STANCE_PATCH = "Stance/Form-Wechsel-Patch aktivieren"
+    L.CVAR_ENABLE_SHOW_PLAYER = "Anzeige des Spielercharakters aktivieren"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Indirekte Kamerasichtbarkeit"
     L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "Indirekter Kamera-Alpha"
     L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "Indirekter Kamera-Offset"

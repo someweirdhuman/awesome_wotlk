@@ -83,5 +83,6 @@ ACVar.CVARS = {
     },
     [L.CATEGORY_OTHER] = {
         { name = "enableStancePatch", label = L.CVAR_ENABLE_STANCE_PATCH, desc = L.DESC_STANCE_PATCH, type = "toggle", min = 0, max = 1 },
+        { name = "showPlayer", label = L.CVAR_ENABLE_SHOW_PLAYER, type = "toggle", min = 0, max = 1, default = 1 },
     }
 }
