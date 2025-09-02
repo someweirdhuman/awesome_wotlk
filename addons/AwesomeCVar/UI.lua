@@ -124,6 +124,94 @@ local function createSliderControl(control, cvarDef, text, descText)
     return 40
 end
 
+local function createDropdownControl(control, cvarDef, text, descText)
+    local dropdown = CreateFrame("Frame", getFrameName(cvarDef.name, "Dropdown"), control, "UIDropDownMenuTemplate")
+
+    if descText then
+        dropdown:SetPoint("TOPLEFT", descText, "BOTTOMLEFT", 0, -10)
+    else
+        dropdown:SetPoint("TOPLEFT", text, "BOTTOMLEFT", 0, -10)
+    end
+    dropdown:SetPoint("RIGHT", control, "RIGHT", -100, 0)
+
+    UIDropDownMenu_SetWidth(dropdown, 160)
+    dropdown.cvarDef = cvarDef
+
+    local function getCurrentValue()
+        return (ACVar and ACVar.GetCVarValue and ACVar:GetCVarValue(cvarDef.name)) or cvarDef.default
+    end
+
+    local function setClosedLabel(val)
+        local label = cvarDef.options[val] or tostring(val)
+        UIDropDownMenu_SetText(dropdown, label)
+        UIDropDownMenu_SetSelectedValue(dropdown, val)
+    end
+
+    local function getMinMaxIndex(t)
+        local minK, maxK
+        for k in pairs(t or {}) do
+            if type(k) == "number" then
+                if not minK or k < minK then minK = k end
+                if not maxK or k > maxK then maxK = k end
+            end
+        end
+        return minK or 0, maxK or -1
+    end
+
+    UIDropDownMenu_Initialize(dropdown, function(self, level)
+        local cur = getCurrentValue()
+        local minK, maxK = getMinMaxIndex(cvarDef.options)
+
+        for i = minK, maxK do
+            local label = (cvarDef.options or {})[i]
+            if label ~= nil then
+                local info = UIDropDownMenu_CreateInfo()
+                info.text = label
+                info.value = i
+                info.checked = (i == cur)
+                info.func = function()
+                    UIDropDownMenu_SetSelectedValue(dropdown, i)
+                    UIDropDownMenu_SetText(dropdown, label)
+
+                    ACVar:SetCVarValue(cvarDef.name, i, cvarDef)
+                    dropdown.pendingValue = i
+                    ACVar:UpdateResetButtonVisibility(cvarDef, i)
+                    ACVar:PrintCVarChange(cvarDef.name, i)
+                    PlaySound("igMainMenuOptionCheckBoxOn")
+                    CloseDropDownMenus()
+                end
+                UIDropDownMenu_AddButton(info, level)
+            end
+        end
+    end)
+
+    setClosedLabel(getCurrentValue())
+
+    local resetButton = createButton(
+        control,
+        getFrameName(cvarDef.name, "ResetButton"),
+        string.format(L.RESET_TO, tostring(cvarDef.options[cvarDef.default] or cvarDef.default)),
+        100, 20
+    )
+    resetButton:SetPoint("LEFT", dropdown, "RIGHT", 12, -4)
+    resetButton:Hide()
+    resetButton.cvarDef = cvarDef
+    resetButton.dropdown = dropdown
+
+    resetButton:SetScript("OnClick", function(self)
+        ACVar:SetCVarValue(self.cvarDef.name, self.cvarDef.default, self.cvarDef)
+        ACVar:PrintCVarChange(self.cvarDef.name, self.cvarDef.default)
+        setClosedLabel(self.cvarDef.default)
+        PlaySound("igMainMenuOptionCheckBoxOn")
+        self:Hide()
+    end)
+
+    dropdown.resetButton = resetButton
+    ACVar:UpdateResetButtonVisibility(cvarDef, getCurrentValue())
+
+    return 40
+end
+
 local function createModeControl(control, cvarDef, text, descText)
     local currentOffsetY = (descText and descText:GetHeight() + 5) or 0
     for j, mode in ipairs(cvarDef.modes) do
@@ -442,6 +530,11 @@ function ACVar:CreateMainFrame()
             elseif cvarDef.type == "mode" then
                 additionalHeight = createModeControl(control, cvarDef, text, descText)
                 controlHeight = controlHeight + additionalHeight
+            elseif cvarDef.type == "dropdown" then
+                additionalHeight = createDropdownControl(control, cvarDef, text, descText)
+                controlHeight = controlHeight + additionalHeight + 5
+            else
+                text:SetText(text:GetText().." (Unsupported type: "..tostring(cvarDef.type)..")")
             end
             control:SetHeight(controlHeight)
             lastControl = control

@@ -37,10 +37,14 @@ if GetLocale() == "deDE" then
     -- CVar Categories
     L.CATEGORY_CAMERA = "Kamera"
     L.CATEGORY_NAMEPLATES = "Namensplaketten"
+    L.CATEGORY_TEXT_TO_SPEECH = "Text to Speech"
     L.CATEGORY_INTERACTION = "Interaktion"
     L.CATEGORY_OTHER = "Sonstige"
 
     -- CVar Labels & Descriptions
+    L.CVAR_LABEL_TTS_VOICE = "TTS Voice"
+    L.CVAR_LABEL_TTS_VOLUME = "TTS Volume"
+    L.CVAR_LABEL_TTS_SPEED = "TTS Rate"
     L.CVAR_LABEL_CAMERA_FOV = "Kamera-Sichtfeld (FoV)"
     L.CVAR_LABEL_ENABLE_STACKING = "Stapeln von Namensplaketten aktivieren"
     L.CVAR_LABEL_STACK_FRIENDLY = "Freundliche Namensplaketten stapeln |cffff0000(Neuladen erf.)|r"
