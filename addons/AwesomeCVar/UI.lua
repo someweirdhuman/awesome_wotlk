@@ -256,13 +256,19 @@ function ACVar:UpdateUIForCVar(cvarDef)
         _G[getFrameName(cvarName, "Checkbox")]:SetChecked(currentValue == cvarDef.max)
     elseif cvarDef.type == "slider" then
         local slider = _G[getFrameName(cvarName, "Slider")]
-        slider:SetValue(currentValue)
+        slider:SetValue(currentValue or 0)
         _G[getFrameName(cvarName, "SliderValue")]:SetText(tostring(currentValue))
         self:UpdateResetButtonVisibility(cvarDef, currentValue)
     elseif cvarDef.type == "mode" then
         for i, mode in ipairs(cvarDef.modes) do
             _G[getFrameName(cvarName, "Radio"..i)]:SetChecked(currentValue == mode.value)
         end
+    elseif cvarDef.type == "dropdown" then
+        local dropdown = _G[getFrameName(cvarName, "Dropdown")]
+        UIDropDownMenu_SetSelectedValue(dropdown, currentValue)
+        local label = cvarDef.options[currentValue] or tostring(currentValue)
+        UIDropDownMenu_SetText(dropdown, label)
+        self:UpdateResetButtonVisibility(cvarDef, currentValue)
     end
 end
 
@@ -274,22 +280,27 @@ function ACVar:UpdateAllUI()
     end
 end
 
-function ACVar:ToggleFrame()
+function ACVar:ToggleFrame(tabName)
     if self.Frame then
         if self.Frame:IsShown() then
             self:HideFrame()
             PlaySound("igMainMenuOptionFaerTab")
         else
-            self:ShowFrame()
+            self:ShowFrame(tabName)
             PlaySound("igMainMenuContinue")
         end
     end
 end
+-- Open API function usage: AwesomeCVar:ToggleFrame("Nameplates")
+_G["AwesomeCVar"].ToggleFrame = function(self, tabName) ACVar:ToggleFrame(tabName) end
 
-function ACVar:ShowFrame()
+function ACVar:ShowFrame(tabName)
     if self.Frame then
         self.Frame:Show()
         self:UpdateAllUI()
+        if self._SelectTab and self.TabsByName and self.TabsByName[tabName] then
+            self._SelectTab(self.TabsByName[tabName])
+        end
         PlaySound("igMainMenuContinue")
     end
 end
@@ -445,6 +456,7 @@ function ACVar:CreateMainFrame()
 
         ACVar:UpdateAllUI()
     end
+    self._SelectTab = selectTab
 
     for categoryName in pairs(CVARS) do
         -- Create a button with a proper tab template
@@ -542,6 +554,12 @@ function ACVar:CreateMainFrame()
         end
         content:SetHeight(totalContentHeight + 10)
     end
+
+    self.TabsByName = {}
+    for _, tab in ipairs(tabs) do
+        self.TabsByName[tab.categoryName] = tab
+    end
+    self.PanelsByName = panels
 
     if #tabs > 0 then
         selectTab(tabs[1]) -- Use the new helper function to select the first tab

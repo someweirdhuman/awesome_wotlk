@@ -41,16 +41,17 @@ function ACVar:GetCVarValue(cvarName)
 end
 
 function ACVar:SetCVarValue(cvarName, value, cvarDef)
-    SetCVar(cvarName, value)
-    if cvarDef and cvarDef.reloadRequired then
-        self.reloadIsPending = true
+    if self:GetCVarValue(cvarName) then
+        SetCVar(cvarName, value)
+        if cvarDef and cvarDef.reloadRequired then
+            self.reloadIsPending = true
+        end
     end
 end
 
 function ACVar.FormatNumber(value)
-    return tonumber(format("%.2f", value))
+    return tonumber(format("%.2f", value or 0)) or 0
 end
-
 
 -- ### Slash Command Handler ###
 local function processSlashCommand(msg)

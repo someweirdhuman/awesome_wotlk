@@ -3,6 +3,7 @@
 
 local addonName, ACVar = ...
 local L = ACVar.L or {} -- Get the locale table loaded previously
+_G["AwesomeCVar"] = {} -- Public API table
 
 -- This table holds constants used throughout the addon.
 ACVar.CONSTANTS = {
