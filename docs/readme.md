@@ -105,6 +105,9 @@ See [Docs](https://github.com/someweirdhuman/awesome_wotlk/blob/main/docs/api_re
 3) Launch `AwesomeWotlkPatch.exe`, you should get a message (or drag wow.exe on top of AwesomeWotlkPatch.exe)
 4) To update just download and replace dll
 
+## Build notice
+Requires `vcpkg` and `skia` installed with `vcpkg`.
+
 ## 3rd party libraries
 - [microsoft-Detours](https://github.com/microsoft/Detours) - [license](https://github.com/microsoft/Detours/blob/6782fe6e6ab11ae34ae66182aa5a73b5fdbcd839/LICENSE.md)
 - [freetype](https://github.com/freetype/freetype) - [license](https://github.com/freetype/freetype/blob/master/docs/FTL.TXT)
