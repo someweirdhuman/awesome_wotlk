@@ -52,7 +52,7 @@ static float clampf(float val, float minVal, float maxVal) { return (val < minVa
 static float dot(const C3Vector& a, const C3Vector& b) { return a.X * b.X + a.Y * b.Y + a.Z * b.Z; }
 
 
-typedef int(__stdcall* ProcessAoETargeting)(uint32_t* a1);
+typedef int(__thiscall* ProcessAoETargeting)(void* thisPtr, int* a1);
 static ProcessAoETargeting ProcessAoETargeting_orig = (ProcessAoETargeting)0x004F66C0;
 
 typedef int(__cdecl* GetSpellRange)(int, int, float*, float*, int);
@@ -428,32 +428,44 @@ static int __cdecl SecureCmdOptionParse_hk(lua_State* L) {
     return result;
 }
 
-static int __stdcall ProcessAoETargeting_hk(uint32_t* a1)
+static int __fastcall ProcessAoETargeting_hk(
+    void* thisPtr,
+    void* /*edx*/,
+    int* a1
+)
 {
+    g_hasAdjustedPos = false;
+
     CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
     if (!player)
-        return ProcessAoETargeting_orig(a1);
+        return ProcessAoETargeting_orig(thisPtr, a1);
 
-    if (g_playerLocationKeywordActive) {
+    if (g_playerLocationKeywordActive)
+    {
         C3Vector playerPos;
         player->GetPosition(playerPos);
+
         TerrainClick(playerPos.X, playerPos.Y, playerPos.Z);
         g_playerLocationKeywordActive = false;
-        return 0;
+
+        return ProcessAoETargeting_orig(thisPtr, a1);
     }
 
-    if (g_cursorKeywordActive) {
-        C3Vector originalCursor = {
+    if (g_cursorKeywordActive)
+    {
+        C3Vector cursorPos{
             *(float*)&a1[2],
             *(float*)&a1[3],
             *(float*)&a1[4]
         };
 
-        TerrainClick(originalCursor.X, originalCursor.Y, originalCursor.Z);
+        TerrainClick(cursorPos.X, cursorPos.Y, cursorPos.Z);
         g_cursorKeywordActive = false;
-        return 0;
+
+        return ProcessAoETargeting_orig(thisPtr, a1);
     }
-    return ProcessAoETargeting_orig(a1);
+
+    return ProcessAoETargeting_orig(thisPtr, a1);
 }
 
 static char __cdecl CGWorldFrame_Intersect_new(C3Vector* playerPos, C3Vector* cameraPos, C3Vector* hitPoint, float* hitDistance, uint32_t hitFlags, uint32_t buffer)
