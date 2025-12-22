@@ -6,6 +6,7 @@
 
 ___
 ## Details
+> - Optionally supports smooth font, for example damage dealt text or names are no longer pixelated
 > - BugFix: clipboard issue when non-english text becomes "???"
 > - Auto Login (Through cmdline/shortcuts, Usage: `Wow.exe -login "LOGIN" -password "PASSWORD" -realmlist "REALMLIST" -realmname "REALMNAME" `)
 > - Changing cameras FOV
@@ -101,12 +102,12 @@ See [Docs](https://github.com/someweirdhuman/awesome_wotlk/blob/main/docs/api_re
 
 ## Installation
 1) Download latest [release](https://github.com/someweirdhuman/awesome_wotlk/releases)
+    1)  AwesomeWotLK_fonts.zip - supports smooth fonts
+    2)  AwesomeWotLK.zip - doesnt include smooth fonts
+    3)  Please note that skia.dll must be placed in root wow directory, regardless of option
 2) Unpack files to root game folder
 3) Launch `AwesomeWotlkPatch.exe`, you should get a message (or drag wow.exe on top of AwesomeWotlkPatch.exe)
 4) To update just download and replace dll
-
-## Build notice
-Requires `vcpkg` and `skia` installed with `vcpkg`.
 
 ## 3rd party libraries
 - [microsoft-Detours](https://github.com/microsoft/Detours) - [license](https://github.com/microsoft/Detours/blob/6782fe6e6ab11ae34ae66182aa5a73b5fdbcd839/LICENSE.md)
