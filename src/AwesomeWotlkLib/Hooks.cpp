@@ -434,7 +434,6 @@ static int __fastcall ProcessAoETargeting_hk(
     int* a1
 )
 {
-    g_hasAdjustedPos = false;
 
     CGUnit_C* player = ObjectMgr::GetCGUnitPlayer();
     if (!player)
