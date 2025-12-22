@@ -46,7 +46,6 @@ target_compile_definitions(
 )
 
 option(ENABLE_SMOOTH_FONTS "Enable smooth fonts" ON)
-set(ENABLE_SMOOTH_FONTS OFF CACHE BOOL "Enable smooth fonts" FORCE)
 
 if(TARGET AwesomeWotlkLib)
     if(ENABLE_SMOOTH_FONTS)
