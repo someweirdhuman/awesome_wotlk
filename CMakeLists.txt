@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
-project(AwesomeWotLK LANGUAGES CXX C)
 
-# Requires latest Windows10-SDK on building
+project(AwesomeWotLK LANGUAGES CXX C)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>")
@@ -32,10 +31,6 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 else()
   message(FATAL_ERROR "Unsupported toolset, use MSVC or Clang for build")
 endif()
-
-set(CMAKE_DISABLE_SOURCE_CHANGES ON)
-set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
-set(CMAKE_SUPPRESS_REGENERATION ON)
 
 add_subdirectory(deps)
 add_subdirectory(src)

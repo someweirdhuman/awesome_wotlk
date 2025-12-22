@@ -5,6 +5,7 @@
 #include "Hooks.h"
 #include "Inventory.h"
 #include "Item.h"
+#include "Fonts.h"
 #include "Spell.h"
 #include "UnitAPI.h"
 #include <Windows.h>
@@ -51,6 +52,9 @@ static void OnAttach()
     CommandLine::initialize();
     Inventory::initialize();
     Item::initialize();
+    #ifdef ENABLE_SMOOTH_FONTS
+        Fonts::initialize();
+    #endif
     NamePlates::initialize();
     Misc::initialize();
     UnitAPI::initialize();
@@ -62,7 +66,7 @@ static void OnAttach()
     Hooks::FrameXML::registerLuaLib(lua_openawesomewotlk);
 }
 
-int __stdcall DllMain(HMODULE hModule, DWORD reason, LPVOID)
+static int __stdcall DllMain(HMODULE hModule, DWORD reason, LPVOID)
 {
     if (reason == DLL_PROCESS_ATTACH)
         OnAttach();

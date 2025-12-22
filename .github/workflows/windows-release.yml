@@ -19,28 +19,39 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Configure CMake
-        run: >
-          cmake -S "${{ github.workspace }}"
-          -B "${{ github.workspace }}\build"
-          -G "Visual Studio 17 2022"
-          -A Win32
-          -T host=x64
-
-      - name: Build
-        run: cmake --build "${{ github.workspace }}\build" --config ${{ env.BUILD_TYPE }} -- /m
-
-      - name: Package artifact (exe + dll only, tag-based name)
+      - name: Configure and build default DLL
         run: |
-          New-Item -ItemType Directory -Force -Path "${{ github.workspace }}\dist" | Out-Null
-          $src = "${{ github.workspace }}\build\Release"
+          $buildDir = "${{ github.workspace }}\build"
+          cmake -S "${{ github.workspace }}" -B $buildDir -G "Visual Studio 17 2022" -A Win32 -T host=x64 -DENABLE_SMOOTH_FONTS=OFF
+          cmake --build $buildDir --config ${{ env.BUILD_TYPE }} -- /m
+
+      - name: Package default DLL
+        run: |
           $tag = "${{ github.ref_name }}"
-          $zip = "${{ github.workspace }}\dist\AwesomeWotLK_$tag.zip"
+          $distDir = "${{ github.workspace }}\dist"
+          New-Item -ItemType Directory -Force -Path $distDir | Out-Null
 
-          if (!(Test-Path "$src\AwesomeWotlkPatch.exe")) { throw "Not found: $src\AwesomeWotlkPatch.exe" }
-          if (!(Test-Path "$src\AwesomeWotlkLib.dll"))   { throw "Not found: $src\AwesomeWotlkLib.dll" }
+          $src = "${{ github.workspace }}\build\Release"
+          $skiaDll = "${{ github.workspace }}\deps\skia\skia.dll"
+          $zip = "$distDir\AwesomeWotLK_$tag.zip"
 
-          Compress-Archive -Path "$src\AwesomeWotlkPatch.exe","$src\AwesomeWotlkLib.dll" -DestinationPath $zip -Force
+          Compress-Archive -Path "$src\AwesomeWotlkPatch.exe","$src\AwesomeWotlkLib.dll",$skiaDll -DestinationPath $zip -Force
+
+      - name: Configure and build fonts-enabled DLL
+        run: |
+          $buildDir = "${{ github.workspace }}\build"
+          cmake -S "${{ github.workspace }}" -B $buildDir -G "Visual Studio 17 2022" -A Win32 -T host=x64 -DENABLE_SMOOTH_FONTS=ON
+          cmake --build $buildDir --config ${{ env.BUILD_TYPE }} -- /m
+
+      - name: Package fonts-enabled DLL
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $distDir = "${{ github.workspace }}\dist"
+          $src = "${{ github.workspace }}\build\Release"
+          $skiaDll = "${{ github.workspace }}\deps\skia\skia.dll"
+          $zip = "$distDir\AwesomeWotLK_fonts_$tag.zip"
+
+          Compress-Archive -Path "$src\AwesomeWotlkPatch.exe","$src\AwesomeWotlkLib.dll",$skiaDll -DestinationPath $zip -Force
 
       - name: Package addons folder
         run: |
