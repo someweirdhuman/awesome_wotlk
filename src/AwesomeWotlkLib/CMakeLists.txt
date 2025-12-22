@@ -21,11 +21,11 @@ add_library(
 target_include_directories(
     ${PROJECT_NAME} PRIVATE
 		${CMAKE_SOURCE_DIR}/deps
+		${CMAKE_SOURCE_DIR}/deps/skia/include
 		${CMAKE_SOURCE_DIR}/deps/msdfgen
 		${CMAKE_BINARY_DIR}/deps/msdfgen
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
-find_package(unofficial-skia CONFIG REQUIRED)
 
 target_link_libraries(
     ${PROJECT_NAME} PRIVATE
@@ -37,10 +37,19 @@ target_link_libraries(
         oleaut32
         uuid
         sapi
-        unofficial::skia::skia
+		"${CMAKE_SOURCE_DIR}/deps/skia/skia.lib"
 )
 
 target_compile_definitions(
     ${PROJECT_NAME} PRIVATE
         APP_NAME="${PROJECT_NAME}"
 )
+
+option(ENABLE_SMOOTH_FONTS "Enable smooth fonts" ON)
+set(ENABLE_SMOOTH_FONTS OFF CACHE BOOL "Enable smooth fonts" FORCE)
+
+if(TARGET AwesomeWotlkLib)
+    if(ENABLE_SMOOTH_FONTS)
+        target_compile_definitions(AwesomeWotlkLib PRIVATE ENABLE_SMOOTH_FONTS)
+    endif()
+endif()

@@ -30,7 +30,7 @@
 #define SDF_RENDER_SIZE 64.0 // 48-128
 #define SDF_SPREAD 8.0 // 6-12
 #define D3DFMT D3DFMT_A8R8G8B8 // D3DFMT_A8R8G8B8-D3DFMT_A16B16G16R16
-#define ALLOW_UNSAFE_FONTS false // due to how distance fields are calculated, some fonts with self-intersecting contours (e.g. diediedie) will break
+#define ALLOW_UNSAFE_FONTS true // due to how distance fields are calculated, some fonts with self-intersecting contours (e.g. diediedie) will break
                                 // set to true to skip font validation
 // ----
 

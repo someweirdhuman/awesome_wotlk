@@ -52,7 +52,9 @@ static void OnAttach()
     CommandLine::initialize();
     Inventory::initialize();
     Item::initialize();
-    Fonts::initialize();
+    #ifdef ENABLE_SMOOTH_FONTS
+        Fonts::initialize();
+    #endif
     NamePlates::initialize();
     Misc::initialize();
     UnitAPI::initialize();
