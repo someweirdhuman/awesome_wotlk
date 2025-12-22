@@ -1,26 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
 
-if(NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    if(DEFINED ENV{VCPKG_ROOT})
-        set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-            CACHE STRING "Vcpkg toolchain file")
-    elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake")
-        set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-            CACHE STRING "Vcpkg toolchain file")
-    elseif(EXISTS "C:/vcpkg/scripts/buildsystems/vcpkg.cmake")
-        set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
-            CACHE STRING "Vcpkg toolchain file")
-    endif()
-endif()
-
-if(NOT DEFINED VCPKG_TARGET_TRIPLET)
-    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "")
-    else()
-        set(VCPKG_TARGET_TRIPLET "x86-windows-static" CACHE STRING "")
-    endif()
-endif()
-
 project(AwesomeWotLK LANGUAGES CXX C)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>")
@@ -52,10 +31,6 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
 else()
   message(FATAL_ERROR "Unsupported toolset, use MSVC or Clang for build")
 endif()
-
-set(CMAKE_DISABLE_SOURCE_CHANGES ON)
-set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
-set(CMAKE_SUPPRESS_REGENERATION ON)
 
 add_subdirectory(deps)
 add_subdirectory(src)
