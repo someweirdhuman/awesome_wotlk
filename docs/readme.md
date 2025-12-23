@@ -6,7 +6,7 @@
 
 ___
 ## Details
-> - Optionally supports smooth font, for example damage dealt text or names are no longer pixelated
+> - Optionally enables smooth, vector-based font rendering, reducing pixelation for text such as damage numbers or unit names.
 > - BugFix: clipboard issue when non-english text becomes "???"
 > - Auto Login (Through cmdline/shortcuts, Usage: `Wow.exe -login "LOGIN" -password "PASSWORD" -realmlist "REALMLIST" -realmname "REALMNAME" `)
 > - Changing cameras FOV
