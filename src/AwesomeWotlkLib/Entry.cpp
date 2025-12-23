@@ -5,9 +5,7 @@
 #include "Hooks.h"
 #include "Inventory.h"
 #include "Item.h"
-#ifdef ENABLE_SMOOTH_FONTS
 #include "Fonts.h"
-#endif
 #include "Spell.h"
 #include "UnitAPI.h"
 #include <Windows.h>
@@ -55,7 +53,7 @@ static void OnAttach()
     Inventory::initialize();
     Item::initialize();
     #ifdef ENABLE_SMOOTH_FONTS
-    Fonts::initialize();
+        Fonts::initialize();
     #endif
     NamePlates::initialize();
     Misc::initialize();
