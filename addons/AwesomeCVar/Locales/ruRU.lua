@@ -68,6 +68,7 @@ if GetLocale() == "ruRU" then
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Увеличить высоту World Frame"
     L.CVAR_ENABLE_STANCE_PATCH = "Включить патч смены стойки/формы"
     L.CVAR_ENABLE_SHOW_PLAYER = "Включить отображение модели персонажа игрока"
+	L.CVAR_MSDF_MODE = "Режим рендеринга шрифтов (требуется перезапуск игры)"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Косвенная видимость камеры"
     L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "Косвенная прозрачность камеры"
     L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "Косвенный сдвиг камеры"
@@ -79,6 +80,7 @@ if GetLocale() == "ruRU" then
     L.DESC_CAMERA_INDIRECT_VISIBILITY = "Позволяет камере свободно перемещаться сквозь некоторые объекты мира без блокировки."
     L.DESC_CAMERA_INDIRECT_ALPHA = "Определяет прозрачность объектов между камерой и игроком."
     L.DESC_CAMERA_DISTANCE_MAX = "Устанавливает максимальное расстояние, на которое вы можете отдалить камеру."
+    L.DESC_MSDF = "Включает векторный рендеринг шрифтов, что значительно улучшает качество глифов.\n0 = отключено; 1 = включено;\n2 = включено (ненадёжные шрифты) — из-за способа расчёта полей расстояний\nнекоторые шрифты с самопересекающимися контурами (например, 'diediedie') могут работать некорректно.\nДля того чтобы изменения вступили в силу, требуется перезапуск клиента WoW."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API реакции"

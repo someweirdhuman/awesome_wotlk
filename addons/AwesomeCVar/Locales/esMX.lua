@@ -68,6 +68,7 @@ if GetLocale() == "esMX" then
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Extender altura del World Frame"
     L.CVAR_ENABLE_STANCE_PATCH = "Activar parche de cambio de postura/forma"
     L.CVAR_ENABLE_SHOW_PLAYER = "Habilitar la visualización del modelo del personaje del jugador"
+	L.CVAR_MSDF_MODE = "Modo de renderizado de fuentes (requiere reiniciar el juego)"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Visibilidad indirecta de la cámara"
     L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "Alpha indirecto de la cámara"
     L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "Desplazamiento indirecto de la cámara"
@@ -79,6 +80,7 @@ if GetLocale() == "esMX" then
     L.DESC_CAMERA_INDIRECT_VISIBILITY = "Permite que la cámara se mueva libremente a través de algunos objetos del mundo sin ser bloqueada."
     L.DESC_CAMERA_INDIRECT_ALPHA = "Define la transparencia de los objetos entre la cámara y el jugador."
     L.DESC_CAMERA_DISTANCE_MAX = "Establece la distancia máxima hasta la que puedes alejar la cámara."
+    L.DESC_MSDF = "Activa el renderizado de fuentes basado en vectores, mejorando considerablemente la calidad de los glifos.\n0 = desactivado; 1 = activado;\n2 = activado (fuentes no seguras) — debido a cómo se calculan los campos de distancia,\nalgunas fuentes con contornos auto-intersectados (p. ej., 'diediedie') pueden fallar.\nSe requiere reiniciar el cliente de WoW para que los cambios surtan efecto."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API de reacción"

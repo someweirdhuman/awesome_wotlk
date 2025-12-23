@@ -68,6 +68,7 @@ if GetLocale() == "frFR" then
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Étendre la hauteur du World Frame"
     L.CVAR_ENABLE_STANCE_PATCH = "Activer le patch de changement de posture/forme"
     L.CVAR_ENABLE_SHOW_PLAYER = "Activer l'affichage du modèle du personnage du joueur"
+	L.CVAR_MSDF_MODE = "Mode de rendu des polices (redémarrage du jeu requis)"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Visibilité indirecte de la caméra"
     L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "Alpha indirect de la caméra"
     L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "Décalage indirect de la caméra"
@@ -79,6 +80,7 @@ if GetLocale() == "frFR" then
     L.DESC_CAMERA_INDIRECT_VISIBILITY = "Permet à votre caméra de se déplacer librement à travers certains objets du monde sans être bloquée."
     L.DESC_CAMERA_INDIRECT_ALPHA = "Définit la transparence des objets entre la caméra et le joueur."
     L.DESC_CAMERA_DISTANCE_MAX = "Définit la distance maximale à laquelle vous pouvez zoomer vers l'extérieur."
+    L.DESC_MSDF = "Active le rendu vectoriel des polices, améliorant considérablement la qualité des glyphes.\n0 = désactivé; 1 = activé;\n2 = activé (polices non sécurisées) — en raison du calcul des champs de distance,\ncertaines polices avec des contours auto-intersectants (ex. 'diediedie') peuvent poser problème.\nUn redémarrage du client WoW est nécessaire pour que les modifications prennent effet."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API de Réaction"

@@ -44,11 +44,3 @@ target_compile_definitions(
     ${PROJECT_NAME} PRIVATE
         APP_NAME="${PROJECT_NAME}"
 )
-
-option(ENABLE_SMOOTH_FONTS "Enable smooth fonts" ON)
-
-if(TARGET AwesomeWotlkLib)
-    if(ENABLE_SMOOTH_FONTS)
-        target_compile_definitions(AwesomeWotlkLib PRIVATE ENABLE_SMOOTH_FONTS)
-    endif()
-endif()

@@ -19,13 +19,13 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Configure and build default DLL
+      - name: Configure and build DLL
         run: |
           $buildDir = "${{ github.workspace }}\build"
-          cmake -S "${{ github.workspace }}" -B $buildDir -G "Visual Studio 17 2022" -A Win32 -T host=x64 -DENABLE_SMOOTH_FONTS=OFF
+          cmake -S "${{ github.workspace }}" -B $buildDir -G "Visual Studio 17 2022" -A Win32 -T host=x64
           cmake --build $buildDir --config ${{ env.BUILD_TYPE }} -- /m
 
-      - name: Package default DLL
+      - name: Package stuff
         run: |
           $tag = "${{ github.ref_name }}"
           $distDir = "${{ github.workspace }}\dist"
@@ -34,22 +34,6 @@ jobs:
           $src = "${{ github.workspace }}\build\Release"
           $skiaDll = "${{ github.workspace }}\deps\skia\skia.dll"
           $zip = "$distDir\AwesomeWotLK_$tag.zip"
-
-          Compress-Archive -Path "$src\AwesomeWotlkPatch.exe","$src\AwesomeWotlkLib.dll",$skiaDll -DestinationPath $zip -Force
-
-      - name: Configure and build fonts-enabled DLL
-        run: |
-          $buildDir = "${{ github.workspace }}\build"
-          cmake -S "${{ github.workspace }}" -B $buildDir -G "Visual Studio 17 2022" -A Win32 -T host=x64 -DENABLE_SMOOTH_FONTS=ON
-          cmake --build $buildDir --config ${{ env.BUILD_TYPE }} -- /m
-
-      - name: Package fonts-enabled DLL
-        run: |
-          $tag = "${{ github.ref_name }}"
-          $distDir = "${{ github.workspace }}\dist"
-          $src = "${{ github.workspace }}\build\Release"
-          $skiaDll = "${{ github.workspace }}\deps\skia\skia.dll"
-          $zip = "$distDir\AwesomeWotLK_fonts_$tag.zip"
 
           Compress-Archive -Path "$src\AwesomeWotlkPatch.exe","$src\AwesomeWotlkLib.dll",$skiaDll -DestinationPath $zip -Force
 

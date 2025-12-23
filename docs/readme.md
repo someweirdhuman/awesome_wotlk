@@ -6,7 +6,7 @@
 
 ___
 ## Details
-> - Optionally supports smooth font, for example damage dealt text or names are no longer pixelated
+> - Optionally enables smooth, vector-based font rendering, reducing pixelation for text such as damage numbers or unit names.
 > - BugFix: clipboard issue when non-english text becomes "???"
 > - Auto Login (Through cmdline/shortcuts, Usage: `Wow.exe -login "LOGIN" -password "PASSWORD" -realmlist "REALMLIST" -realmname "REALMNAME" `)
 > - Changing cameras FOV
@@ -84,6 +84,7 @@ ___
     - ttsVoice<br>
     - ttsSpeed<br>
     - ttsVolume<br>
+    - MSDFMode<br>
 > - New Interaction Keybind:<br>
     - It loots mobs, skins mobs, interacts with near object like veins, chairs, doors, etc, mailboxes, etc.<br>
     - You can keybind this in options menu like any other keybind (Requires Interaction Addon, bundled in release rar)<br>
@@ -102,9 +103,6 @@ See [Docs](https://github.com/someweirdhuman/awesome_wotlk/blob/main/docs/api_re
 
 ## Installation
 1) Download latest [release](https://github.com/someweirdhuman/awesome_wotlk/releases)
-    1)  AwesomeWotLK_fonts.zip - supports smooth fonts
-    2)  AwesomeWotLK.zip - doesnt include smooth fonts
-    3)  Please note that skia.dll must be placed in root wow directory, regardless of option
 2) Unpack files to root game folder
 3) Launch `AwesomeWotlkPatch.exe`, you should get a message (or drag wow.exe on top of AwesomeWotlkPatch.exe)
 4) To update just download and replace dll
