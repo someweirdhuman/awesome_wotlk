@@ -68,7 +68,7 @@ if GetLocale() == "enUS" then
     L.CVAR_LABEL_UPPER_BORDER_ONLY_BOSS = "Allow ONLY bosses to stick to upper border of the screen"
     L.CVAR_ENABLE_STANCE_PATCH = "Enable stance/form swap patch"
     L.CVAR_ENABLE_SHOW_PLAYER = "Enable rendering of the player's character model"
-    L.CVAR_MSDF_MODE = "Fonts rendering mode"
+    L.CVAR_MSDF_MODE = "Fonts rendering mode |cffff0000(Restart Required)|r"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Camera Indirect Visibility"
 	L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "Camera Indirect Alpha"
 	L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "Camera Indirect Offset"

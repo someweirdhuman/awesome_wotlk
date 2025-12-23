@@ -68,7 +68,7 @@ if GetLocale() == "frFR" then
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Étendre la hauteur du World Frame"
     L.CVAR_ENABLE_STANCE_PATCH = "Activer le patch de changement de posture/forme"
     L.CVAR_ENABLE_SHOW_PLAYER = "Activer l'affichage du modèle du personnage du joueur"
-	L.CVAR_MSDF_MODE = "Mode de rendu des polices (redémarrage du jeu requis)"
+    L.CVAR_MSDF_MODE = "Mode de rendu des polices (redémarrage du jeu requis) |cffff0000(Redémarrage requis)|r"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Visibilité indirecte de la caméra"
     L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "Alpha indirect de la caméra"
     L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "Décalage indirect de la caméra"

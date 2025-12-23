@@ -68,7 +68,7 @@ if GetLocale() == "esMX" then
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "Extender altura del World Frame"
     L.CVAR_ENABLE_STANCE_PATCH = "Activar parche de cambio de postura/forma"
     L.CVAR_ENABLE_SHOW_PLAYER = "Habilitar la visualización del modelo del personaje del jugador"
-	L.CVAR_MSDF_MODE = "Modo de renderizado de fuentes (requiere reiniciar el juego)"
+    L.CVAR_MSDF_MODE = "Modo de renderizado de fuentes (requiere reiniciar el juego) |cffff0000(Reinicio requerido)|r"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Visibilidad indirecta de la cámara"
     L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "Alpha indirecto de la cámara"
     L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "Desplazamiento indirecto de la cámara"
