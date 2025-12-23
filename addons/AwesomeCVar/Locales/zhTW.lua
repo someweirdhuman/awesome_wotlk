@@ -68,6 +68,7 @@ if GetLocale() == "zhTW" then
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "延展世界框架高度"
     L.CVAR_ENABLE_STANCE_PATCH = "啟用姿態/形態切換修補"
     L.CVAR_ENABLE_SHOW_PLAYER = "啟用玩家角色模型渲染"
+	L.CVAR_MSDF_MODE = "字體渲染模式（需要重新啟動遊戲）"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "鏡頭間接可見性"
     L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "鏡頭間接透明度"
     L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "鏡頭間接偏移"
@@ -79,6 +80,7 @@ if GetLocale() == "zhTW" then
     L.DESC_CAMERA_INDIRECT_VISIBILITY = "允許鏡頭自由穿越部分世界物件而不被阻擋。"
     L.DESC_CAMERA_INDIRECT_ALPHA = "設定鏡頭與玩家之間物件的透明度。"
     L.DESC_CAMERA_DISTANCE_MAX = "設定你可以拉遠鏡頭的最遠距離。"
+	L.DESC_MSDF = "啟用向量字體渲染，可大幅提升字形品質。\n0 = 停用；1 = 啟用；\n2 = 啟用（不安全的字體）— 由於距離場的計算方式，\n某些具有自相交輪廓的字體（例如 'diediedie'）可能會顯示異常。"
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "反應 API"

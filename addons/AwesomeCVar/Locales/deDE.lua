@@ -68,6 +68,7 @@ if GetLocale() == "deDE" then
     L.CVAR_LABEL_EXTEND_WORLD_FRAME_HEIGHT = "World Frame Höhe erweitern"
     L.CVAR_ENABLE_STANCE_PATCH = "Stance/Form-Wechsel-Patch aktivieren"
     L.CVAR_ENABLE_SHOW_PLAYER = "Anzeige des Spielercharakters aktivieren"
+	L.CVAR_MSDF_MODE = "Schrift-Rendering-Modus (Spielneustart erforderlich)"
     L.CVAR_LABEL_CAMERA_INDIRECT_VISIBILITY = "Indirekte Kamerasichtbarkeit"
     L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "Indirekter Kamera-Alpha"
     L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "Indirekter Kamera-Offset"
@@ -79,6 +80,7 @@ if GetLocale() == "deDE" then
     L.DESC_CAMERA_INDIRECT_VISIBILITY = "Erlaubt der Kamera, sich frei durch einige Weltobjekte zu bewegen, ohne blockiert zu werden."
     L.DESC_CAMERA_INDIRECT_ALPHA = "Definiert die Transparenz von Objekten zwischen Kamera und Spieler."
     L.DESC_CAMERA_DISTANCE_MAX = "Legt die maximale Entfernung fest, bis zu der du herauszoomen kannst."
+	L.DESC_MSDF = "Aktiviert vektorbasierte Schriftwiedergabe und verbessert die Glyphenqualität deutlich.\n0 = deaktiviert; 1 = aktiviert;\n2 = aktiviert (unsichere Schriften) — aufgrund der Berechnung der Distanzfelder\nkönnen einige Schriften mit sich selbst schneidenden Konturen (z. B. 'diediedie') fehlerhaft dargestellt werden."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "Reaktions-API"
