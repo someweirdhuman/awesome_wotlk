@@ -80,7 +80,7 @@ if GetLocale() == "ptBR" then
     L.DESC_CAMERA_INDIRECT_VISIBILITY = "Permite que sua câmera se mova livremente por alguns objetos do mundo sem ser bloqueada."
     L.DESC_CAMERA_INDIRECT_ALPHA = "Define a transparência dos objetos entre a câmera e o jogador."
     L.DESC_CAMERA_DISTANCE_MAX = "Define a distância máxima para a qual você pode afastar a câmera."
-    L.DESC_MSDF = "Ativa o render de fontes baseado em vetores, melhorando drasticamente a qualidade dos glifos.\n0 = desativado; 1 = ativado;\n2 = ativado (fontes inseguras) — devido à forma como os campos de distância são calculados,\nalgumas fontes com contornos auto-intersectantes (ex.: 'diediedie') podem apresentar falhas.\nÉ necessário reiniciar o cliente do WoW para que as alterações tenham efeito."
+	L.DESC_MSDF = "Ativa o render de fontes baseado em vetores, melhorando drasticamente a qualidade dos glifos.\n0 = desativado; 1 = ativado;\n2 = ativado (fontes inseguras) — devido à forma como os campos de distância são calculados,\nalgumas fontes com contornos auto-intersectantes (ex.: 'diediedie') podem apresentar falhas."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API de Reação"

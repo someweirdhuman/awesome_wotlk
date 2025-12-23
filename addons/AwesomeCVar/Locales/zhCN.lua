@@ -80,7 +80,7 @@ if GetLocale() == "zhCN" then
     L.DESC_CAMERA_INDIRECT_VISIBILITY = "允许镜头自由穿越部分世界物体而不被阻挡。"
     L.DESC_CAMERA_INDIRECT_ALPHA = "定义镜头与玩家之间物体的透明度。"
     L.DESC_CAMERA_DISTANCE_MAX = "设置你可以拉远镜头的最大距离。"
-    L.DESC_MSDF = "启用基于矢量的字体渲染，可显著提升字形质量。\n0 = 禁用；1 = 启用；\n2 = 启用（不安全的字体）— 由于距离场的计算方式，\n某些具有自相交轮廓的字体（例如 'diediedie'）可能会出现问题。\n要使更改生效，需要重启 WoW 客户端。"
+	L.DESC_MSDF = "启用基于矢量的字体渲染，可显著提升字形质量。\n0 = 禁用；1 = 启用；\n2 = 启用（不安全的字体）— 由于距离场的计算方式，\n某些具有自相交轮廓的字体（例如 'diediedie'）可能会出现问题。"
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "反应 API"

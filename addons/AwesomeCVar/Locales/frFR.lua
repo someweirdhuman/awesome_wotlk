@@ -80,7 +80,7 @@ if GetLocale() == "frFR" then
     L.DESC_CAMERA_INDIRECT_VISIBILITY = "Permet à votre caméra de se déplacer librement à travers certains objets du monde sans être bloquée."
     L.DESC_CAMERA_INDIRECT_ALPHA = "Définit la transparence des objets entre la caméra et le joueur."
     L.DESC_CAMERA_DISTANCE_MAX = "Définit la distance maximale à laquelle vous pouvez zoomer vers l'extérieur."
-    L.DESC_MSDF = "Active le rendu vectoriel des polices, améliorant considérablement la qualité des glyphes.\n0 = désactivé; 1 = activé;\n2 = activé (polices non sécurisées) — en raison du calcul des champs de distance,\ncertaines polices avec des contours auto-intersectants (ex. 'diediedie') peuvent poser problème.\nUn redémarrage du client WoW est nécessaire pour que les modifications prennent effet."
+	L.DESC_MSDF = "Active le rendu vectoriel des polices, améliorant considérablement la qualité des glyphes.\n0 = désactivé; 1 = activé;\n2 = activé (polices non sécurisées) — en raison du calcul des champs de distance,\ncertaines polices avec des contours auto-intersectants (ex. 'diediedie') peuvent poser problème."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API de Réaction"

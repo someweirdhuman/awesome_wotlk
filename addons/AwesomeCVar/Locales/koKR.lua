@@ -80,7 +80,7 @@ if GetLocale() == "koKR" then
     L.DESC_CAMERA_INDIRECT_VISIBILITY = "카메라가 일부 월드 오브젝트를 자유롭게 통과할 수 있도록 허용합니다."
     L.DESC_CAMERA_INDIRECT_ALPHA = "카메라와 플레이어 사이 오브젝트의 투명도를 정의합니다."
     L.DESC_CAMERA_DISTANCE_MAX = "카메라를 얼마나 멀리 줌아웃할 수 있는지의 최대 거리를 설정합니다."
-    L.DESC_MSDF = "벡터 기반 폰트 렌더링을 활성화하여 글리프 품질을 크게 향상시킵니다.\n0 = 비활성화; 1 = 활성화;\n2 = 활성화(안전하지 않은 폰트) — 거리 필드 계산 방식으로 인해\n자기 교차 윤곽을 가진 일부 폰트(예: 'diediedie')는 정상적으로 표시되지 않을 수 있습니다.\n변경 사항을 적용하려면 WoW 클라이언트를 다시 시작해야 합니다."
+	L.DESC_MSDF = "벡터 기반 폰트 렌더링을 활성화하여 글리프 품질을 크게 향상시킵니다.\n0 = 비활성화; 1 = 활성화;\n2 = 활성화(안전하지 않은 폰트) — 거리 필드 계산 방식으로 인해\n자기 교차 윤곽을 가진 일부 폰트(예: 'diediedie')는 정상적으로 표시되지 않을 수 있습니다."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "반응 API"

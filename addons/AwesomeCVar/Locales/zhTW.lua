@@ -80,7 +80,7 @@ if GetLocale() == "zhTW" then
     L.DESC_CAMERA_INDIRECT_VISIBILITY = "允許鏡頭自由穿越部分世界物件而不被阻擋。"
     L.DESC_CAMERA_INDIRECT_ALPHA = "設定鏡頭與玩家之間物件的透明度。"
     L.DESC_CAMERA_DISTANCE_MAX = "設定你可以拉遠鏡頭的最遠距離。"
-    L.DESC_MSDF = "啟用向量字體渲染，可大幅提升字形品質。\n0 = 停用；1 = 啟用；\n2 = 啟用（不安全的字體）— 由於距離場的計算方式，\n某些具有自相交輪廓的字體（例如 'diediedie'）可能會顯示異常。\n要使更改生效，需重新啟動 WoW 客戶端。"
+	L.DESC_MSDF = "啟用向量字體渲染，可大幅提升字形品質。\n0 = 停用；1 = 啟用；\n2 = 啟用（不安全的字體）— 由於距離場的計算方式，\n某些具有自相交輪廓的字體（例如 'diediedie'）可能會顯示異常。"
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "反應 API"
