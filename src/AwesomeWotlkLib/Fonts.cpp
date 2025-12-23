@@ -30,8 +30,6 @@
 #define SDF_RENDER_SIZE 64.0 // 48-128
 #define SDF_SPREAD 8.0 // 6-12
 #define D3DFMT D3DFMT_A8R8G8B8 // D3DFMT_A8R8G8B8-D3DFMT_A16B16G16R16
-#define ALLOW_UNSAFE_FONTS false // due to how distance fields are calculated, some fonts with self-intersecting contours (e.g. diediedie) will break
-                                // set to true to skip font validation
 // ----
 
 
@@ -49,6 +47,19 @@ static const double MAX_COORD = 1e9;
 static const int MIN_CONTOUR_SIZE = 3;
 static const int MAX_CURVE_SAMPLES = 10;
 
+static int MODE = 0;
+static bool INITIALIZED = false;
+static bool ALLOW_UNSAFE_FONTS = false; // due to how distance fields are calculated, some fonts with self-intersecting contours (e.g. diediedie) will break
+
+static Console::CVar* s_cvar_MSDFMode;
+
+static int CVarHandler_MSDFMode(Console::CVar* cvar, const char*, const char* value, void*)
+{
+    const int val = std::atoi(value);
+    if (val < 0 || val > 2)
+        return 0;
+    return 1;
+}
 
 // these structs are NOT to be trusted, rough LLM estimation
 struct FontShaderData
@@ -815,16 +826,6 @@ static msdfgen::FontHandle* CreateMSDFGenFont(const FT_Byte* file_base, FT_Long 
 }
 
 
-static int __cdecl FreeType_Init_hk(void* memory, FT_Library* alibrary) {
-    const FT_Error error = FT_Init_FreeType(&g_realFtLibrary);
-    if (error) return error;
-
-    if (alibrary) *alibrary = static_cast<FT_Library>(g_realFtLibrary);
-
-    g_msdfFreetype = msdfgen::initializeFreetype();
-    return 0;
-}
-
 static int __cdecl FreeType_NewMemoryFace_hk(FT_Library library, const FT_Byte* file_base, FT_Long file_size, FT_Long face_index, FT_Face* aface) {
     if (!g_realFtLibrary && FT_Init_FreeType(&g_realFtLibrary) != 0) return -1;
 
@@ -1159,9 +1160,9 @@ static void __fastcall CGxDeviceD3d__IShaderCreatePixel_hk(int pThis, void* edx,
             float outlinePx = 0.0f;
 
             if (outlineHint >= 1.5f) {
-                outlinePx = max(3.0f, pow(fontSize, 0.150f) * 1.6f);
+                outlinePx = max(2.75f, pow(fontSize, 0.150f) * 1.6f);
             } else if (outlineHint >= 0.5f) {
-                outlinePx = max(1.5f, pow(fontSize, 0.075f) * 1.5f);
+                outlinePx = max(1.50f, pow(fontSize, 0.075f) * 1.5f);
             }
             float4 sample = tex2D(sdfAtlas, uv);
 
@@ -1214,7 +1215,14 @@ static int __fastcall CGxString__WriteGeometry_hk(CGxString* pThis, void* edx, i
     const int result = CGxString__WriteGeometry_orig(pThis, destPtr, index, vertIndex, vertCount);
 
     auto it = g_fontHandles.find(pThis->m_fontObj->m_fontResource->fontFace);
-    if (it == g_fontHandles.end() || !it->second->isValid || !it->second->atlasTexture) return result;
+    if (it == g_fontHandles.end() || !it->second->isValid || !it->second->atlasTexture) {
+        IDirect3DDevice9* device = GetD3DDevice();
+        if (device) {
+            const float resetControl[4] = { 0, 0, 0, 0 };
+            device->SetPixelShaderConstantF(SDF_SAMPLER_SLOT, resetControl, 1);
+        }
+        return result;
+    }
 
     IDirect3DDevice9* device = GetD3DDevice();
     if (!device) return result;
@@ -1340,11 +1348,10 @@ static int __fastcall CGxString__InitializeTextLine_hk(CGxString* pThis, void* e
                 const uint32_t codepoint = static_cast<uint32_t>(verts.m_data[q].u - 1.0f);
 
                 const GlyphMetrics* gm = CacheGlyphMSDF(fontFace, codepoint);
+                if (!gm) continue;
+
                 CGlyphCacheEntry* entry = CGxString__GetOrCreateGlyphEntry_orig(fontObj, codepoint);
-                if (!gm || !entry) {
-                    verts.m_data[q].u -= 1.0f;
-                    continue;
-                }
+                if (!entry) continue;
 
                 CFontVertex* vert0 = &verts.m_data[q + 0];
                 CFontVertex* vert1 = &verts.m_data[q + 1];
@@ -1382,26 +1389,54 @@ static int __fastcall CGxString__InitializeTextLine_hk(CGxString* pThis, void* e
 }
 
 
+static int __cdecl FreeType_Init_hk(void* memory, FT_Library* alibrary) {
+    if (!INITIALIZED) {
+        const int mode = std::atoi(s_cvar_MSDFMode->vStr);
+        if (mode < 1) return FreeType_Init_orig(memory, alibrary);
+
+        ALLOW_UNSAFE_FONTS = mode > 1;
+
+        DetourTransactionBegin();
+        DetourAttach(&(LPVOID&)FreeType_NewMemoryFace_orig, FreeType_NewMemoryFace_hk);
+        DetourAttach(&(LPVOID&)FreeType_NewFace_orig, FreeType_NewFace_hk);
+        DetourAttach(&(LPVOID&)FreeType_Done_Face_orig, FreeType_Done_Face_hk);
+        DetourAttach(&(LPVOID&)FreeType_SetPixelSizes_orig, FreeType_SetPixelSizes_hk);
+        DetourAttach(&(LPVOID&)FreeType_GetCharIndex_orig, FreeType_GetCharIndex_hk);
+        DetourAttach(&(LPVOID&)FreeType_LoadGlyph_orig, FreeType_LoadGlyph_hk);
+        DetourAttach(&(LPVOID&)FreeType_GetKerning_orig, FreeType_GetKerning_hk);
+        DetourAttach(&(LPVOID&)FreeType_Done_FreeType_orig, FreeType_Done_FreeType_hk);
+
+        DetourAttach(&(LPVOID&)IGxuFontRenderBatch_orig, IGxuFontRenderBatch_hk);
+        DetourAttach(&(LPVOID&)IGxuFontGlyphRenderGlyph_orig, IGxuFontGlyphRenderGlyph_hk);
+
+        DetourAttach(&(LPVOID&)CGxString__WriteGeometry_orig, CGxString__WriteGeometry_hk);
+        DetourAttach(&(LPVOID&)CGxString__GetGlyphYMetrics_orig, CGxString_GetGlyphYMetrics_hk);
+        DetourAttach(&(LPVOID&)CGxString__GetOrCreateGlyphEntry_orig, CGxString__GetOrCreateGlyphEntry_hk);
+        DetourAttach(&(LPVOID&)CGxString__InitializeTextLine_orig, CGxString__InitializeTextLine_hk);
+        DetourTransactionCommit();
+
+        INITIALIZED = true;
+        MODE = mode;
+    }
+    else if (MODE < 1) {
+        return FreeType_Init_orig(memory, alibrary);
+    }
+
+    const FT_Error error = FT_Init_FreeType(&g_realFtLibrary);
+    if (error) return error;
+
+    if (alibrary) *alibrary = static_cast<FT_Library>(g_realFtLibrary);
+
+    g_msdfFreetype = msdfgen::initializeFreetype();
+    return 0;
+}
+
+
 void Fonts::initialize()
 {
+    s_cvar_MSDFMode = Console::RegisterCVar("MSDFMode", NULL, (Console::CVarFlags)1, "1", CVarHandler_MSDFMode, 0, 0, 0, 0);;
     DetourAttach(&(LPVOID&)FreeType_Init_orig, FreeType_Init_hk);
-    DetourAttach(&(LPVOID&)FreeType_NewMemoryFace_orig, FreeType_NewMemoryFace_hk);
-    DetourAttach(&(LPVOID&)FreeType_NewFace_orig, FreeType_NewFace_hk);
-    DetourAttach(&(LPVOID&)FreeType_Done_Face_orig, FreeType_Done_Face_hk);
-    DetourAttach(&(LPVOID&)FreeType_SetPixelSizes_orig, FreeType_SetPixelSizes_hk);
-    DetourAttach(&(LPVOID&)FreeType_GetCharIndex_orig, FreeType_GetCharIndex_hk);
-    DetourAttach(&(LPVOID&)FreeType_LoadGlyph_orig, FreeType_LoadGlyph_hk);
-    DetourAttach(&(LPVOID&)FreeType_GetKerning_orig, FreeType_GetKerning_hk);
-    DetourAttach(&(LPVOID&)FreeType_Done_FreeType_orig, FreeType_Done_FreeType_hk);
 
     //DetourAttach(&(LPVOID&)CGxDeviceD3d__IShaderCreateVertex_orig, CGxDeviceD3d__IShaderCreateVertex_hk);
     DetourAttach(&(LPVOID&)CGxDeviceD3d__IShaderCreatePixel_orig, CGxDeviceD3d__IShaderCreatePixel_hk);
-
-    DetourAttach(&(LPVOID&)IGxuFontRenderBatch_orig, IGxuFontRenderBatch_hk);
-    DetourAttach(&(LPVOID&)IGxuFontGlyphRenderGlyph_orig, IGxuFontGlyphRenderGlyph_hk);
-
-    DetourAttach(&(LPVOID&)CGxString__WriteGeometry_orig, CGxString__WriteGeometry_hk);
-    DetourAttach(&(LPVOID&)CGxString__GetGlyphYMetrics_orig, CGxString_GetGlyphYMetrics_hk);
-    DetourAttach(&(LPVOID&)CGxString__GetOrCreateGlyphEntry_orig, CGxString__GetOrCreateGlyphEntry_hk);
-    DetourAttach(&(LPVOID&)CGxString__InitializeTextLine_orig, CGxString__InitializeTextLine_hk);
 }
