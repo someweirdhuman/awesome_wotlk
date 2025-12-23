@@ -102,9 +102,6 @@ See [Docs](https://github.com/someweirdhuman/awesome_wotlk/blob/main/docs/api_re
 
 ## Installation
 1) Download latest [release](https://github.com/someweirdhuman/awesome_wotlk/releases)
-    1)  AwesomeWotLK_fonts.zip - supports smooth fonts
-    2)  AwesomeWotLK.zip - doesnt include smooth fonts
-    3)  Please note that skia.dll must be placed in root wow directory, regardless of option
 2) Unpack files to root game folder
 3) Launch `AwesomeWotlkPatch.exe`, you should get a message (or drag wow.exe on top of AwesomeWotlkPatch.exe)
 4) To update just download and replace dll
