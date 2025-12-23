@@ -80,7 +80,7 @@ if GetLocale() == "enUS" then
     L.DESC_CAMERA_INDIRECT_VISIBILITY = "Allows your camera to move freely through some world objects without being blocked."
     L.DESC_CAMERA_INDIRECT_ALPHA = "Defines the transparency of objects between the camera and player."
     L.DESC_CAMERA_DISTANCE_MAX = "Sets the maximum distance which you can zoom out to."
-	L.DESC_MSDF = "Enables vector-based font rendering, dramatically improving glyph quality.\n0 = disabled; 1 = enabled;\n2 = enabled (unsafe fonts) — due to how distance fields are calculated,\nsome fonts with self-intersecting contours (e.g., 'diediedie') may break."
+    L.DESC_MSDF = "Enables vector-based font rendering, dramatically improving glyph quality.\n0 = disabled; 1 = enabled;\n2 = enabled (unsafe fonts) — due to how distance fields are calculated,\nsome fonts with self-intersecting contours (e.g., 'diediedie') may break.\nA client restart is required for changes to take effect."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "Reaction API"

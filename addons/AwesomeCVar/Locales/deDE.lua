@@ -80,7 +80,7 @@ if GetLocale() == "deDE" then
     L.DESC_CAMERA_INDIRECT_VISIBILITY = "Erlaubt der Kamera, sich frei durch einige Weltobjekte zu bewegen, ohne blockiert zu werden."
     L.DESC_CAMERA_INDIRECT_ALPHA = "Definiert die Transparenz von Objekten zwischen Kamera und Spieler."
     L.DESC_CAMERA_DISTANCE_MAX = "Legt die maximale Entfernung fest, bis zu der du herauszoomen kannst."
-	L.DESC_MSDF = "Aktiviert vektorbasierte Schriftwiedergabe und verbessert die Glyphenqualität deutlich.\n0 = deaktiviert; 1 = aktiviert;\n2 = aktiviert (unsichere Schriften) — aufgrund der Berechnung der Distanzfelder\nkönnen einige Schriften mit sich selbst schneidenden Konturen (z. B. 'diediedie') fehlerhaft dargestellt werden."
+	L.DESC_MSDF = "Aktiviert vektorbasierte Schriftwiedergabe und verbessert die Glyphenqualität deutlich.\n0 = deaktiviert; 1 = aktiviert;\n2 = aktiviert (unsichere Schriften) — aufgrund der Berechnung der Distanzfelder\nkönnen einige Schriften mit sich selbst schneidenden Konturen (z. B. 'diediedie') fehlerhaft dargestellt werden.\nUm die Änderungen wirksam zu machen, ist ein Neustart des WoW-Clients erforderlich."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "Reaktions-API"
