@@ -32,10 +32,9 @@ jobs:
           New-Item -ItemType Directory -Force -Path $distDir | Out-Null
 
           $src = "${{ github.workspace }}\build\Release"
-          $skiaDll = "${{ github.workspace }}\deps\skia\skia.dll"
           $zip = "$distDir\AwesomeWotLK_$tag.zip"
 
-          Compress-Archive -Path "$src\AwesomeWotlkPatch.exe","$src\AwesomeWotlkLib.dll",$skiaDll -DestinationPath $zip -Force
+          Compress-Archive -Path "$src\AwesomeWotlkPatch.exe","$src\AwesomeWotlkLib.dll" -DestinationPath $zip -Force
 
       - name: Configure and build fonts-enabled DLL
         run: |
