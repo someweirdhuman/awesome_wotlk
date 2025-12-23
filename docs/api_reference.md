@@ -619,13 +619,6 @@ Default: **0.6**
 Controls the transparency level of objects between the camera and the player character when cameraIndirectVisibility is enabled. <br>
 Limited to [0.6 - 1] range.
 
-## cameraIndirectOffset`CVar` 
-Arguments: **offset**`number`
-
-Default: **10**
-
-Not implemented yet. <br>
-
 ## interactionMode`CVar` 
 Arguments: **mode**`bool`
 
@@ -642,6 +635,13 @@ Default: **60**
 
 The size of the cone-shaped area in front of the player (measured in degrees) within which a mob or entity must be located to be eligible for interaction. <br>
 This is only used if `interactionMode` is set to 1, which is the default.
+
+## MSDFMode`CVar` 
+Arguments: **mode**`number`
+
+Default: **1**
+
+MSDF-based font rendering utilizes vector distance data instead of rasterized textures, allowing crisp, high-quality text at any scale with minimal blurring or aliasing. Applies to all in-game text.
 
 ## Cursor`macro`
 
