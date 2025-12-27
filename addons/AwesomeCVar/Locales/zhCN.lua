@@ -51,6 +51,7 @@ if GetLocale() == "zhCN" then
     L.CVAR_LABEL_FRIENDLY_DETECT_MODE = "友方侦测模式 |cffff0000（需重载）|r"
     L.CVAR_LABEL_NAMEPLATE_DISTANCE = "姓名板距离"
     L.CVAR_LABEL_MAX_RAISE_DISTANCE = "最大抬升距离"
+    L.CVAR_LABEL_NAMEPLATE_RECHECK_TRESHOLD = "姓名板重新检测阈值"
     L.CVAR_LABEL_X_SPACE = "姓名板 X 轴间距"
     L.CVAR_LABEL_Y_SPACE = "姓名板 Y 轴间距"
     L.CVAR_LABEL_UPPER_BORDER = "姓名板上边界偏移"
@@ -81,6 +82,7 @@ if GetLocale() == "zhCN" then
     L.DESC_CAMERA_INDIRECT_ALPHA = "定义镜头与玩家之间物体的透明度。"
     L.DESC_CAMERA_DISTANCE_MAX = "设置你可以拉远镜头的最大距离。"
 	L.DESC_MSDF = "启用基于矢量的字体渲染，可显著提升字形质量。\n0 = 禁用；1 = 启用；\n2 = 启用（不安全的字体）— 由于距离场的计算方式，\n某些具有自相交轮廓的字体（例如 'diediedie'）可能会出现问题。"
+    L.DESC_NAMEPLATE_RECHECK_TRESHOLD = "姓名板在更新之前必须相对于其先前位置移动的最小距离，有助于防止跳动。"
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "反应 API"

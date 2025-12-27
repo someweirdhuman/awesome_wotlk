@@ -51,6 +51,7 @@ if GetLocale() == "frFR" then
     L.CVAR_LABEL_FRIENDLY_DETECT_MODE = "Mode de détection amical |cffff0000(Recharg. requis)|r"
     L.CVAR_LABEL_NAMEPLATE_DISTANCE = "Distance des barres de noms"
     L.CVAR_LABEL_MAX_RAISE_DISTANCE = "Distance d'élévation max"
+    L.CVAR_LABEL_NAMEPLATE_RECHECK_TRESHOLD = "Seuil de recontrôle des barres de noms"
     L.CVAR_LABEL_X_SPACE = "Espace X des barres de noms"
     L.CVAR_LABEL_Y_SPACE = "Espace Y des barres de noms"
     L.CVAR_LABEL_UPPER_BORDER = "Décalage bordure supérieure"
@@ -81,6 +82,7 @@ if GetLocale() == "frFR" then
     L.DESC_CAMERA_INDIRECT_ALPHA = "Définit la transparence des objets entre la caméra et le joueur."
     L.DESC_CAMERA_DISTANCE_MAX = "Définit la distance maximale à laquelle vous pouvez zoomer vers l'extérieur."
 	L.DESC_MSDF = "Active le rendu vectoriel des polices, améliorant considérablement la qualité des glyphes.\n0 = désactivé; 1 = activé;\n2 = activé (polices non sécurisées) — en raison du calcul des champs de distance,\ncertaines polices avec des contours auto-intersectants (ex. 'diediedie') peuvent poser problème."
+    L.DESC_NAMEPLATE_RECHECK_TRESHOLD = "La distance minimale qu'une barre de nom doit parcourir depuis sa position précédente avant d'être mise à jour, ce qui aide à prévenir les sauts."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API de Réaction"

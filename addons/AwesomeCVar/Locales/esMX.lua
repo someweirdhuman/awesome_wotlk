@@ -51,6 +51,7 @@ if GetLocale() == "esMX" then
     L.CVAR_LABEL_FRIENDLY_DETECT_MODE = "Modo de detección de aliados |cffff0000(Req. recarga)|r"
     L.CVAR_LABEL_NAMEPLATE_DISTANCE = "Distancia de placas de nombre"
     L.CVAR_LABEL_MAX_RAISE_DISTANCE = "Distancia máxima de elevación"
+    L.CVAR_LABEL_NAMEPLATE_RECHECK_TRESHOLD = "Umbral de rechecado de placas de nombre"
     L.CVAR_LABEL_X_SPACE = "Espacio X de placas de nombre"
     L.CVAR_LABEL_Y_SPACE = "Espacio Y de placas de nombre"
     L.CVAR_LABEL_UPPER_BORDER = "Desplazamiento del borde superior"
@@ -81,6 +82,7 @@ if GetLocale() == "esMX" then
     L.DESC_CAMERA_INDIRECT_ALPHA = "Define la transparencia de los objetos entre la cámara y el jugador."
     L.DESC_CAMERA_DISTANCE_MAX = "Establece la distancia máxima hasta la que puedes alejar la cámara."
 	L.DESC_MSDF = "Activa el renderizado de fuentes basado en vectores, mejorando considerablemente la calidad de los glifos.\n0 = desactivado; 1 = activado;\n2 = activado (fuentes no seguras) — debido a cómo se calculan los campos de distancia,\nalgunas fuentes con contornos auto-intersectados (p. ej., 'diediedie') pueden fallar."
+    L.DESC_NAMEPLATE_RECHECK_TRESHOLD = "La distancia mínima que una placa de nombre debe moverse desde su posición anterior antes de actualizarse, ayudando a prevenir saltos."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API de reacción"

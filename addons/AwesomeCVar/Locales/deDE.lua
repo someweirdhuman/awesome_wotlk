@@ -51,6 +51,7 @@ if GetLocale() == "deDE" then
     L.CVAR_LABEL_FRIENDLY_DETECT_MODE = "Erkennungsmodus für Freunde |cffff0000(Neuladen erf.)|r"
     L.CVAR_LABEL_NAMEPLATE_DISTANCE = "Distanz der Namensplaketten"
     L.CVAR_LABEL_MAX_RAISE_DISTANCE = "Max. Anhebedistanz"
+    L.CVAR_LABEL_NAMEPLATE_RECHECK_TRESHOLD = "Namensplaketten Neuberechnungs-Schwelle"
     L.CVAR_LABEL_X_SPACE = "X-Abstand der Namensplaketten"
     L.CVAR_LABEL_Y_SPACE = "Y-Abstand der Namensplaketten"
     L.CVAR_LABEL_UPPER_BORDER = "Oberer Rand-Offset der Namensplaketten"
@@ -81,6 +82,7 @@ if GetLocale() == "deDE" then
     L.DESC_CAMERA_INDIRECT_ALPHA = "Definiert die Transparenz von Objekten zwischen Kamera und Spieler."
     L.DESC_CAMERA_DISTANCE_MAX = "Legt die maximale Entfernung fest, bis zu der du herauszoomen kannst."
 	L.DESC_MSDF = "Aktiviert vektorbasierte Schriftwiedergabe und verbessert die Glyphenqualität deutlich.\n0 = deaktiviert; 1 = aktiviert;\n2 = aktiviert (unsichere Schriften) — aufgrund der Berechnung der Distanzfelder\nkönnen einige Schriften mit sich selbst schneidenden Konturen (z. B. 'diediedie') fehlerhaft dargestellt werden."
+    L.DESC_NAMEPLATE_RECHECK_TRESHOLD = "Die minimale Entfernung, um die sich eine Namensplakette von ihrer vorherigen Position bewegen muss, bevor sie aktualisiert wird. Hilft, Ruckeln zu vermeiden."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "Reaktions-API"

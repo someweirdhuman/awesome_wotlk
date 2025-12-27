@@ -32,6 +32,7 @@ static Console::CVar* s_cvar_nameplateStackFriendlyMode;
 static Console::CVar* s_cvar_nameplateMaxRaiseDistance;
 static Console::CVar* s_cvar_nameplateExtendWorldFrameHeight;
 static Console::CVar* s_cvar_nameplateUpperBorderOnlyBoss;
+static Console::CVar* s_cvar_nameplateRecheckTreshold;
 
 guid_t parseGuidFromString(const char* str)
 {
@@ -131,6 +132,7 @@ static int CVarHandler_NameplateFriendlyHitboxHeight(Console::CVar*, const char*
 static int CVarHandler_NameplateFriendlyHitboxWidth(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateMaxRaiseDistance(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateUpperBorderOnlyBoss(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
+static int CVarHandler_NameplateRecheckTreshold(Console::CVar*, const char*, const char* value, LPVOID) { return 1; }
 static int CVarHandler_NameplateExtendWorldFrameHeight(Console::CVar*, const char*, const char* value, LPVOID) {
     if (!IsInWorld()) return 1;
 
@@ -171,7 +173,6 @@ static void UpdateNameplateFriendliness(const char* name, const char* value)
 
         entry.xpos = 0.f;
         entry.ypos = 0.f;
-        entry.position = 0.f;
 
         SetClampedToScreen(L, frame_idx, false);
         SetClampRectInsets(L, frame_idx, 0, 0, 0, 0);
@@ -202,7 +203,6 @@ static int CVarHandler_NameplateStacking(Console::CVar*, const char*, const char
         int frame_idx = lua_gettop(L);
         entry.xpos = 0.f;
         entry.ypos = 0.f;
-        entry.position = 0.f;
         SetClampedToScreen(L, frame_idx, false);
         SetClampRectInsets(L, frame_idx, 0, 0, 0, 0);
         lua_pop(L, 1);
@@ -262,239 +262,99 @@ static void NameplateStackingUpdateSmooth(lua_State* L, NamePlateVars* vars)
 {
     bool nameplateStackFriendly = std::atoi(s_cvar_nameplateStackFriendly->vStr) == 1;
     auto now = std::chrono::steady_clock::now();
-    double delta = std::chrono::duration<float>(now - gLastCallTime).count() * 500;
+    double delta = std::chrono::duration<float>(now - gLastCallTime).count();
     gLastCallTime = now;
-
-    for (size_t i = 0; i < vars->nameplates.size(); ++i)
-    {
-        NamePlateEntry& entry = vars->nameplates[i];
-
-        lua_pushframe(L, entry.nameplate);
-        int frame_idx = lua_gettop(L);
-
-        if (!(entry.flags & NamePlateFlag_Visible)) {
-            entry.xpos = 0.f;
-            entry.ypos = 0.f;
-            entry.currentStackOffset = 0.f;
-            entry.targetStackOffset = 0.f;
-            SetClampedToScreen(L, frame_idx, false);
-            SetClampRectInsets(L, frame_idx, 0, 0, 0, 0);
-        }
-        lua_pop(L, 1);
-    }
 
     int xSpace = std::atoi(s_cvar_nameplateXSpace->vStr);
     int ySpace = std::atoi(s_cvar_nameplateYSpace->vStr);
-
-    std::vector<size_t> sorted_indices(vars->nameplates.size());
-    std::iota(sorted_indices.begin(), sorted_indices.end(), 0);
-
-    std::sort(sorted_indices.begin(), sorted_indices.end(), [&](size_t a, size_t b) {
-        const auto& plate_a = vars->nameplates[a];
-        const auto& plate_b = vars->nameplates[b];
-        const double inertiaFactor = 1.1;
-        double effectivePosA = plate_a.ypos + (plate_a.currentStackOffset * inertiaFactor);
-        double effectivePosB = plate_b.ypos + (plate_b.currentStackOffset * inertiaFactor);
-        return effectivePosA < effectivePosB;
-        });
-
-    for (size_t i = 0; i < sorted_indices.size(); ++i) {
-        size_t idx1 = sorted_indices[i];
-        NamePlateEntry& nameplate_1 = vars->nameplates[idx1];
-
-        if (!(nameplate_1.flags & NamePlateFlag_Visible) || (!nameplateStackFriendly && nameplate_1.isFriendly)) {
-            nameplate_1.targetStackOffset = 0.0;
-            continue;
-        }
-
-        double currentCalculatedTargetOffset = 0.0;
-
-        for (size_t j = 0; j < i; ++j) {
-            size_t idx2 = sorted_indices[j];
-            NamePlateEntry& nameplate_2 = vars->nameplates[idx2];
-
-            if (!(nameplate_2.flags & NamePlateFlag_Visible) || (!nameplateStackFriendly && nameplate_2.isFriendly)) {
-                continue;
-            }
-
-            if (std::abs(nameplate_1.xpos - nameplate_2.xpos) < xSpace) {
-                double requiredY = (nameplate_2.ypos + nameplate_2.currentStackOffset + ySpace);
-                double requiredOffset = requiredY - nameplate_1.ypos;
-
-                currentCalculatedTargetOffset = max(currentCalculatedTargetOffset, requiredOffset);
-            }
-        }
-        nameplate_1.targetStackOffset = currentCalculatedTargetOffset;
-    }
+    double speedRaise = std::atof(s_cvar_nameplateSpeedRaise->vStr) * 2.0;
+    double speedLower = std::atof(s_cvar_nameplateSpeedLower->vStr) * 2.0;
 
     int upperBorder = std::atoi(s_cvar_nameplateUpperBorder->vStr);
     int originPos = std::atoi(s_cvar_nameplateOriginPos->vStr);
-    double speedRaise = std::atof(s_cvar_nameplateSpeedRaise->vStr) / 100;
-    double speedReset = std::atof(s_cvar_nameplateSpeedReset->vStr) / 100;
-    double speedLower = std::atof(s_cvar_nameplateSpeedLower->vStr) / 100;
-    const double nameplateMaxRaiseDistance = std::atoi(s_cvar_nameplateMaxRaiseDistance->vStr);
+    double maxRaise = std::atof(s_cvar_nameplateMaxRaiseDistance->vStr);
+    bool onlyBossUpper = std::atoi(s_cvar_nameplateUpperBorderOnlyBoss->vStr) == 1;
+    int worldFrameExtend = std::atoi(s_cvar_nameplateExtendWorldFrameHeight->vStr);
+    const double recheckThreshold = std::atof(s_cvar_nameplateRecheckTreshold->vStr);
 
+    std::vector<size_t> active_indices;
     for (size_t i = 0; i < vars->nameplates.size(); ++i) {
-        NamePlateEntry& nameplate = vars->nameplates[i];
+        if ((vars->nameplates[i].flags & NamePlateFlag_Visible) && (nameplateStackFriendly || !vars->nameplates[i].isFriendly)) {
+            active_indices.push_back(i);
+        }
+        else {
+            vars->nameplates[i].targetStackOffset = 0.0;
+            vars->nameplates[i].currentStackOffset = 0.0;
+        }
+    }
 
+    std::sort(active_indices.begin(), active_indices.end(), [&](size_t a, size_t b) {
+        const auto& pA = vars->nameplates[a];
+        const auto& pB = vars->nameplates[b];
+        if (std::abs(pA.ypos - pB.ypos) > 8.0) {
+            return pA.ypos < pB.ypos;
+        }
+        return pA.guid < pB.guid;
+        });
+
+    for (size_t i = 0; i < active_indices.size(); ++i) {
+        NamePlateEntry& p1 = vars->nameplates[active_indices[i]];
+        double testOffset = 0.0;
+
+        for (int attempts = 0; attempts < 10; ++attempts) {
+            bool collisionFound = false;
+            double currentY1 = p1.ypos + testOffset;
+
+            for (size_t j = 0; j < i; ++j) {
+                NamePlateEntry& p2 = vars->nameplates[active_indices[j]];
+
+                if (std::abs(p1.xpos - p2.xpos) < (xSpace - 2)) {
+                    double currentY2 = p2.ypos + p2.targetStackOffset;
+
+                    if (std::abs(currentY1 - currentY2) < (ySpace - 1)) {
+                        testOffset = (currentY2 + ySpace) - p1.ypos;
+                        collisionFound = true;
+                        break;
+                    }
+                }
+            }
+            if (!collisionFound) break;
+        }
+
+        if (maxRaise > 0 && testOffset > maxRaise) {
+            testOffset = maxRaise;
+        }
+
+        if (std::abs(testOffset - p1.targetStackOffset) > recheckThreshold || testOffset == 0) {
+            p1.targetStackOffset = testOffset;
+        }
+    }
+
+    for (size_t idx : active_indices) {
+        NamePlateEntry& nameplate = vars->nameplates[idx];
         lua_pushframe(L, nameplate.nameplate);
         int frame_idx = lua_gettop(L);
 
-        double width = 0, height = 0;
+        double width, height;
         GetSize(L, frame_idx, width, height);
 
-        if (!nameplateStackFriendly && nameplate.isFriendly) {
-            SetClampedToScreen(L, frame_idx, true);
-            SetClampRectInsets(L, frame_idx, -10, 10, upperBorder, -nameplate.ypos - originPos + height / 2);
-            lua_pop(L, 1);
-            continue;
-        }
+        double diff = nameplate.targetStackOffset - nameplate.currentStackOffset;
 
-        if (nameplate.flags & NamePlateFlag_Visible) {
-            double diffToTarget = nameplate.targetStackOffset - nameplate.currentStackOffset;
-            double interpolationSpeed = speedRaise;
-
-            if (nameplate.targetStackOffset < nameplate.currentStackOffset - 0.01) {
-                interpolationSpeed = speedLower;
-            }
-            else if (nameplate.targetStackOffset > nameplate.currentStackOffset + 0.01) {
-                interpolationSpeed = speedRaise;
-            }
-            else {
-                interpolationSpeed = speedReset;
-            }
-
-            double interpolationFactor = interpolationSpeed * delta;
-
-            const double maxInterpolationFactor = 0.5;
-            interpolationFactor = min(interpolationFactor, maxInterpolationFactor);
-
-            nameplate.currentStackOffset += diffToTarget * interpolationFactor;
-
-            if (std::abs(nameplate.currentStackOffset - nameplate.targetStackOffset) < 0.01) {
-                nameplate.currentStackOffset = nameplate.targetStackOffset;
-            }
-
-            nameplate.currentStackOffset = max(0.0, nameplate.currentStackOffset);
-            if (nameplateMaxRaiseDistance > 0) {
-                nameplate.currentStackOffset = min(nameplate.currentStackOffset, nameplateMaxRaiseDistance);
-            }
-
-            SetClampedToScreen(L, frame_idx, true);
-            if (std::atoi(s_cvar_nameplateUpperBorderOnlyBoss->vStr) == 1) {
-                SetClampRectInsets(L, frame_idx, -10, 10, nameplate.rank == 3 ? upperBorder : (-upperBorder * 5), -nameplate.ypos - nameplate.currentStackOffset - originPos + height / 2);
-            }
-            else {
-                SetClampRectInsets(L, frame_idx, -10, 10, upperBorder, -nameplate.ypos - nameplate.currentStackOffset - originPos + height / 2);
-            }
+        if (std::abs(diff) < 0.5) {
+            nameplate.currentStackOffset = nameplate.targetStackOffset;
         }
         else {
-            nameplate.currentStackOffset = 0.f;
-            nameplate.targetStackOffset = 0.f;
-            SetClampedToScreen(L, frame_idx, false);
-            SetClampRectInsets(L, frame_idx, 0, 0, 0, 0);
-        }
-        lua_pop(L, 1);
-    }
-}
-
-static void NameplateStackingUpdate(lua_State* L, NamePlateVars* vars)
-{
-    bool nameplateStackFriendly = std::atoi(s_cvar_nameplateStackFriendly->vStr) == 1 ? true : false;
-    auto now = std::chrono::steady_clock::now();
-    double delta = std::chrono::duration<float>(now - gLastCallTime).count() * 500;  // delta 
-    gLastCallTime = now;
-
-    for (size_t i = 0; i < vars->nameplates.size(); ++i)
-    {
-        NamePlateEntry& entry = vars->nameplates[i];
-        if (!nameplateStackFriendly && entry.isFriendly) {
-            continue;
-        }
-        std::string point;
-        std::string relativeToName;
-        std::string relativePoint;
-        double xOfs, yOfs;
-
-        lua_pushframe(L, entry.nameplate);
-        int frame_idx = lua_gettop(L);
-
-        if (!(entry.flags & NamePlateFlag_Visible)) {
-            entry.xpos = 0.f;
-            entry.ypos = 0.f;
-            SetClampedToScreen(L, frame_idx, false);
-            SetClampRectInsets(L, frame_idx, 0, 0, 0, 0);
-        }
-        lua_pop(L, 1);
-    }
-
-    int xSpace = std::atoi(s_cvar_nameplateXSpace->vStr);
-    int ySpace = std::atoi(s_cvar_nameplateYSpace->vStr);
-    int upperBorder = std::atoi(s_cvar_nameplateUpperBorder->vStr);
-    int originPos = std::atoi(s_cvar_nameplateOriginPos->vStr);
-    double speedRaise = std::atof(s_cvar_nameplateSpeedRaise->vStr);
-    double speedReset = std::atof(s_cvar_nameplateSpeedReset->vStr);
-    double speedLower = std::atof(s_cvar_nameplateSpeedLower->vStr);
-
-    for (size_t i = 0; i < vars->nameplates.size(); ++i) {
-        NamePlateEntry& nameplate_1 = vars->nameplates[i];
-
-        lua_pushframe(L, nameplate_1.nameplate);
-        int frame_1 = lua_gettop(L);
-
-        double width = 0, height = 0;
-        GetSize(L, frame_1, width, height);
-
-        if (!nameplateStackFriendly && nameplate_1.isFriendly) {
-            SetClampedToScreen(L, frame_1, true);
-            SetClampRectInsets(L, frame_1, -10, 10, upperBorder, -nameplate_1.ypos - originPos + height / 2);
-            lua_pop(L, 1);
-            continue;
+            double lerpFactor = (diff > 0 ? speedRaise : speedLower) * delta;
+            if (lerpFactor > 0.8) lerpFactor = 0.8;
+            nameplate.currentStackOffset += diff * lerpFactor;
         }
 
-        if (nameplate_1.flags & NamePlateFlag_Visible) {
-            double min = 1000;
-            bool reset = true;
-            for (size_t j = 0; j < vars->nameplates.size(); ++j) {
-                NamePlateEntry& nameplate_2 = vars->nameplates[j];
-                lua_pushframe(L, nameplate_2.nameplate);
+        SetClampedToScreen(L, frame_idx, true);
 
-                int frame_2 = lua_gettop(L);
-                if (nameplate_2.flags & NamePlateFlag_Visible) {
-                    if (nameplate_1.guid != nameplate_2.guid) {
-                        double xdiff = nameplate_1.xpos - nameplate_2.xpos;
-                        double ydiff = nameplate_1.ypos + nameplate_1.position - nameplate_2.ypos - nameplate_2.position;
-                        double ydiff_origin = nameplate_1.ypos - nameplate_2.ypos - nameplate_2.position;
+        int currentUpper = (onlyBossUpper && nameplate.rank != 3) ? -worldFrameExtend : upperBorder;
+        float bottomInset = -nameplate.ypos - nameplate.currentStackOffset - originPos + (height / 2);
 
-                        if (std::abs(xdiff) < xSpace) {
-                            if (ydiff >= 0 && std::abs(ydiff) < min) {
-                                min = std::abs(ydiff);
-                            }
-                            if (std::abs(ydiff_origin) < ySpace + 2 * delta) {
-                                reset = false;
-                            }
-                        }
-                    }
-                }
-                lua_pop(L, 1);
-            }
-
-            double oldposition = nameplate_1.position;
-
-            if (oldposition >= 2 * delta && reset == 1) {
-                nameplate_1.position = oldposition - std::exp(-10.0f / oldposition) * delta * speedReset;
-            }
-            else if (min < ySpace) {
-                nameplate_1.position = oldposition + std::exp(-min / ySpace) * delta * speedRaise;
-            }
-            else if ((oldposition >= 2 * delta) && (min > ySpace + delta * 2)) {
-                nameplate_1.position = oldposition - std::exp(-ySpace / min) * delta * 0.8f * speedLower;
-            }
-
-            SetClampedToScreen(L, frame_1, true);
-            SetClampRectInsets(L, frame_1, -10, 10, upperBorder, -nameplate_1.ypos - nameplate_1.position - originPos + height / 2);
-        }
-
+        SetClampRectInsets(L, frame_idx, -10, 10, currentUpper, bottomInset);
         lua_pop(L, 1);
     }
 }
@@ -650,7 +510,6 @@ static void onUpdateCallback()
                 FrameScript::FireEvent(NAME_PLATE_UNIT_REMOVED, "%s", token);
                 entry.guid = 0;
                 entry.flags &= ~NamePlateFlag_Visible;
-                entry.position = 0;
                 entry.xpos = 0;
                 entry.ypos = 0;
                 entry.isFriendly = false;
@@ -706,6 +565,7 @@ void NamePlates::initialize()
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateMaxRaiseDistance, "nameplateMaxRaiseDistance", NULL, (Console::CVarFlags)1, "200", CVarHandler_NameplateMaxRaiseDistance);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateExtendWorldFrameHeight, "nameplateExtendWorldFrameHeight", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateExtendWorldFrameHeight);
     Hooks::FrameXML::registerCVar(&s_cvar_nameplateUpperBorderOnlyBoss, "nameplateUpperBorderOnlyBoss", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateUpperBorderOnlyBoss);
+    Hooks::FrameXML::registerCVar(&s_cvar_nameplateRecheckTreshold, "nameplateRecheckTreshold", NULL, (Console::CVarFlags)1, "0", CVarHandler_NameplateRecheckTreshold);
     Hooks::FrameScript::registerToken("nameplate", getTokenGuid, getTokenId);
     Hooks::FrameScript::registerOnUpdate(onUpdateCallback);
     Hooks::FrameScript::registerOnEnter(OnEnterWorld);

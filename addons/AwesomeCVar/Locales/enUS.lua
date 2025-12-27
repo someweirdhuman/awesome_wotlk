@@ -51,6 +51,7 @@ if GetLocale() == "enUS" then
     L.CVAR_LABEL_FRIENDLY_DETECT_MODE = "Friendly Detection Mode |cffff0000(Reload Required)|r"
     L.CVAR_LABEL_NAMEPLATE_DISTANCE = "Nameplate Distance"
     L.CVAR_LABEL_MAX_RAISE_DISTANCE = "Max Raise Distance"
+    L.CVAR_LABEL_NAMEPLATE_RECHECK_TRESHOLD = "Nameplate Recheck Treshold"
     L.CVAR_LABEL_X_SPACE = "Nameplate X Space"
     L.CVAR_LABEL_Y_SPACE = "Nameplate Y Space"
     L.CVAR_LABEL_UPPER_BORDER = "Nameplate Upper Border Offset"
@@ -73,7 +74,7 @@ if GetLocale() == "enUS" then
 	L.CVAR_LABEL_CAMERA_INDIRECT_ALPHA = "Camera Indirect Alpha"
 	L.CVAR_LABEL_CAMERA_INDIRECT_OFFSET = "Camera Indirect Offset"
 	L.CVAR_LABEL_CAMERA_DISTANCE_MAX = "Camera Distance"
-
+    
     L.DESC_HITBOX_DISABLED = "0 = DISABLED, don't use without a nameplate addon"
     L.DESC_EXTEND_WORLD_FRAME_HEIGHT = "Sticks out-of-view nameplates to top border; may break some UI elements. REQUIRES stacking nameplates enabled."
     L.DESC_STANCE_PATCH = "Allows you to change stance/form and cast ability if macroed in single click. Doesn't work on Warmane."
@@ -81,7 +82,8 @@ if GetLocale() == "enUS" then
     L.DESC_CAMERA_INDIRECT_ALPHA = "Defines the transparency of objects between the camera and player."
     L.DESC_CAMERA_DISTANCE_MAX = "Sets the maximum distance which you can zoom out to."
 	L.DESC_MSDF = "Enables vector-based font rendering, dramatically improving glyph quality.\n0 = disabled; 1 = enabled;\n2 = enabled (unsafe fonts) — due to how distance fields are calculated,\nsome fonts with self-intersecting contours (e.g., 'diediedie') may break."
-
+    L.DESC_NAMEPLATE_RECHECK_TRESHOLD = "The minimum distance a nameplate must move from its previous position before being updated, helping to prevent jumpiness."
+    
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "Reaction API"
     L.MODE_LABEL_COLOR_PARSING = "Color Parsing"

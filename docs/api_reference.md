@@ -202,6 +202,13 @@ Default: **0**
 
 When enabled, only nameplates of boss creatures will stick to top of the screen, all other nameplates will overflow.
 
+## nameplateRecheckTreshold`CVar`
+Arguments: **distance**`number`
+
+Default: **5**
+
+The minimum distance a nameplate must move from its previous position before being updated, helping to prevent jumpiness.
+
 # C_VoiceChat
 Windows SAPI–backed Text-to-Speech backport from retail
 

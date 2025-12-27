@@ -39,11 +39,9 @@ struct NamePlateEntry {
     bool isFriendly = false;
     uint8_t rank = 0;
 
-    double position;
     double ypos;
     double xpos;
-
-    //smoth fc stuff
+    double xposOffset;
     double currentStackOffset; 
     double targetStackOffset;  
 };

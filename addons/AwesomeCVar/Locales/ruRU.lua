@@ -51,6 +51,7 @@ if GetLocale() == "ruRU" then
     L.CVAR_LABEL_FRIENDLY_DETECT_MODE = "Режим определения союзников |cffff0000(нужен /reload)|r"
     L.CVAR_LABEL_NAMEPLATE_DISTANCE = "Дистанция индикаторов"
     L.CVAR_LABEL_MAX_RAISE_DISTANCE = "Макс. дистанция подъема"
+    L.CVAR_LABEL_NAMEPLATE_RECHECK_TRESHOLD = "Порог повторной проверки индикаторов"
     L.CVAR_LABEL_X_SPACE = "Пробел X для индикаторов"
     L.CVAR_LABEL_Y_SPACE = "Пробел Y для индикаторов"
     L.CVAR_LABEL_UPPER_BORDER = "Смещение верхней границы"
@@ -81,6 +82,7 @@ if GetLocale() == "ruRU" then
     L.DESC_CAMERA_INDIRECT_ALPHA = "Определяет прозрачность объектов между камерой и игроком."
     L.DESC_CAMERA_DISTANCE_MAX = "Устанавливает максимальное расстояние, на которое вы можете отдалить камеру."
 	L.DESC_MSDF = "Включает векторный рендеринг шрифтов, что значительно улучшает качество глифов.\n0 = отключено; 1 = включено;\n2 = включено (ненадёжные шрифты) — из-за способа расчёта полей расстояний\nнекоторые шрифты с самопересекающимися контурами (например, 'diediedie') могут работать некорректно."
+    L.DESC_NAMEPLATE_RECHECK_TRESHOLD = "Минимальное расстояние, на которое должен переместиться индикатор от предыдущей позиции, прежде чем он будет обновлён, что помогает предотвратить дергания."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "API реакции"

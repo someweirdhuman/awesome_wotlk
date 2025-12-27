@@ -51,6 +51,7 @@ if GetLocale() == "koKR" then
     L.CVAR_LABEL_FRIENDLY_DETECT_MODE = "우호적 대상 감지 모드 |cffff0000(새로고침 필요)|r"
     L.CVAR_LABEL_NAMEPLATE_DISTANCE = "이름표 거리"
     L.CVAR_LABEL_MAX_RAISE_DISTANCE = "최대 상승 거리"
+    L.CVAR_LABEL_NAMEPLATE_RECHECK_TRESHOLD = "이름표 재검사 임계값"
     L.CVAR_LABEL_X_SPACE = "이름표 X축 간격"
     L.CVAR_LABEL_Y_SPACE = "이름표 Y축 간격"
     L.CVAR_LABEL_UPPER_BORDER = "이름표 상단 테두리 오프셋"
@@ -81,6 +82,7 @@ if GetLocale() == "koKR" then
     L.DESC_CAMERA_INDIRECT_ALPHA = "카메라와 플레이어 사이 오브젝트의 투명도를 정의합니다."
     L.DESC_CAMERA_DISTANCE_MAX = "카메라를 얼마나 멀리 줌아웃할 수 있는지의 최대 거리를 설정합니다."
 	L.DESC_MSDF = "벡터 기반 폰트 렌더링을 활성화하여 글리프 품질을 크게 향상시킵니다.\n0 = 비활성화; 1 = 활성화;\n2 = 활성화(안전하지 않은 폰트) — 거리 필드 계산 방식으로 인해\n자기 교차 윤곽을 가진 일부 폰트(예: 'diediedie')는 정상적으로 표시되지 않을 수 있습니다."
+    L.DESC_NAMEPLATE_RECHECK_TRESHOLD = "이름표가 업데이트되기 전에 이전 위치에서 이동해야 하는 최소 거리로, 튀는 현상을 방지하는 데 도움이 됩니다."
 
     -- CVar Mode Options
     L.MODE_LABEL_REACTION_API = "반응 API"

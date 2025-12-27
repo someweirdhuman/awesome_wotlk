@@ -78,6 +78,7 @@ ___
     - nameplateMaxRaiseDistance<br>
     - nameplateExtendWorldFrameHeight<br>
     - nameplateUpperBorderOnlyBoss<br>
+    - nameplateRecheckTreshold<br>
     - enableStancePatch<br>
     - cameraIndirectVisibility<br>
     - cameraIndirectAlpha<br>
