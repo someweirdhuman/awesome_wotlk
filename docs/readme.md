@@ -74,7 +74,6 @@ ___
     - interactionMode<br>
     - interactionAngle<br>
     - nameplateStackFriendly<br>
-    - nameplateStackFriendlyMode<br>
     - nameplateMaxRaiseDistance<br>
     - nameplateExtendWorldFrameHeight<br>
     - nameplateUpperBorderOnlyBoss<br>

@@ -56,7 +56,6 @@ ACVar.CVARS = {
     [L.CATEGORY_NAMEPLATES] = {
         { name = "nameplateStacking", label = L.CVAR_LABEL_ENABLE_STACKING, type = "toggle", min = 0, max = 1 },
         { name = "nameplateStackFriendly", label = L.CVAR_LABEL_STACK_FRIENDLY, type = "toggle", min = 0, max = 1, reloadRequired = true },
-        { name = "nameplateStackFriendlyMode", label = L.CVAR_LABEL_FRIENDLY_DETECT_MODE, type = "mode", modes = { {value = 0, label = L.MODE_LABEL_REACTION_API}, {value = 1, label = L.MODE_LABEL_COLOR_PARSING} }, reloadRequired = true },
         { name = "nameplateDistance", label = L.CVAR_LABEL_NAMEPLATE_DISTANCE, type = "slider", min = 1, max = 200, step = 1, default = 40 },
         { name = "nameplateMaxRaiseDistance", label = L.CVAR_LABEL_MAX_RAISE_DISTANCE, type = "slider", min = 0, max = 500, step = 1, default = 200 },
         { name = "nameplateRecheckTreshold", label = L.CVAR_LABEL_NAMEPLATE_RECHECK_TRESHOLD, desc = L.DESC_NAMEPLATE_RECHECK_TRESHOLD, type = "slider", min = 0, max = 20, step = 1, default = 5 },

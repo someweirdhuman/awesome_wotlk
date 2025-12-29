@@ -136,7 +136,6 @@ Default: **0**
 
 Height of a clickable **Friendly** nameplate hitbox, addons may override or break this, reload or disable/enable nameplates afterwards.<br>
 Use 0 to disable this and use default values.
-Affected by choice of `nameplateStackFriendlyMode`, which has unintuitive name.
 
 ## nameplateFriendlyHitboxWidth`CVar` 
 Arguments: **width**`number`
@@ -170,15 +169,6 @@ Default: **1**
 Toggles if friendly nameplates are stacking or overlapping. <br>
 If set to **0** then it overlaps<br>
 If set to **1** it stacks. 
-
-## nameplateStackFriendlyMode`CVar` 
-Arguments: **mode**`number`
-
-Default: **1**
-
-Changes how friendliness of mobs is decided. <br>
-If set to **0** a UnitReaction("player", "nameplate%") >= 5 + CanAttack check for reaction 4 is used.<br>
-If set to **1** a parsing of healthbar color is used, same as weakaura did it.
 
 ## nameplateMaxRaiseDistance`CVar` 
 Arguments: **height**`number`
