@@ -7,15 +7,77 @@
 #include <cstring>
 #include "Hooks.h"
 #include <string>
+#include <format>
+#define NAME_PLATE_CREATED "NAME_PLATE_CREATED"
+#define NAME_PLATE_UNIT_ADDED "NAME_PLATE_UNIT_ADDED"
+#define NAME_PLATE_UNIT_REMOVED "NAME_PLATE_UNIT_REMOVED"
+#define NAME_PLATE_OWNER_CHANGED "NAME_PLATE_OWNER_CHANGED"
+
+struct NameplateHolder
+{
+    Frame* nameplate;
+    bool visible = false;
+
+    //stacking stuff, helpers more or less
+    bool isFriendly = false;
+    uint8_t rank = 0;
+
+    //stacking stuff
+    double ypos;
+    double xpos;
+    double xposOffset;
+    double currentStackOffset;
+    double targetStackOffset;
+};
+
+extern std::vector<NameplateHolder> Nameplates;
+
 
 using namespace std;
+bool GetEffectiveScale(lua_State* L, double& scale);
+
+bool GetPoint(lua_State* L, int frame_idx, int point_index,
+    std::string& point, std::string& relativeToName, std::string& relativePoint,
+    double& xOfs, double& yOfs);
+
+bool SetHeight(lua_State* L, int frame_idx, double height);
+bool SetWidth(lua_State* L, int frame_idx, double width);
+
+bool ConfigureWorldFrame(lua_State* L, bool enabledVariable);
+
+bool SetPoint(lua_State* L,
+    int frame_idx,
+    const char* point,
+    int relativeTo_idx,
+    const char* relativePoint,
+    double x, double y);
+
+bool SetClampRectInsets(lua_State* L, int frame_idx, double left, double right, double top, double bottom);
+bool SetClampedToScreen(lua_State* L, int frame_idx, bool clamped);
+
+bool GetSize(lua_State* L, int frame_idx, double& width, double& height);
+
+int IsFriendlyByColor(lua_State* L, int frame_idx);
+bool IsFriendlyByReaction(CGUnit_C* unit);
 
 namespace NamePlates {
     void initialize();
 }
 
 // Forward declarations if needed
-struct Frame;
+struct Frame
+{
+    char pad0[32];
+    void* idk;
+
+    char pad1[672 - 36];
+    Frame* next;
+
+    char pad_between[4];
+    guid_t guid;
+
+    char pad2[71];
+};
 using guid_t = uint64_t;  // Or your actual definition
 
 // Flag type
@@ -45,41 +107,6 @@ struct NamePlateEntry {
     double currentStackOffset; 
     double targetStackOffset;  
 };
-
-// Main state struct
-struct NamePlateVars {
-    NamePlateVars() : updateId(1) {}
-    std::vector<NamePlateEntry> nameplates;
-    uint32_t updateId;
-};
-
-inline NamePlateVars& lua_findorcreatevars(lua_State* L)
-{
-    struct Dummy {
-        static int lua_gc(lua_State* L)
-        {
-            ((NamePlateVars*)lua_touserdata(L, -1))->~NamePlateVars();
-            return 0;
-        }
-    };
-    NamePlateVars* result = NULL;
-    lua_getfield(L, LUA_REGISTRYINDEX, "nameplatevars"); // vars
-    if (lua_isuserdata(L, -1))
-        result = (NamePlateVars*)lua_touserdata(L, -1);
-    lua_pop(L, 1);
-
-    if (!result) {
-        result = (NamePlateVars*)lua_newuserdata(L, sizeof(NamePlateVars)); // vars
-        new (result) NamePlateVars();
-
-        lua_createtable(L, 0, 1); // vars, mt
-        lua_pushcfunction(L, Dummy::lua_gc); // vars, mt, gc
-        lua_setfield(L, -2, "__gc"); // vars, mt
-        lua_setmetatable(L, -2); // vars
-        lua_setfield(L, LUA_REGISTRYINDEX, "nameplatevars");
-    }
-    return *result;
-}
 
 inline bool GetEffectiveScale(lua_State* L, double& scale)
 {
@@ -450,12 +477,15 @@ inline bool IsFriendlyByReaction(CGUnit_C* unit) {
     return false;
 }
 
-inline NamePlateEntry* getEntryByGuid(guid_t guid)
+inline Frame* getNameplateByGuid(guid_t guid)
 {
-    if (!guid) return NULL;
-    NamePlateVars& vars = lua_findorcreatevars(GetLuaState());
-    auto it = std::find_if(vars.nameplates.begin(), vars.nameplates.end(), [guid](const NamePlateEntry& entry) {
-        return (entry.flags & NamePlateFlag_Visible) && entry.guid == guid;
-        });
-    return it != vars.nameplates.end() ? &(*it) : NULL;
+    if (!guid)
+        return nullptr;
+
+    auto it = std::find_if(Nameplates.begin(), Nameplates.end(), [guid](const NameplateHolder& h) {
+        if (h.nameplate == nullptr) return false;
+        return h.nameplate && h.nameplate->guid == guid;
+    });
+
+    return it != Nameplates.end() ? it->nameplate : nullptr;
 }

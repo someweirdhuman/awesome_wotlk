@@ -18,6 +18,7 @@ void registerToken(const char* token, TokenNGuidGetter* getGuid, TokenIdNGetter*
 void registerOnUpdate(DummyCallback_t func);
 void registerOnEnter(DummyCallback_t func);
 void registerOnLeave(DummyCallback_t func);
+void registerOnGameShutdown(DummyCallback_t func);
 }
 
 namespace FrameXML {

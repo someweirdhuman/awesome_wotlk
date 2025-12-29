@@ -229,6 +229,9 @@ void Hooks::FrameScript::registerOnEnter(DummyCallback_t func) { s_customOnEnter
 static std::vector<Hooks::DummyCallback_t> s_customOnLeave;
 void Hooks::FrameScript::registerOnLeave(DummyCallback_t func) { s_customOnLeave.push_back(func); }
 
+static std::vector<Hooks::DummyCallback_t> s_customOnGameShutdown;
+void Hooks::FrameScript::registerOnGameShutdown(DummyCallback_t func) { s_customOnGameShutdown.push_back(func); }
+
 static int(*FrameScript_FireOnUpdate_orig)(int a1, int a2, int a3, int a4) = (decltype(FrameScript_FireOnUpdate_orig))0x00495810;
 static int FrameScript_FireOnUpdate_hk(int a1, int a2, int a3, int a4)
 {
@@ -251,6 +254,14 @@ static void __fastcall OnLeaveWorld()
     for (auto func : s_customOnLeave)
         func();
     return CGGameUI__LeaveWorld();
+}
+
+static int(__fastcall* CGGameUI__Shutdown)() = (int(__fastcall*)())0x00528F00;
+static int __fastcall OnShutdown()
+{
+    for (auto func : s_customOnGameShutdown)
+        func();
+    return CGGameUI__Shutdown();
 }
 
 static std::vector<Hooks::DummyCallback_t> s_glueXmlPostLoad;
@@ -676,6 +687,7 @@ void Hooks::initialize()
     DetourAttach(&(LPVOID&)FrameScript_FireOnUpdate_orig, FrameScript_FireOnUpdate_hk);
     DetourAttach(&(LPVOID&)CGGameUI__EnterWorld, OnEnterWorld);
     DetourAttach(&(LPVOID&)CGGameUI__LeaveWorld, OnLeaveWorld);
+    DetourAttach(&(LPVOID&)CGGameUI__Shutdown, OnShutdown);
     DetourAttach(&(LPVOID&)FrameScript_FillEvents_orig, FrameScript_FillEvents_hk);
     DetourAttach(&(LPVOID&)Lua_OpenFrameXMLApi_orig, Lua_OpenFrameXMLApi_hk);
     DetourAttach(&(LPVOID&)GetGuidByKeyword_orig, GetGuidByKeyword_hk);
