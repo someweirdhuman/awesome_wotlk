@@ -698,12 +698,6 @@ void NamePlates::initialize()
 {
     AllocConsole();
 
-    // Redirect stdout to the new console
-    FILE* fp;
-    freopen_s(&fp, "CONOUT$", "w", stdout);
-    freopen_s(&fp, "CONOUT$", "w", stderr);
-    freopen_s(&fp, "CONIN$", "r", stdin);
-
     Hooks::FrameXML::registerLuaLib(lua_openlibnameplates);
     Hooks::FrameXML::registerEvent(NAME_PLATE_CREATED);
     Hooks::FrameXML::registerEvent(NAME_PLATE_UNIT_ADDED);
