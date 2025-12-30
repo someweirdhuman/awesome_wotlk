@@ -1,4 +1,4 @@
-#include "NamePlates.h"
+﻿#include "NamePlates.h"
 #include "GameClient.h"
 #include "Hooks.h"
 #include <Windows.h>
@@ -28,7 +28,10 @@ static Console::CVar* s_cvar_nameplateExtendWorldFrameHeight;
 static Console::CVar* s_cvar_nameplateUpperBorderOnlyBoss;
 static Console::CVar* s_cvar_nameplateRecheckTreshold;
 
-std::vector<NameplateHolder> Nameplates;
+//std::vector<NameplateHolder> Nameplates;
+std::unordered_map<int, NameplateHolder> Nameplates; // index -> holder
+std::unordered_map<Frame*, int> FrameToIndex;        // fast lookup
+int NextIndex = 1;
 
 guid_t parseGuidFromString(const char* str)
 {
@@ -88,26 +91,32 @@ static int C_NamePlate_GetNamePlateTokenByGUID(lua_State* L)
 
 static guid_t getTokenGuid(int id)
 {
-    if (id < 0 || id >= Nameplates.size())
+    auto it = Nameplates.find(id + 1);
+    if (it == Nameplates.end()) {
         return 0;
-    if (Nameplates[id].nameplate == nullptr)
+    }
+
+    NameplateHolder& holder = it->second;
+    if (!holder.nameplate) {
         return 0;
-    return Nameplates[id].nameplate->guid;
+    }
+
+    return holder.nameplate->guid;
 }
 
 int getTokenId(guid_t guid)
 {
-    if (!guid)
+    if (!guid) {
         return -1;
+    }
 
-    for (size_t i = 0; i < Nameplates.size(); i++) {
-        Frame* frame = Nameplates[i].nameplate;
-        if (!frame)
+    for (auto& [index, holder] : Nameplates)
+    {
+        if (!holder.nameplate)
             continue;
 
-        if (frame->guid == guid && Nameplates[i].visible == true)
-        {
-            return static_cast<int>(i);
+        if (holder.nameplate->guid == guid && holder.visible) {
+            return index;
         }
     }
 
@@ -149,16 +158,20 @@ static int CVarHandler_NameplateStacking(Console::CVar*, const char*, const char
 {
     lua_State* L = GetLuaState();
 
-    for (NameplateHolder& holder : Nameplates)
+    for (auto& [index, holder] : Nameplates)
     {
         if (holder.nameplate)
         {
             lua_pushframe(L, holder.nameplate);
             int frame_idx = lua_gettop(L);
+
+            // Reset position
             holder.xpos = 0.f;
             holder.ypos = 0.f;
+
             SetClampedToScreen(L, frame_idx, false);
             SetClampRectInsets(L, frame_idx, 0, 0, 0, 0);
+
             lua_pop(L, 1);
         }
     }
@@ -173,9 +186,10 @@ static int C_NamePlate_GetNamePlates(lua_State* L)
 {
     lua_createtable(L, 0, 0);
     int id = 1;
-    for (NameplateHolder& holder : Nameplates)
+
+    for (auto& [index, holder] : Nameplates)
     {
-        if ((holder.visible) && holder.nameplate)
+        if (holder.visible && holder.nameplate)
         {
             lua_pushframe(L, holder.nameplate);
             lua_rawseti(L, -2, id++);
@@ -218,6 +232,7 @@ static int lua_openlibnameplates(lua_State* L)
 
 static void NameplateStackingUpdateSmooth()
 {
+    //todo replace lua calls
     lua_State* L = GetLuaState();
 
     double scale = 0;
@@ -246,18 +261,20 @@ static void NameplateStackingUpdateSmooth()
     double recheckThreshold = std::atof(s_cvar_nameplateRecheckTreshold->vStr);
 
     std::vector<size_t> active_indices;
-    for (size_t i = 0; i < Nameplates.size(); ++i) {
-        if (Nameplates[i].nameplate == nullptr) continue;
+    active_indices.reserve(Nameplates.size());
+    for (auto& [index, holder] : Nameplates) {
+        if (holder.nameplate == nullptr)
+            continue;
 
-        lua_pushframe(L, Nameplates[i].nameplate);
+        lua_pushframe(L, holder.nameplate);
         int frame_idx = lua_gettop(L);
 
-        CGUnit_C* unit = (CGUnit_C * )ObjectMgr::Get(Nameplates[i].nameplate->guid, TYPEMASK_UNIT);
+        CGUnit_C* unit = (CGUnit_C*)ObjectMgr::Get(holder.nameplate->guid, TYPEMASK_UNIT);
 
-        Nameplates[i].isFriendly = IsFriendlyByReaction(unit);
-        Nameplates[i].rank = unit->GetCreatureRank();
+        holder.isFriendly = IsFriendlyByReaction(unit);
+        holder.rank = unit->GetCreatureRank();
 
-        if (Nameplates[i].isFriendly) {
+        if (holder.isFriendly) {
             if (nameplateFriendlyHitboxHeight > 0) SetHeight(L, frame_idx, nameplateFriendlyHitboxHeight);
             if (nameplateFriendlyHitboxWidth > 0) SetWidth(L, frame_idx, nameplateFriendlyHitboxWidth);
         }
@@ -267,42 +284,54 @@ static void NameplateStackingUpdateSmooth()
         }
 
         std::string point, relativeToName, relativePoint;
-        double xOfs, yOfs;
+        double xOfs = 0.0, yOfs = 0.0;
         bool status = GetPoint(L, frame_idx, 1, point, relativeToName, relativePoint, xOfs, yOfs);
         if (status) {
-            Nameplates[i].xpos = xOfs;
-            Nameplates[i].ypos = yOfs;
+            holder.xpos = xOfs;
+            holder.ypos = yOfs;
         }
 
         double halfWidth = 0, halfHeight = 0;
         GetSize(L, frame_idx, halfWidth, halfHeight);
-        halfWidth *= 0.5, halfHeight *= 0.5;
+        halfWidth *= 0.5;
+        halfHeight *= 0.5;
 
         SetClampedToScreen(L, frame_idx, true);
-        SetClampRectInsets(L, frame_idx, halfWidth, -halfWidth, -halfHeight, -Nameplates[i].ypos - originPos + halfHeight);
+        SetClampRectInsets(L, frame_idx,
+            halfWidth, -halfWidth,
+            -halfHeight, -holder.ypos - originPos + halfHeight);
 
-        if ((Nameplates[i].visible) && (nameplateStackFriendly || Nameplates[i].isFriendly)) {
-            active_indices.push_back(i);
-        }else {
-            Nameplates[i].targetStackOffset = 0.0;
-            Nameplates[i].currentStackOffset = 0.0;
+        if ((holder.visible) && (nameplateStackFriendly || holder.isFriendly)) {
+            active_indices.push_back(index);
+        }
+        else {
+            holder.targetStackOffset = 0.0;
+            holder.currentStackOffset = 0.0;
         }
 
         lua_pop(L, 1);
     }
 
-    std::sort(active_indices.begin(), active_indices.end(), [&](size_t a, size_t b) {
-        const auto& pA = Nameplates[a];
-        const auto& pB = Nameplates[b];
+    std::sort(active_indices.begin(), active_indices.end(),
+    [&](size_t a, size_t b)
+    {
+        auto itA = Nameplates.find(a);
+        auto itB = Nameplates.find(b);
 
-        if (std::abs(pA.ypos - pB.ypos) > 8.0) {
+        if (itA == Nameplates.end()) return false;
+        if (itB == Nameplates.end()) return true;
+
+        const auto& pA = itA->second;
+        const auto& pB = itB->second;
+
+        if (std::abs(pA.ypos - pB.ypos) > 8.0)
             return pA.ypos < pB.ypos;
-        }
+
         return pA.nameplate->guid < pB.nameplate->guid;
     });
 
     for (size_t i = 0; i < active_indices.size(); ++i) {
-        NameplateHolder& p1 = Nameplates[active_indices[i]];
+        NameplateHolder& p1 = Nameplates.at(active_indices[i]);
         double testOffset = 0.0;
 
         for (int attempts = 0; attempts < 10; ++attempts) {
@@ -310,7 +339,7 @@ static void NameplateStackingUpdateSmooth()
             double currentY1 = p1.ypos + testOffset;
 
             for (size_t j = 0; j < i; ++j) {
-                NameplateHolder& p2 = Nameplates[active_indices[j]];
+                NameplateHolder& p2 = Nameplates.at(active_indices[j]);
 
                 if (std::abs(p1.xpos - p2.xpos) < (xSpace - 2)) {
                     double currentY2 = p2.ypos + p2.targetStackOffset;
@@ -335,7 +364,7 @@ static void NameplateStackingUpdateSmooth()
     }
 
     for (size_t idx : active_indices) {
-        NameplateHolder& nameplate = Nameplates[idx];
+        NameplateHolder& nameplate = Nameplates.at(idx);
         lua_pushframe(L, nameplate.nameplate);
         int frame_idx = lua_gettop(L);
 
@@ -366,11 +395,15 @@ static void NameplateStackingUpdateSmooth()
 static void OnGameShutdown()
 {
     Nameplates.clear();
+    FrameToIndex.clear();
+    NextIndex = 1;
 }
 
 static void onUpdateCallback()
 {
     if (!IsInWorld()) return;
+
+    //todo: move to 0x007258D0
 
     Camera* camera = GetActiveCamera();
     VecXYZ camPos = camera->pos;
@@ -378,7 +411,7 @@ static void onUpdateCallback()
     std::vector<std::pair<NameplateHolder*, VecXYZ>> sorted;
     sorted.reserve(Nameplates.size());
 
-    for (auto& h : Nameplates)
+    for (auto& [index, h] : Nameplates)
     {
         if (!h.visible || !h.nameplate)
             continue;
@@ -402,11 +435,10 @@ static void onUpdateCallback()
     int level = 0;
     for (auto& [h, pos] : sorted)
         CFrame::SetFrameLevel(h->nameplate, level += 10, 1);
- 
+
     if (strcmp(s_cvar_nameplateStacking->vStr, "1") == 0) {
         NameplateStackingUpdateSmooth();
     }
-
 }
 
 LPVOID PatchNamePlateLevelUpdate_orig = (LPVOID)0x0098E9F9;
@@ -462,147 +494,90 @@ void InstallDetour(const uintptr_t target, const int stolen, void* detour, void*
 static void* showNameplateTrampoline = nullptr;
 static void* hideNameplateTrampoline = nullptr;
 static void* createNameplateTrampoline = nullptr;
-static void* postNameplateTrampoline = nullptr;
 static void* destroyUnitTrampoline = nullptr;
-std::vector<std::function<void()>> NameplateQueue;
 
 void OnNameplateShow(Unit* unit)
 {
     Frame* nameplate = unit->nameplate;
+    if (!nameplate) return;
 
-    if (nameplate == nullptr) return;
-
-    auto it = std::find_if(Nameplates.begin(), Nameplates.end(),
-    [nameplate](NameplateHolder& h)
-    {
-        return h.nameplate == nameplate;
-    });
+    // already registered
+    if (FrameToIndex.contains(nameplate))
+        return;
 
     int index = -1;
-    bool shouldFireEvent = false;
-
-    if (it == Nameplates.end())
+    // reuse empty slot
+    for (auto& [i, h] : Nameplates)
     {
-        // Try to find an empty slot
-        auto emptyIt = std::find_if(Nameplates.begin(), Nameplates.end(),
-        [](NameplateHolder& h)
+        if (h.nameplate == nullptr)
         {
-            return h.nameplate == nullptr;
-        });
-
-        if (emptyIt != Nameplates.end())
-        {
-            emptyIt->nameplate = nameplate;
-            emptyIt->visible = true;
-            index = (int)std::distance(Nameplates.begin(), emptyIt) + 1;
-            shouldFireEvent = true;
-        }
-        else
-        {
-            // No empty slot, add to end
-            Nameplates.push_back({ nameplate, true });
-            index = (int)Nameplates.size();
-            shouldFireEvent = true;
+            index = i;
+            h.nameplate = nameplate;
+            h.visible = true;
+            break;
         }
     }
 
-    if (shouldFireEvent)
+    // no empty slot → new index
+    if (index == -1)
     {
-        NameplateQueue.push_back([index]()
-        {
-            char token[16];
-            snprintf(token, sizeof(token), "nameplate%d", index);
-            FrameScript::FireEvent(NAME_PLATE_UNIT_ADDED, "%s", token);
-        });
+        index = NextIndex++;
+        Nameplates[index] = { nameplate, true, index };
+        lua_State* L = GetLuaState();
+        lua_pushstring(L, NAME_PLATE_CREATED);
+        lua_pushframe(L, nameplate);
+        FrameScript::FireEvent_inner(FrameScript::GetEventIdByName(NAME_PLATE_CREATED), L, 2);
+        lua_pop(L, 2);
     }
+
+    FrameToIndex[nameplate] = index;
+    char token[16];
+    snprintf(token, sizeof(token), "nameplate%d", index);
+    FrameScript::FireEvent(NAME_PLATE_UNIT_ADDED, "%s", token);
 }
 
 void OnNameplateHide(Unit* unit)
 {
     Frame* nameplate = unit->nameplate;
+    if (!nameplate) return;
 
-    auto it = std::find_if(
-        Nameplates.begin(),
-        Nameplates.end(),
-        [&](const NameplateHolder& h)
-        {
-            if (h.nameplate == nullptr)
-                return false;
-            return h.nameplate == nameplate;
-        }
-    );
+    auto it = FrameToIndex.find(nameplate);
+    if (it == FrameToIndex.end())
+        return;
 
-    if (it != Nameplates.end())
-    {
-        int index = (int)std::distance(Nameplates.begin(), it) + 1;
+    int index = it->second;
+    auto& h = Nameplates[index];
 
-        //need to fire event before setting nameplate to nullptr so ingame u can check stuff
-        char token[16];
-        snprintf(token, sizeof(token), "nameplate%d", index);
-        FrameScript::FireEvent(NAME_PLATE_UNIT_REMOVED, "%s", token);
+    // fire event BEFORE clearing nameplate
+    char token[16];
+    snprintf(token, sizeof(token), "nameplate%d", index);
+    FrameScript::FireEvent(NAME_PLATE_UNIT_REMOVED, "%s", token);
 
-        it->visible = false;
-        it->nameplate = nullptr;
-        it->ypos = 0.f;
-        it->xpos = 0.f;
-        it->xposOffset = 0.f;
-        it->currentStackOffset = 0.f;
-        it->targetStackOffset = 0.f;
-    }
-}
+    // clear slot but keep index alive
+    h.visible = false;
+    h.nameplate = nullptr;
+    h.ypos = 0.f;
+    h.xpos = 0.f;
+    h.xposOffset = 0.f;
+    h.currentStackOffset = 0.f;
+    h.targetStackOffset = 0.f;
 
-void OnNameplateCreate(Unit* unit)
-{
-    Frame* nameplate = unit->nameplate;
-
-    NameplateQueue.push_back([nameplate]()
-    {
-        lua_State* L = GetLuaState();
-        lua_pushstring(L, NAME_PLATE_CREATED);
-        lua_pushframe(L, nameplate);
-        FrameScript::FireEvent_inner(
-            FrameScript::GetEventIdByName(NAME_PLATE_CREATED),
-            L,
-            2
-        );
-        lua_pop(L, 2);
-    });
-}
-
-void OnPostNameplate()
-{
-    for (auto& fn : NameplateQueue)
-        fn();
-
-    NameplateQueue.clear();
+    FrameToIndex.erase(it);
 }
 
 void onDestroyUnit(Unit* unit)
 {
     Frame* nameplate = unit->nameplate;
+    if (!nameplate) return;
 
-    auto it = std::find_if(
-        Nameplates.begin(),
-        Nameplates.end(),
-        [&](const NameplateHolder& h)
-        {
-            if (h.nameplate == nullptr)
-                return false;
-            return h.nameplate == nameplate;
-        }
-    );
+    auto it = FrameToIndex.find(nameplate);
+    if (it == FrameToIndex.end())
+        return;
 
-    if (it != Nameplates.end())
-    {
-        int index = (int)std::distance(Nameplates.begin(), it) + 1;
-        it->visible = false;
-        it->nameplate = nullptr;
-        it->ypos = 0.f;
-        it->xpos = 0.f;
-        it->xposOffset = 0.f;
-        it->currentStackOffset = 0.f;
-        it->targetStackOffset = 0.f;
-    }
+    int index = it->second;
+
+    FrameToIndex.erase(it);
+    Nameplates.erase(index);
 }
 
 
@@ -642,39 +617,6 @@ __declspec(naked) void detourHideNameplate()
     }
 }
 
-__declspec(naked) void detourCreateNameplate()
-{
-    __asm {
-        pushad
-        pushfd
-
-        mov eax, esi
-        push eax
-        call OnNameplateCreate
-        add esp, 4
-
-        popfd
-        popad
-
-        jmp createNameplateTrampoline
-    }
-}
-
-__declspec(naked) void detourPostNameplate()
-{
-    __asm {
-        pushad
-        pushfd
-
-        call OnPostNameplate
-
-        popfd
-        popad
-
-        jmp postNameplateTrampoline
-    }
-}
-
 __declspec(naked) void detourUnitDestroy()
 {
     __asm {
@@ -693,10 +635,14 @@ __declspec(naked) void detourUnitDestroy()
     }
 }
 
-
 void NamePlates::initialize()
 {
     AllocConsole();
+    
+    FILE* fp;
+    freopen_s(&fp, "CONOUT$", "w", stdout);
+    freopen_s(&fp, "CONOUT$", "w", stderr);
+    freopen_s(&fp, "CONIN$", "r", stdin);
 
     Hooks::FrameXML::registerLuaLib(lua_openlibnameplates);
     Hooks::FrameXML::registerEvent(NAME_PLATE_CREATED);
@@ -724,8 +670,6 @@ void NamePlates::initialize()
 
     InstallDetour(0x0072B38C, 5, &detourHideNameplate, &hideNameplateTrampoline);
     InstallDetour(0x0072582C, 5, &detourShowNameplate, &showNameplateTrampoline);
-    InstallDetour(0x00725766, 5, &detourCreateNameplate, &createNameplateTrampoline);
-    InstallDetour(0x004F90B6, 5, &detourPostNameplate, &postNameplateTrampoline);
     InstallDetour(0x00737BA0, 6, &detourUnitDestroy, &destroyUnitTrampoline);
 
     Hooks::FrameScript::registerToken("nameplate", getTokenGuid, getTokenId);

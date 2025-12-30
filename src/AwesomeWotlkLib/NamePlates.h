@@ -18,6 +18,8 @@ struct NameplateHolder
     Frame* nameplate;
     bool visible = false;
 
+    int index;
+
     //stacking stuff, helpers more or less
     bool isFriendly = false;
     uint8_t rank = 0;
@@ -30,9 +32,9 @@ struct NameplateHolder
     double targetStackOffset;
 };
 
-extern std::vector<NameplateHolder> Nameplates;
-
-
+extern std::unordered_map<int, NameplateHolder> Nameplates; // index -> holder
+extern std::unordered_map<Frame*, int> FrameToIndex;        // fast lookup
+extern int NextIndex;
 using namespace std;
 bool GetEffectiveScale(lua_State* L, double& scale);
 
@@ -482,10 +484,13 @@ inline Frame* getNameplateByGuid(guid_t guid)
     if (!guid)
         return nullptr;
 
-    auto it = std::find_if(Nameplates.begin(), Nameplates.end(), [guid](const NameplateHolder& h) {
-        if (h.nameplate == nullptr) return false;
-        return h.nameplate && h.nameplate->guid == guid;
-    });
+    for (auto& [index, holder] : Nameplates)
+    {
+        Frame* f = holder.nameplate;
+        if (!f) continue;
+        if (f->guid == guid)
+            return f;
+    }
 
-    return it != Nameplates.end() ? it->nameplate : nullptr;
+    return nullptr;
 }
