@@ -36,31 +36,6 @@ extern std::unordered_map<int, NameplateHolder> Nameplates; // index -> holder
 extern std::unordered_map<Frame*, int> FrameToIndex;        // fast lookup
 extern int NextIndex;
 using namespace std;
-bool GetEffectiveScale(lua_State* L, double& scale);
-
-bool GetPoint(lua_State* L, int frame_idx, int point_index,
-    std::string& point, std::string& relativeToName, std::string& relativePoint,
-    double& xOfs, double& yOfs);
-
-bool SetHeight(lua_State* L, int frame_idx, double height);
-bool SetWidth(lua_State* L, int frame_idx, double width);
-
-bool ConfigureWorldFrame(lua_State* L, bool enabledVariable);
-
-bool SetPoint(lua_State* L,
-    int frame_idx,
-    const char* point,
-    int relativeTo_idx,
-    const char* relativePoint,
-    double x, double y);
-
-bool SetClampRectInsets(lua_State* L, int frame_idx, double left, double right, double top, double bottom);
-bool SetClampedToScreen(lua_State* L, int frame_idx, bool clamped);
-
-bool GetSize(lua_State* L, int frame_idx, double& width, double& height);
-
-int IsFriendlyByColor(lua_State* L, int frame_idx);
-bool IsFriendlyByReaction(CGUnit_C* unit);
 
 namespace NamePlates {
     void initialize();
@@ -405,62 +380,6 @@ inline bool GetSize(lua_State* L, int frame_idx, double& width, double& height)
     lua_pop(L, 2);  // pop width and height
 
     return true;
-}
-inline int IsFriendlyByColor(lua_State* L, int frame_idx)
-{
-    //CSimpleFrame+0x278 = TSList https://github.com/blinkysc/thunderbrew/blob/master/src/ui/CSimpleFrame.hpp#L78
-    lua_getfield(L, frame_idx, "GetChildren");
-    if (!lua_isfunction(L, -1)) {
-        lua_pop(L, 1);
-        return -1;
-    }
-
-    lua_pushvalue(L, frame_idx);
-
-    if (lua_pcall(L, 1, 1, 0) != 0) {
-        lua_pop(L, 1);
-        return -1;
-    }
-
-    int healthbar_idx = lua_gettop(L);
-
-    lua_getfield(L, healthbar_idx, "GetStatusBarColor");
-    if (!lua_isfunction(L, -1)) {
-        lua_pop(L, 2);
-        return -1;
-    }
-
-    lua_pushvalue(L, healthbar_idx);
-
-    if (lua_pcall(L, 1, 3, 0) != 0) {
-        lua_pop(L, 1);
-        return -1;
-    }
-
-    float r = static_cast<float>(lua_tonumber(L, -3));
-    float g = static_cast<float>(lua_tonumber(L, -2));
-    float b = static_cast<float>(lua_tonumber(L, -1));
-    lua_pop(L, 4);
-
-
-    if (r < 0.01f) {
-        if (b < 0.01f && g > 0.99f)
-            return 5; // FRIENDLY_NPC
-        else if (b > 0.99f && g < 0.01f)
-            return 5; // FRIENDLY_PLAYER
-    }
-    else if (r > 0.99f) {
-        if (b < 0.01f && g > 0.99f)
-            return 4; // ENEMY_NPC
-        else if (b < 0.01f && g < 0.01f)
-            return 2; // ENEMY_NPC
-    }
-    else if (r > 0.5f && r < 0.6f) {
-        if (g > 0.5f && g < 0.6f && b > 0.5f && b < 0.6f)
-            return 1; // ENEMY_NPC (TAPPED)
-    }
-
-    return 3; // Default: ENEMY_PLAYER (ignored in your case)
 }
 
 inline bool IsFriendlyByReaction(CGUnit_C* unit) {

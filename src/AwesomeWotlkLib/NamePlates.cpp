@@ -28,7 +28,6 @@ static Console::CVar* s_cvar_nameplateExtendWorldFrameHeight;
 static Console::CVar* s_cvar_nameplateUpperBorderOnlyBoss;
 static Console::CVar* s_cvar_nameplateRecheckTreshold;
 
-//std::vector<NameplateHolder> Nameplates;
 std::unordered_map<int, NameplateHolder> Nameplates; // index -> holder
 std::unordered_map<Frame*, int> FrameToIndex;        // fast lookup
 int NextIndex = 1;
@@ -165,13 +164,11 @@ static int CVarHandler_NameplateStacking(Console::CVar*, const char*, const char
             lua_pushframe(L, holder.nameplate);
             int frame_idx = lua_gettop(L);
 
-            // Reset position
             holder.xpos = 0.f;
             holder.ypos = 0.f;
 
             SetClampedToScreen(L, frame_idx, false);
             SetClampRectInsets(L, frame_idx, 0, 0, 0, 0);
-
             lua_pop(L, 1);
         }
     }
@@ -286,6 +283,7 @@ static void NameplateStackingUpdateSmooth()
         std::string point, relativeToName, relativePoint;
         double xOfs = 0.0, yOfs = 0.0;
         bool status = GetPoint(L, frame_idx, 1, point, relativeToName, relativePoint, xOfs, yOfs);
+
         if (status) {
             holder.xpos = xOfs;
             holder.ypos = yOfs;
@@ -296,7 +294,7 @@ static void NameplateStackingUpdateSmooth()
         halfWidth *= 0.5;
         halfHeight *= 0.5;
 
-        SetClampedToScreen(L, frame_idx, true);
+        SetClampedToScreen(L, frame_idx, 1);
         SetClampRectInsets(L, frame_idx,
             halfWidth, -halfWidth,
             -halfHeight, -holder.ypos - originPos + halfHeight);
@@ -364,28 +362,44 @@ static void NameplateStackingUpdateSmooth()
     }
 
     for (size_t idx : active_indices) {
-        NameplateHolder& nameplate = Nameplates.at(idx);
-        lua_pushframe(L, nameplate.nameplate);
+        NameplateHolder& holder = Nameplates.at(idx);
+
+        lua_pushframe(L, holder.nameplate);
         int frame_idx = lua_gettop(L);
 
-        double width, height;
+        double width = 0, height = 0;
         GetSize(L, frame_idx, width, height);
 
-        double diff = nameplate.targetStackOffset - nameplate.currentStackOffset;
+        double diff = holder.targetStackOffset - holder.currentStackOffset;
 
         if (std::abs(diff) < 0.5) {
-            nameplate.currentStackOffset = nameplate.targetStackOffset;
+            holder.currentStackOffset = holder.targetStackOffset;
         }
         else {
             double lerpFactor = (diff > 0 ? speedRaise : speedLower) * delta;
             if (lerpFactor > 0.8) lerpFactor = 0.8;
-            nameplate.currentStackOffset += diff * lerpFactor;
+            holder.currentStackOffset += diff * lerpFactor;
         }
 
         SetClampedToScreen(L, frame_idx, true);
+        int currentUpper;
 
-        int currentUpper = (onlyBossUpper && nameplate.rank != 3) ? -worldFrameExtend : upperBorder;
-        float bottomInset = -nameplate.ypos - nameplate.currentStackOffset - originPos + (height / 2);
+        if (onlyBossUpper) {
+            currentUpper = (holder.rank == 3)
+                ? upperBorder
+                : -upperBorder * 5;
+        }
+        else {
+            currentUpper = upperBorder;
+        }
+
+        float bottomInset =
+            -holder.ypos
+            - holder.currentStackOffset
+            - originPos
+            + (height / 2);
+
+        printf("%f %f \n", width, height);
 
         SetClampRectInsets(L, frame_idx, -10, 10, currentUpper, bottomInset);
         lua_pop(L, 1);
@@ -637,13 +651,6 @@ __declspec(naked) void detourUnitDestroy()
 
 void NamePlates::initialize()
 {
-    AllocConsole();
-    
-    FILE* fp;
-    freopen_s(&fp, "CONOUT$", "w", stdout);
-    freopen_s(&fp, "CONOUT$", "w", stderr);
-    freopen_s(&fp, "CONIN$", "r", stdin);
-
     Hooks::FrameXML::registerLuaLib(lua_openlibnameplates);
     Hooks::FrameXML::registerEvent(NAME_PLATE_CREATED);
     Hooks::FrameXML::registerEvent(NAME_PLATE_UNIT_ADDED);
