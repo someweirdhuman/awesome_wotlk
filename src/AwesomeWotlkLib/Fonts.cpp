@@ -3,6 +3,7 @@
 #include <Detours/detours.h>
 #include <map>
 #include <iostream>
+#include <set>
 
 #include <d3d9.h>
 #include <d3dcompiler.h>
@@ -25,7 +26,7 @@
 
 // ----  if you want overkill quality, try raising these
 #define SDF_SAMPLER_SLOT 13
-#define ATLAS_SIZE 1024 // 1024-2048
+#define ATLAS_SIZE 1024 // 512-2048
 #define ATLAS_GUTTER 12 // usually spread + 2-4
 #define SDF_RENDER_SIZE 64.0 // 48-128
 #define SDF_SPREAD 8.0 // 6-12
@@ -269,7 +270,7 @@ struct CFontCache
 
 struct CFontTextureCache
 {
-    IDirect3DTexture9* m_texture;
+    void* m_rasterSizePadded;
     uint32_t m_pageInfo;
     uint32_t m_flags;
     float m_scaleX;
@@ -287,7 +288,7 @@ struct CFontFaceMapEntry
 {
     uint32_t unk_00;
     FT_Face* fontFace;
-    void* m_cache2; // CGxString__FontObject::cache2
+    void* m_cache2;
 };
 
 struct CFontFaceWrapper
@@ -370,6 +371,32 @@ struct CGxString
     char unk_E0[20];                            // 0xDC
 };
 
+struct TextureWrapperInternal {
+    uint32_t width;                 // +0x00
+    uint32_t height;                // +0x04
+    char pad0[0x30];                // +0x08
+    IDirect3DTexture9* d3dTex;      // +0x38
+    char pad1[8];                   // +0x3C
+};
+
+struct TextureWrapper {
+    char pad[68];                           // +0x00
+    TextureWrapperInternal* internalObj;    // +0x44
+};
+
+struct TextureData {
+    char pad[396];                          // +0x00
+    TextureWrapper** wrapperArray;          // +0x44
+};
+
+struct RenderContext {
+    uint32_t pad0[6];           // +0x00
+    TextureData* textureData;   // +0x18
+    uint32_t pad1[2];           // +0x1C
+    CGxString* firstString;     // +0x24
+};
+
+
 struct FaceCacheKey
 {
     FT_Face face;
@@ -386,6 +413,22 @@ struct GlyphMetrics
     float u0, v0, u1, v1;
     int width, height;
     int bitmapLeft, bitmapTop;
+    uint32_t atlasPageIndex;
+};
+
+struct AtlasPage {
+    IDirect3DTexture9* texture = nullptr;
+    int nextX = ATLAS_GUTTER;
+    int nextY = ATLAS_GUTTER;
+    int rowHeight = 0;
+    std::set<uint32_t> containedGlyphs;
+
+    ~AtlasPage() {
+        if (texture) {
+            texture->Release();
+            texture = nullptr;
+        }
+    }
 };
 
 struct FontHandle
@@ -396,25 +439,18 @@ struct FontHandle
     FT_Long fontDataSize;
     bool isValid;
 
-    IDirect3DTexture9* atlasTexture;
-    int atlasNextX = ATLAS_GUTTER;
-    int atlasNextY = ATLAS_GUTTER;
-    int atlasRowHeight = 0;
+    std::vector<std::unique_ptr<AtlasPage>> atlasPages;
     std::map<uint32_t, GlyphMetrics> glyphCache;
 
     FontHandle() : msdfFont(nullptr), ftFace(nullptr), fontData(nullptr),
-        fontDataSize(0), isValid(false), atlasTexture(nullptr),
-        atlasNextX(ATLAS_GUTTER), atlasNextY(ATLAS_GUTTER),
-        atlasRowHeight(0) {}
+        fontDataSize(0), isValid(false) {
+    }
     ~FontHandle() {
         if (msdfFont) {
             msdfgen::destroyFont(msdfFont);
             msdfFont = nullptr;
         }
-        if (atlasTexture) {
-            atlasTexture->Release();
-            atlasTexture = nullptr;
-        }
+        atlasPages.clear();
     }
 };
 
@@ -825,6 +861,30 @@ static msdfgen::FontHandle* CreateMSDFGenFont(const FT_Byte* file_base, FT_Long 
     return handle;
 }
 
+static bool CreateAtlasPage(FontHandle* fontHandle) {
+    IDirect3DDevice9* device = GetD3DDevice();
+    if (!device) return false;
+
+    auto page = std::make_unique<AtlasPage>();
+
+    if (FAILED(device->CreateTexture(
+        ATLAS_SIZE, ATLAS_SIZE, 1, 0,
+        D3DFMT, D3DPOOL_MANAGED,
+        &page->texture, nullptr
+    ))) {
+        return false;
+    }
+
+    D3DLOCKED_RECT lockedRect{};
+    if (SUCCEEDED(page->texture->LockRect(0, &lockedRect, nullptr, 0))) {
+        std::memset(lockedRect.pBits, 0, ATLAS_SIZE * lockedRect.Pitch);
+        page->texture->UnlockRect(0);
+    }
+
+    fontHandle->atlasPages.push_back(std::move(page));
+    return true;
+}
+
 
 static int __cdecl FreeType_NewMemoryFace_hk(FT_Library library, const FT_Byte* file_base, FT_Long file_size, FT_Long face_index, FT_Face* aface) {
     if (!g_realFtLibrary && FT_Init_FreeType(&g_realFtLibrary) != 0) return -1;
@@ -842,22 +902,6 @@ static int __cdecl FreeType_NewMemoryFace_hk(FT_Library library, const FT_Byte* 
 
     if (fontHandle->msdfFont) {
         fontHandle->isValid = (ALLOW_UNSAFE_FONTS) || IsFontMSDFCompatible(fontHandle->msdfFont);
-        if (fontHandle->isValid) {
-            IDirect3DDevice9* device = GetD3DDevice();
-            if (device) {
-                if (SUCCEEDED(device->CreateTexture(
-                    ATLAS_SIZE, ATLAS_SIZE, 1, 0,
-                    D3DFMT, D3DPOOL_MANAGED,
-                    &fontHandle->atlasTexture, nullptr
-                ))) {
-                    D3DLOCKED_RECT lockedRect{};
-                    if (SUCCEEDED(fontHandle->atlasTexture->LockRect(0, &lockedRect, nullptr, 0))) {
-                        std::memset(lockedRect.pBits, 0, ATLAS_SIZE * lockedRect.Pitch);
-                        fontHandle->atlasTexture->UnlockRect(0);
-                    }
-                }
-            }
-        }
     }
 
     g_fontHandles[real_face] = std::move(fontHandle);
@@ -996,7 +1040,8 @@ static const GlyphMetrics* CacheGlyphMSDF(FT_Face face, uint32_t codepoint) {
     if (cacheIt != fontHandle->glyphCache.end()) {
         return &cacheIt->second;
     }
-    if (!fontHandle->atlasTexture) return nullptr;
+    if (fontHandle->atlasPages.empty())
+        if (!CreateAtlasPage(fontHandle)) return nullptr;
 
     if (FT_Set_Pixel_Sizes(face, SDF_RENDER_SIZE, SDF_RENDER_SIZE) != 0) return nullptr;
     const FT_UInt glyph_index = FT_Get_Char_Index(face, codepoint);
@@ -1015,12 +1060,33 @@ static const GlyphMetrics* CacheGlyphMSDF(FT_Face face, uint32_t codepoint) {
     int sdfWidth = (outline_width > 0) ? outline_width + 2 * SDF_SPREAD : SDF_SPREAD;
     int sdfHeight = (outline_height > 0) ? outline_height + 2 * SDF_SPREAD : SDF_SPREAD;
 
-    if (fontHandle->atlasNextX + sdfWidth + ATLAS_GUTTER > ATLAS_SIZE) {
-        fontHandle->atlasNextX = ATLAS_GUTTER;
-        fontHandle->atlasNextY += fontHandle->atlasRowHeight + ATLAS_GUTTER;
-        fontHandle->atlasRowHeight = 0;
+    int pageIndex = -1;
+    AtlasPage* targetPage = nullptr;
+
+    for (int i = 0; i < fontHandle->atlasPages.size(); ++i) {
+        AtlasPage* page = fontHandle->atlasPages[i].get();
+        if (page->nextX + sdfWidth + ATLAS_GUTTER <= ATLAS_SIZE &&
+            page->nextY + sdfHeight + ATLAS_GUTTER <= ATLAS_SIZE) {
+            pageIndex = i;
+            targetPage = page;
+            break;
+        }
+        int nextY = page->nextY + page->rowHeight + ATLAS_GUTTER;
+        if (nextY + sdfHeight + ATLAS_GUTTER <= ATLAS_SIZE) {
+            page->nextX = ATLAS_GUTTER;
+            page->nextY = nextY;
+            page->rowHeight = 0;
+            pageIndex = i;
+            targetPage = page;
+            break;
+        }
     }
-    if (fontHandle->atlasNextY + sdfHeight + ATLAS_GUTTER > ATLAS_SIZE) return nullptr;
+
+    if (pageIndex == -1) {
+        if (!CreateAtlasPage(fontHandle)) return nullptr;
+        pageIndex = fontHandle->atlasPages.size() - 1;
+        targetPage = fontHandle->atlasPages.back().get();
+    }
 
     std::vector<unsigned char> msdf_data;
     if (outline_width > 0 && outline_height > 0) {
@@ -1029,34 +1095,35 @@ static const GlyphMetrics* CacheGlyphMSDF(FT_Face face, uint32_t codepoint) {
 
     if (!msdf_data.empty()) {
         D3DLOCKED_RECT lockedRect;
-        if (SUCCEEDED(fontHandle->atlasTexture->LockRect(0, &lockedRect, nullptr, 0))) {
+        if (SUCCEEDED(targetPage->texture->LockRect(0, &lockedRect, nullptr, 0))) {
             unsigned char* dest = static_cast<unsigned char*>(lockedRect.pBits) +
-                fontHandle->atlasNextY * lockedRect.Pitch + fontHandle->atlasNextX * 4;
+                targetPage->nextY * lockedRect.Pitch + targetPage->nextX * 4;
             const unsigned char* src = msdf_data.data();
             for (int y = 0; y < sdfHeight; ++y) {
                 memcpy(dest, src, sdfWidth * 4);
                 dest += lockedRect.Pitch;
                 src += sdfWidth * 4;
             }
-            fontHandle->atlasTexture->UnlockRect(0);
+            targetPage->texture->UnlockRect(0);
         }
     }
 
     GlyphMetrics metrics = {};
 
-    metrics.u0 = static_cast<float>(static_cast<double>(fontHandle->atlasNextX) / ATLAS_SIZE);
-    metrics.v0 = static_cast<float>(static_cast<double>(fontHandle->atlasNextY) / ATLAS_SIZE);
-    metrics.u1 = static_cast<float>(static_cast<double>(fontHandle->atlasNextX + sdfWidth) / ATLAS_SIZE);
-    metrics.v1 = static_cast<float>(static_cast<double>(fontHandle->atlasNextY + sdfHeight) / ATLAS_SIZE);
+    metrics.u0 = static_cast<float>(static_cast<double>(targetPage->nextX) / ATLAS_SIZE);
+    metrics.v0 = static_cast<float>(static_cast<double>(targetPage->nextY) / ATLAS_SIZE);
+    metrics.u1 = static_cast<float>(static_cast<double>(targetPage->nextX + sdfWidth) / ATLAS_SIZE);
+    metrics.v1 = static_cast<float>(static_cast<double>(targetPage->nextY + sdfHeight) / ATLAS_SIZE);
     metrics.width = sdfWidth;
     metrics.height = sdfHeight;
     metrics.bitmapTop = yMax;
     metrics.bitmapLeft = face->glyph->bitmap_left;
+    metrics.atlasPageIndex = pageIndex;
 
     fontHandle->glyphCache[codepoint] = metrics;
 
-    fontHandle->atlasNextX += sdfWidth + ATLAS_GUTTER;
-    fontHandle->atlasRowHeight = std::max(fontHandle->atlasRowHeight, sdfHeight);
+    targetPage->nextX += sdfWidth + ATLAS_GUTTER;
+    targetPage->rowHeight = std::max(targetPage->rowHeight, sdfHeight);
 
     return &fontHandle->glyphCache.at(codepoint);
 }
@@ -1215,7 +1282,7 @@ static int __fastcall CGxString__WriteGeometry_hk(CGxString* pThis, void* edx, i
     const int result = CGxString__WriteGeometry_orig(pThis, destPtr, index, vertIndex, vertCount);
 
     auto it = g_fontHandles.find(pThis->m_fontObj->m_fontResource->fontFace);
-    if (it == g_fontHandles.end() || !it->second->isValid || !it->second->atlasTexture) {
+    if (it == g_fontHandles.end() || !it->second->isValid) {
         IDirect3DDevice9* device = GetD3DDevice();
         if (device) {
             const float resetControl[4] = { 0, 0, 0, 0 };
@@ -1223,6 +1290,8 @@ static int __fastcall CGxString__WriteGeometry_hk(CGxString* pThis, void* edx, i
         }
         return result;
     }
+    FontHandle* fontHandle = it->second.get();
+    if (!fontHandle->atlasPages[index]->texture) return result;
 
     IDirect3DDevice9* device = GetD3DDevice();
     if (!device) return result;
@@ -1234,8 +1303,9 @@ static int __fastcall CGxString__WriteGeometry_hk(CGxString* pThis, void* edx, i
         is3d ? 0.0f : ((flags & 8) ? 2.0f : ((flags & 1) ? 1.0f : 0.0f)),
         SDF_SPREAD, ATLAS_SIZE
     };
+
     device->SetPixelShaderConstantF(SDF_SAMPLER_SLOT, controlFlagSDF, 1);
-    device->SetTexture(SDF_SAMPLER_SLOT, it->second->atlasTexture);
+    device->SetTexture(SDF_SAMPLER_SLOT, fontHandle->atlasPages[index]->texture);
 
     return result;
 }
@@ -1283,13 +1353,25 @@ typedef CGlyphCacheEntry* (__thiscall* CGxString__GetOrCreateGlyphEntry_t)(CFont
 static CGxString__GetOrCreateGlyphEntry_t CGxString__GetOrCreateGlyphEntry_orig = reinterpret_cast<CGxString__GetOrCreateGlyphEntry_t>(0x006C3FC0);
 
 static CGlyphCacheEntry* __fastcall CGxString__GetOrCreateGlyphEntry_hk(CFontObject* fontObj, void* edx, uint32_t codepoint) {
+    FT_Face face = fontObj->m_fontResource->fontFace;
+
+    const GlyphMetrics* gm = CacheGlyphMSDF(face, codepoint);
+    if (!gm || !isFontValid(face))  return CGxString__GetOrCreateGlyphEntry_orig(fontObj, codepoint);
+
+    // store target page idx
+    fontObj->m_atlasPages[0].m_flags &= ~0xF0000000;
+    fontObj->m_atlasPages[0].m_flags |= (gm->atlasPageIndex << 28);
+
     CGlyphCacheEntry* result = CGxString__GetOrCreateGlyphEntry_orig(fontObj, codepoint);
-    if (result && isFontValid(fontObj->m_fontResource->fontFace)) {
+    if (result) {
         result->m_metrics.u0 = 1.0f + codepoint; // store codepoint
+        // prevent atlas cursor from moving to ensuring it never pages before the msdf atlas does
+        result->m_cellIndexMin = 0;
+        result->m_cellIndexMax = 0;
+        result->m_texturePageIndex = gm->atlasPageIndex; // overwrite with msdf atlas page index to ensure correct batching
     }
     return result;
 }
-
 
 typedef double(__thiscall* CGxString__GetBearingX_t)(CFontObject* fontObj, CGlyphCacheEntry* entry, float flag, float scale);
 static CGxString__GetBearingX_t CGxString__GetBearingX_orig = reinterpret_cast<CGxString__GetBearingX_t>(0x006C24F0);
@@ -1311,7 +1393,7 @@ __declspec(naked) static void CGxString_GetGlyphYMetrics_hk() // skip the orig b
         jz font_unsafe;
         xor ecx, ecx;
         jmp CGxString__GetGlyphYMetrics_jmpback;
-        font_unsafe :
+        font_unsafe:
             mov ecx, [edx + 68h];
             jmp CGxString__GetGlyphYMetrics_jmpback;
     }
@@ -1389,6 +1471,31 @@ static int __fastcall CGxString__InitializeTextLine_hk(CGxString* pThis, void* e
 }
 
 
+typedef CGlyphCacheEntry*(__thiscall* IGxuFontInitGlyphMetrics_t)(CFramePoint* pAtlasPage, CGlyphMetrics* resultBuffer);
+static IGxuFontInitGlyphMetrics_t IGxuFontInitGlyphMetrics_orig = reinterpret_cast<IGxuFontInitGlyphMetrics_t>(0x006C9D90);
+
+static void(*IGxuFontInitGlyphMetrics_site_orig)() = (decltype(IGxuFontInitGlyphMetrics_site_orig))0x006C4051;
+static constexpr DWORD_PTR IGxuFontInitGlyphMetrics_site_jmpback = 0x006C4056;
+
+__declspec(naked) void IGxuFontInitGlyphMetrics_site_hk()
+{
+    __asm {
+        pushfd;
+        mov esi, [edi + 180h];  // fontObj->m_atlasPages[0].m_flags
+        shr esi, 28;
+        cmp ebx, esi; // compare the current engine page against the current msdf page, keep the engine up to speed
+        je pages_match;
+        xor eax, eax; // manually page the engine side when msdf atlas fills up
+        popfd;
+        jmp IGxuFontInitGlyphMetrics_site_jmpback;
+        pages_match:
+            popfd;
+            call IGxuFontInitGlyphMetrics_orig;
+            jmp IGxuFontInitGlyphMetrics_site_jmpback;
+    }
+}
+
+
 static int __cdecl FreeType_Init_hk(void* memory, FT_Library* alibrary) {
     if (!INITIALIZED) {
         const int mode = std::atoi(s_cvar_MSDFMode->vStr);
@@ -1408,6 +1515,7 @@ static int __cdecl FreeType_Init_hk(void* memory, FT_Library* alibrary) {
 
         DetourAttach(&(LPVOID&)IGxuFontRenderBatch_orig, IGxuFontRenderBatch_hk);
         DetourAttach(&(LPVOID&)IGxuFontGlyphRenderGlyph_orig, IGxuFontGlyphRenderGlyph_hk);
+        DetourAttach(&(LPVOID&)IGxuFontInitGlyphMetrics_site_orig, IGxuFontInitGlyphMetrics_site_hk);
 
         DetourAttach(&(LPVOID&)CGxString__WriteGeometry_orig, CGxString__WriteGeometry_hk);
         DetourAttach(&(LPVOID&)CGxString__GetGlyphYMetrics_orig, CGxString_GetGlyphYMetrics_hk);
