@@ -1,3 +1,22 @@
+# Archived
+
+This repository is archived and will no longer receive updates or maintenance.
+
+Most of the features and ongoing work were done by **noname08662**, and development may continue in his repository instead:
+[https://github.com/noname08662/awesome_wotlk](https://github.com/noname08662/awesome_wotlk)
+
+If you’re interested in future updates or improvements, follow that project.
+
+
+
+
+---
+---
+---
+
+
+
+
 # Awesome WotLK
 ## World of Warcraft 3.3.5a 12340 improvements library
 ### Fork of https://github.com/FrostAtom/awesome_wotlk/
